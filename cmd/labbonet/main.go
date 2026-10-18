@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/Labyricorn/Labbonet/frontend"
 	"github.com/Labyricorn/Labbonet/internal/api"
+	"github.com/Labyricorn/Labbonet/internal/secrets"
 	"github.com/Labyricorn/Labbonet/internal/server"
 	"github.com/Labyricorn/Labbonet/internal/store"
 )
@@ -59,6 +61,12 @@ func run(args []string) error {
 	}
 	defer st.Close()
 
+	logger, closeLog, err := openAccessLogger(*dataDir)
+	if err != nil {
+		return err
+	}
+	defer closeLog()
+
 	var frontendFS fs.FS
 	if *frontendDir != "" {
 		frontendFS = server.DirFrontend(*frontendDir)
@@ -71,12 +79,21 @@ func run(args []string) error {
 		Port:     *port,
 		Frontend: frontendFS,
 		Sessions: sessions,
+		Logger:   logger,
 	})
 	if err != nil {
 		return err
 	}
 	srv.Handle("GET /api/health", http.HandlerFunc(api.Health))
 	srv.Handle("POST /api/backup", api.BackupHandler(st, *dataDir))
+
+	endpoints := &api.Endpoints{Store: st, Protector: secrets.NewProtector()}
+	srv.Handle("GET /api/endpoints", http.HandlerFunc(endpoints.List))
+	srv.Handle("POST /api/endpoints", http.HandlerFunc(endpoints.Create))
+	srv.Handle("PATCH /api/endpoints/{id}", http.HandlerFunc(endpoints.Patch))
+	srv.Handle("DELETE /api/endpoints/{id}", http.HandlerFunc(endpoints.Delete))
+	srv.Handle("PUT /api/endpoints/{id}/credential", http.HandlerFunc(endpoints.SetCredential))
+	srv.Handle("DELETE /api/endpoints/{id}/credential", http.HandlerFunc(endpoints.ClearCredential))
 
 	ln, err := srv.Listen()
 	if err != nil {
@@ -108,6 +125,24 @@ func run(args []string) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return srv.Shutdown(shutdownCtx)
+}
+
+// openAccessLogger opens dataDir/logs/access.log for append, creating
+// the logs directory if needed, and returns a logger plus a close
+// function. The access log never carries headers or bodies (see
+// internal/server.AccessLog), so it can never leak conversation
+// content or a credential (SECURITY-MODEL.md section 7).
+func openAccessLogger(dataDir string) (*log.Logger, func(), error) {
+	logsDir := filepath.Join(dataDir, "logs")
+	if err := os.MkdirAll(logsDir, 0o700); err != nil {
+		return nil, nil, fmt.Errorf("create logs directory: %w", err)
+	}
+	f, err := os.OpenFile(filepath.Join(logsDir, "access.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return nil, nil, fmt.Errorf("open access log: %w", err)
+	}
+	logger := log.New(f, "", log.LstdFlags)
+	return logger, func() { f.Close() }, nil
 }
 
 func defaultDataDir() string {

@@ -4,7 +4,7 @@ Inherits the root `G:\.vibe\AGENTS.md` (DOX framework and Devlog Loop).
 
 ## Purpose
 
-Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application modeled on GobboNet (design reference only). Planning is complete; Phase 1 implementation is under way per `docs/PHASE1-PLAN.md` (steps 1-2 of 7 done as of 2026-10-17).
+Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application modeled on GobboNet (design reference only). Planning is complete; Phase 1 implementation is under way per `docs/PHASE1-PLAN.md` (steps 1-3 of 7 done as of 2026-10-17).
 
 ## Ownership
 

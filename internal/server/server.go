@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -20,6 +21,10 @@ type Config struct {
 	Frontend fs.FS
 
 	Sessions *SessionManager
+
+	// Logger, if set, records method/path/status for every request
+	// (never headers or bodies) via AccessLog. Nil disables logging.
+	Logger *log.Logger
 }
 
 // Server is the Labbonet HTTP server: a loopback listener with the full
@@ -61,6 +66,7 @@ func New(cfg Config) (*Server, error) {
 	root = s.apiGate(root)
 	root = hostAllowlist(allowedHosts, root)
 	root = withSecurityHeaders(root)
+	root = AccessLog(cfg.Logger, root)
 	s.handler = root
 
 	return s, nil

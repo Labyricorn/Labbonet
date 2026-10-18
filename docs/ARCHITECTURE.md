@@ -154,7 +154,7 @@ Dependencies must be AGPLv3-compatible. Record each one here when it is added.
 |---|---|---|---|
 | Go standard library | Everything not listed | BSD-3-Clause | Required |
 | `modernc.org/sqlite` | SQLite driver | BSD-3-Clause | Added (Phase 1 step 2, v1.60.1; license confirmed from the vendored module's `LICENSE` file) |
-| `golang.org/x/sys` | DPAPI on Windows | BSD-3-Clause | Planned (Phase 1) |
+| `golang.org/x/sys` | DPAPI on Windows | BSD-3-Clause | Added (Phase 1 step 3, v0.48.0; license confirmed from the vendored module's `LICENSE` file; it was already present as an indirect dependency of `modernc.org/sqlite` and is now also a direct one) |
 | `markdown-it` | Markdown rendering | MIT | Candidate (Phase 1) |
 | `DOMPurify` | HTML sanitization | Apache-2.0 or MPL-2.0 | Candidate (Phase 1) |
 | `@mlc-ai/web-llm` | Browser inference | Apache-2.0 | Planned (Phase 2) |

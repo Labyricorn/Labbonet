@@ -68,6 +68,29 @@ func (s *Store) ListEndpoints(ctx context.Context) ([]*Endpoint, error) {
 	return out, rows.Err()
 }
 
+// UpdateEndpoint edits an endpoint's name, enabled flag and concurrency
+// limit. The base URL and privacy class are fixed at registration
+// (ARCHITECTURE.md section 4.1): changing a host means deleting and
+// re-registering, so it always goes back through the validation and
+// classification in internal/endpoints.
+func (s *Store) UpdateEndpoint(ctx context.Context, id int64, name string, enabled bool, concurrencyLimit int) (*Endpoint, error) {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE endpoints SET name = ?, enabled = ?, concurrency_limit = ? WHERE id = ?`,
+		name, boolToInt(enabled), concurrencyLimit, id,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update endpoint: %w", err)
+	}
+	return s.GetEndpoint(ctx, id)
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
 // DeleteEndpoint removes an endpoint and (via ON DELETE CASCADE) its
 // credential and model inventory.
 func (s *Store) DeleteEndpoint(ctx context.Context, id int64) error {

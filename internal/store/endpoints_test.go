@@ -49,6 +49,28 @@ func TestEndpoints_CreateGetListDelete(t *testing.T) {
 	}
 }
 
+func TestEndpoints_Update(t *testing.T) {
+	ctx := t.Context()
+	st, _ := newTestStore(t)
+
+	ep, err := st.CreateEndpoint(ctx, "Strata", "openai", "http://127.0.0.1:8080", "local", 1)
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	updated, err := st.UpdateEndpoint(ctx, ep.ID, "Strata (renamed)", false, 3)
+	if err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	if updated.Name != "Strata (renamed)" || updated.Enabled || updated.ConcurrencyLimit != 3 {
+		t.Fatalf("updated endpoint = %+v", updated)
+	}
+	// The base URL and privacy class are not touched by Update.
+	if updated.BaseURL != ep.BaseURL || updated.PrivacyClass != ep.PrivacyClass {
+		t.Fatalf("UpdateEndpoint changed base_url/privacy_class: %+v", updated)
+	}
+}
+
 // A-E6: two endpoints advertising the same model ID are kept as separate
 // (endpoint_id, model_id) identities, not merged.
 func TestEndpoints_SameModelIDOnDifferentEndpointsStaySeparate(t *testing.T) {
