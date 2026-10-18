@@ -15,6 +15,7 @@ Labbonet is an inference client and workflow orchestrator, not an engine install
 - [`docs/SECURITY-MODEL.md`](docs/SECURITY-MODEL.md): threat model and security controls.
 - [`docs/PROVIDER-SPEC.md`](docs/PROVIDER-SPEC.md): provider adapter contract with Strata and LM Studio profiles.
 - [`docs/PHASE1-ACCEPTANCE.md`](docs/PHASE1-ACCEPTANCE.md): Phase 1 scope, non-goals and acceptance tests.
+- [`docs/PHASE1-PLAN.md`](docs/PHASE1-PLAN.md): Phase 1 build order in seven steps.
 - [`docs/GOBBONET-REFERENCE.md`](docs/GOBBONET-REFERENCE.md) and [`docs/REUSE-LOG.md`](docs/REUSE-LOG.md): pinned design reference and reuse record.
 
 ## Direction
