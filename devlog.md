@@ -2,6 +2,12 @@
 
 Operational memory: implementation discoveries, rejected approaches, debugging outcomes. Durable contracts live in AGENTS.md files, not here.
 
+## 2026-10-17 — Full GobboNet functionality request: audit and proposed plan
+
+The owner requested all GobboNet functionality after confirming that CHARS, MODS and SCHED were disabled only in Labbonet. Audited the pinned `chat.html` and source modules for generation, persistence/sync, prompt/lore/RAG, threads/chat, search/render/dashboard/scroll, characters/card interchange/personas, utilities, macros, data and scheduler. Added `docs/GOBBONET-PARITY-PLAN.md` with an explicit feature inventory, eight vertical implementation milestones, verification checkpoints and retained security/provider adaptations. No application functionality was implemented by this planning change.
+
+Proposed sequencing moves application parity before WebLLM and broader multi-model expansion; this awaits owner approval under the root Devlog Loop. Arbitrary JavaScript/remote styles, engine management and LAN/firewall setup are not silently restored. Existing Phase 1 provider windows and visual sign-off remain pending. No accepted decision or phase order was amended. DOX pass: indexed the proposed plan in project AGENTS; parent and frontend ownership/contracts remain unchanged. Documentation-only verification: checked source pin, feature references and diff whitespace; no code tests required.
+
 ---
 
 ## 2026-10-17 — Phase 1 step 1: skeleton and security shell
