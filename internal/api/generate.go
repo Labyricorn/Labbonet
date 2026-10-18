@@ -49,6 +49,9 @@ type generateRequest struct {
 	MaxReplyChars       int                   `json:"max_reply_chars"`
 	ReasoningLimitChars int                   `json:"reasoning_limit_chars"`
 	Attachments         []generate.Attachment `json:"attachments"`
+	// WebSearch asks for this message to be searched on the web first; refused with 409 unless
+	// search is enabled and a key is stored.
+	WebSearch bool `json:"web_search"`
 }
 
 type sseEventPayload struct {
@@ -152,6 +155,7 @@ func (g *Generate) Generate(w http.ResponseWriter, r *http.Request) {
 		ReasoningEffort: req.ReasoningEffort, ConfirmLoad: req.ConfirmLoad,
 		RegenerateParentID: req.RegenerateParentID, ExpectedRevision: req.Revision,
 		MaxReplyChars: req.MaxReplyChars, ReasoningLimitChars: req.ReasoningLimitChars, Attachments: req.Attachments,
+		WebSearch: req.WebSearch,
 	}
 	job, err := g.jobs().StartContext(r.Context(), genReq)
 	if err != nil {
@@ -160,7 +164,7 @@ func (g *Generate) Generate(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Conversation changed or is generating; reload before sending", http.StatusConflict)
 		case errors.Is(err, generate.ErrPrompt), errors.Is(err, generate.ErrAttachment), errors.Is(err, generate.ErrLimits):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, generate.ErrModelNotLoaded), errors.Is(err, generate.ErrNoModelSelected):
+		case errors.Is(err, generate.ErrModelNotLoaded), errors.Is(err, generate.ErrNoModelSelected), errors.Is(err, generate.ErrSearch):
 			http.Error(w, err.Error(), http.StatusConflict)
 		default:
 			http.Error(w, err.Error(), http.StatusBadGateway)

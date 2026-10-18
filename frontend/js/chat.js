@@ -13,6 +13,7 @@ import { api, streamGenerate, attachGeneration } from "./api.js";
 import { loadPrefs, savePrefs, decorateCode, sourceToggle, addAttachments, createFollow } from "./tools.js";
 import { renderMarkdown } from "./render.js";
 import { mountModelSelector } from "./models.js";
+import { createSearchToggle, renderSources, loadSources } from "./search.js";
 
 let castLifecycle;
 
@@ -112,7 +113,8 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   followBox.addEventListener("change", () => { prefs.follow = followBox.checked; savePrefs(prefs); });
   followLabel.append(followBox, " follow");
   const runStatus = document.createElement("span"); runStatus.className = "gen-status"; runStatus.setAttribute("aria-live", "polite");
-  tools.append(attachBtn, fileInput, chips,
+  const searchToggle = createSearchToggle();
+  tools.append(attachBtn, fileInput, chips, searchToggle.el,
     limitSelect("reply cap", "End a reply at the first sentence end after this many characters", "replyCap", [0, 500, 1000, 2000, 4000]),
     limitSelect("reasoning limit", "Stop a reply whose reasoning grows past this many characters", "reasoningLimit", [0, 2000, 8000, 32000]),
     followLabel, runStatus);
@@ -167,9 +169,13 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     messages = fresh.messages;
   }
 
+  // Citations for replies that used web search (message id -> stored search record).
+  let sources = new Map();
+
   async function reload() {
     const fresh = await api.getConversation(conversationId);
     applyConversation(fresh);
+    sources = await loadSources(conversationId);
     renderThread();
   }
 
@@ -329,6 +335,8 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
       badge.textContent = { edit: "edited", reroll: "reroll", fork: "forked" }[msg.origin];
       el.appendChild(badge);
     }
+    const found = msg.id && sources.get(msg.id);
+    if (found) el.appendChild(renderSources(found));
     decorateSpeaker(el, msg.speaker, msg.role);
     if (msg.id && msg.status !== "streaming" && !streaming) el.appendChild(messageActions(msg, el));
     return el;
@@ -344,6 +352,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     follow?.update(true);
   }
 
+  sources = await loadSources(conversationId);
   renderThread();
   const castControls = await mountCastControls(castSlot, conversationId, async () => {
     await reload();
@@ -387,12 +396,12 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   const leaving = () => lifecycle.signal.aborted;
   // Navigating to another thread only stops watching: the reply keeps running on the server
   // and is re-attached when this thread is opened again.
-  lifecycle.signal.addEventListener("abort", () => { clearInterval(timer); abortController?.abort(); });
+  lifecycle.signal.addEventListener("abort", () => { clearInterval(timer); abortController?.abort(); searchToggle.dispose(); });
 
-  function startTimer() {
+  function startTimer(label = "generating") {
     const started = Date.now();
-    runStatus.textContent = "generating… 0s";
-    timer = setInterval(() => { runStatus.textContent = `generating… ${Math.floor((Date.now() - started) / 1000)}s`; }, 1000);
+    runStatus.textContent = `${label}… 0s`;
+    timer = setInterval(() => { runStatus.textContent = `${label}… ${Math.floor((Date.now() - started) / 1000)}s`; }, 1000);
   }
 
   function endNote(end) {
@@ -494,8 +503,9 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   // generate starts one reply. body is either {content, attachments} (a new user turn appended to
   // the visible branch) or {regenerate_parent_id} (a new reply variant to that user message).
   async function generate(body, confirmLoad) {
+    const searching = searchToggle.on;
     setBusy(true);
-    startTimer();
+    startTimer(searching ? "searching the web, then generating" : "generating");
 
     const regenerating = body.regenerate_parent_id !== undefined;
     let shown = messages;
@@ -520,6 +530,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
       const payload = {
         ...body, revision, confirm_load: confirmLoad,
         max_reply_chars: prefs.replyCap || undefined, reasoning_limit_chars: prefs.reasoningLimit || undefined,
+        web_search: searching || undefined,
       };
       outcome = await reattach(await consume((handler, signal) => streamGenerate(conversationId, payload, handler, signal)));
     } catch (err) {
@@ -538,7 +549,12 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
           return;
         }
       } else if (!leaving()) {
-        alert(err.status === 409 ? `${err.message}. The thread was reloaded.` : `Generation failed: ${err.message}`);
+        if (err.status === 409 && /^web search/i.test(err.message)) {
+          alert(err.message);
+          searchToggle.refresh();
+        } else {
+          alert(err.status === 409 ? `${err.message}. The thread was reloaded.` : `Generation failed: ${err.message}`);
+        }
       }
     }
     await settle(outcome);

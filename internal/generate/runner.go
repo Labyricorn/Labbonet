@@ -66,6 +66,9 @@ type Request struct {
 	ReasoningLimitChars int
 	// Attachments are text files appended to the user message (new turns only).
 	Attachments []Attachment
+	// WebSearch sends the typed message to the web-search service first and offers the
+	// results to the prompt. It is refused (ErrSearch) unless search is enabled with a key.
+	WebSearch bool
 }
 
 // Runner drives one generation end to end (ARCHITECTURE.md section
@@ -76,6 +79,8 @@ type Runner struct {
 	Egress    *egress.Client
 	Slots     *Slots
 	Registry  *Registry
+	// Search is the fixed web-search client; nil makes WebSearch requests fail with ErrSearch.
+	Search *egress.SearchClient
 
 	mem memoryState
 }
@@ -102,6 +107,7 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 	if req.RegenerateParentID != nil && len(req.Attachments) > 0 {
 		return fmt.Errorf("%w: a regenerated reply has no new message to attach to", ErrAttachment)
 	}
+	typed := req.UserContent
 	composed, attachedNames, err := ComposeUserContent(req.UserContent, req.Attachments)
 	if err != nil {
 		return err
@@ -173,6 +179,31 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 			contextLimit = m.ContextLength
 		}
 	}
+	// Web search runs before the memory step and the prompt are built. A configuration problem
+	// refuses the send; a failed request is recorded and the reply goes on without results.
+	var searchRec *SearchRecord
+	var webResults []prompt.WebResult
+	if req.WebSearch {
+		plan, err := rn.planSearch(ctx)
+		if err != nil {
+			return err
+		}
+		query := typed
+		if req.RegenerateParentID != nil {
+			query = userContent
+		}
+		if searchRec, webResults, err = rn.runSearch(ctx, plan, query); err != nil {
+			return err
+		}
+	}
+	macros, err := rn.Store.ListMacros(ctx)
+	if err != nil {
+		return err
+	}
+	macroValues := make(map[string]string, len(macros))
+	for _, m := range macros {
+		macroValues[strings.ToLower(m.Trigger)] = m.Text
+	}
 	now := time.Now()
 	mem, err := rn.prepareMemory(ctx, memoryInput{Conv: conv, Endpoint: ep, ModelID: modelID, Character: character, Persona: persona, Path: path,
 		User: userContent, Turn: turn, ContextLimit: contextLimit, MaxTokens: req.MaxTokens, Now: now})
@@ -181,7 +212,8 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 	}
 	snapshot, err := prompt.Assemble(prompt.Input{Character: character, Persona: persona, System: conv.SystemPrompt, History: mem.History, User: userContent, Turn: turn,
 		ContextLimit: contextLimit, MaxTokens: req.MaxTokens, Temperature: req.Temperature, TopP: req.TopP, Now: now,
-		Summary: mem.Summary, SummarySeq: mem.SummarySeq, ArchivedMessages: mem.Archived, Retrieve: mem.Retrieve})
+		Summary: mem.Summary, SummarySeq: mem.SummarySeq, ArchivedMessages: mem.Archived, Retrieve: mem.Retrieve,
+		Macros: macroValues, Web: webResults, WebQuery: queryOf(searchRec)})
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrPrompt, err)
 	}
@@ -215,6 +247,13 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 		record := mem.Record
 		_ = persistWrite(func(c context.Context) error {
 			return rn.Store.AddRetrievalRecord(c, req.ConversationID, &genID, record)
+		})
+	}
+	if searchRec != nil {
+		searchRec.Used, searchRec.Omitted = len(snapshot.Web), snapshot.WebOmitted
+		record := *searchRec
+		_ = persistWrite(func(c context.Context) error {
+			return rn.Store.AddSearchRecord(c, req.ConversationID, &genID, record)
 		})
 	}
 	runCtx, cancel := context.WithCancel(ctx)
@@ -435,4 +474,11 @@ func (a *accumulator) usageJSON() usageJSON {
 
 func (a *accumulator) timingsJSON() timingsJSON {
 	return timingsJSON{TTFTMillis: a.timings.TTFTMillis, TokensPerSecond: a.timings.TokensPerSecond}
+}
+
+func queryOf(r *SearchRecord) string {
+	if r == nil {
+		return ""
+	}
+	return r.Query
 }

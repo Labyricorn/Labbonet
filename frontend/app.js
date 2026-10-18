@@ -2,6 +2,7 @@ import { mountCastLibrary } from "./js/cast.js";
 import { api } from "./js/api.js";
 import { mountDataDialog } from "./js/data.js";
 import { mountMemory } from "./js/memory.js";
+import { mountMods, bootAppearance } from "./js/mods.js";
 import { mountChatView } from "./js/conversations.js";
 import { mountEndpointsView } from "./js/endpoints.js";
 import { mountDiagnosticsView } from "./js/diagnostics.js";
@@ -39,6 +40,8 @@ document.getElementById("about-button").addEventListener("click", () => aboutDia
 document.getElementById("close-about").addEventListener("click", () => aboutDialog.close());
 mountDataDialog(document.getElementById("backup-button"));
 mountMemory(document.getElementById("memory-button"), document.getElementById("memory-chip"));
+mountMods(document.getElementById("mods-button"));
+bootAppearance();
 
 for (const btn of document.querySelectorAll("[data-view]")) {
   btn.addEventListener("click", () => switchView(btn.dataset.view));

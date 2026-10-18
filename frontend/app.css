@@ -167,3 +167,31 @@ button:disabled { opacity: .45; cursor: default; }
 .memory-chip { color: var(--magenta); border-color: var(--magenta-dim); white-space: nowrap; max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
 .storybook-report { margin-bottom: 10px; max-height: 220px; overflow: auto; }
 @media (max-width: 700px) { .memory-chip { order: 4; max-width: 100%; } }
+
+/* MODS dialog, web-search toggle and citations (Labbonet original; reuses the pinned modal, button and
+   chat-tools classes). --font-scale is set only by an appearance preset (validated 0.8-1.4). */
+.message { font-size: calc(15px * var(--font-scale, 1)); }
+#msg-input { font-size: calc(15px * var(--font-scale, 1)); }
+.mods-modal .macro-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.mods-modal .macro-trigger { color: var(--cyan-bright); }
+.mods-modal .macro-preview { flex: 1 1 160px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--cyan-dim); font-size: 12px; }
+.mods-modal .macro-output { margin: 0; min-height: 1.6em; flex: 1 1 100%; }
+.mods-modal .memory-section input[type=color] { width: 56px; height: 26px; padding: 0; background: var(--black); border: 1px solid var(--cyan-dim); }
+.mods-modal .memory-section input[type=password] { width: min(320px, 100%); }
+.mods-modal .mods-editor { display: block; }
+.mods-modal .memory-section .cast-control-label.appearance-row { justify-content: flex-start; }
+.mods-modal .appearance-row input[type=number] { margin-left: auto; }
+.search-toggle { cursor: pointer; }
+.search-toggle.active { color: var(--magenta); }
+.search-toggle input:disabled + * , .search-toggle:has(input:disabled) { opacity: .6; cursor: not-allowed; }
+.web-sources { margin-top: 10px; border: 1px solid var(--magenta-dim); border-radius: var(--radius); font-size: 12px; background: rgba(0,0,0,.35); }
+.web-sources-head { padding: 4px 8px; cursor: pointer; color: var(--magenta); letter-spacing: .5px; overflow-wrap: anywhere; }
+.web-sources-failed { border-color: var(--red-neon); }
+.web-sources-failed .web-sources-head { color: var(--red-neon); }
+.web-sources > p { margin: 4px 8px 8px; }
+.web-source-list { margin: 4px 8px 8px 28px; }
+.web-source { margin-bottom: 6px; overflow-wrap: anywhere; }
+.web-source.unused { opacity: .6; }
+.web-source a { color: var(--magenta); }
+.web-source-host { color: var(--cyan-dim); font-size: 11px; }
+.web-source-snippet { color: var(--cyan-mid); font-size: 11px; }

@@ -140,7 +140,8 @@ func run(args []string) error {
 	srv.Handle("POST /api/conversations/{id}/greeting", http.HandlerFunc(cast.Greet))
 
 	registry := generate.NewRegistry()
-	runner := &generate.Runner{Store: st, Protector: protector, Egress: egressClient, Slots: generate.NewSlots(), Registry: registry}
+	searchClient := egress.NewSearchClient()
+	runner := &generate.Runner{Store: st, Protector: protector, Egress: egressClient, Slots: generate.NewSlots(), Registry: registry, Search: searchClient}
 	jobs := generate.NewJobs(runner)
 	if n, err := st.RecoverInterrupted(context.Background()); err != nil {
 		return fmt.Errorf("recover interrupted generations: %w", err)
@@ -161,6 +162,21 @@ func run(args []string) error {
 	srv.Handle("POST /api/generations/{id}/cancel", http.HandlerFunc(gen.Cancel))
 	srv.Handle("GET /api/generations/{id}/events", http.HandlerFunc(gen.Events))
 	srv.Handle("GET /api/conversations/{id}/generation", http.HandlerFunc(gen.Active))
+
+	modsAPI := &api.Mods{Store: st, Protector: protector, Search: searchClient}
+	srv.Handle("GET /api/macros", http.HandlerFunc(modsAPI.ListMacros))
+	srv.Handle("POST /api/macros", http.HandlerFunc(modsAPI.SaveMacro))
+	srv.Handle("POST /api/macros/preview", http.HandlerFunc(modsAPI.PreviewMacros))
+	srv.Handle("PUT /api/macros/{id}", http.HandlerFunc(modsAPI.SaveMacro))
+	srv.Handle("DELETE /api/macros/{id}", http.HandlerFunc(modsAPI.DeleteMacro))
+	srv.Handle("GET /api/appearance", http.HandlerFunc(modsAPI.GetAppearance))
+	srv.Handle("PUT /api/appearance", http.HandlerFunc(modsAPI.PutAppearance))
+	srv.Handle("GET /api/search/settings", http.HandlerFunc(modsAPI.GetSearchSettings))
+	srv.Handle("PUT /api/search/settings", http.HandlerFunc(modsAPI.PutSearchSettings))
+	srv.Handle("PUT /api/search/credential", http.HandlerFunc(modsAPI.PutSearchKey))
+	srv.Handle("DELETE /api/search/credential", http.HandlerFunc(modsAPI.DeleteSearchKey))
+	srv.Handle("POST /api/search/test", http.HandlerFunc(modsAPI.TestSearch))
+	srv.Handle("GET /api/conversations/{id}/search", http.HandlerFunc(modsAPI.SearchRecords))
 
 	diagnostics := &api.Diagnostics{Store: st}
 	srv.Handle("GET /api/diagnostics", http.HandlerFunc(diagnostics.List))

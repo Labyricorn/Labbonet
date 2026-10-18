@@ -11,13 +11,13 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `Initial_Project_Proposal.md`: project brief and baseline definition.
 - `decision_register.md`: DR-001 to DR-016 with statuses, rationale and decision log.
 - `Strata_Protocol.md`: verified Strata API behavior (evidence for DR-005 and the provider adapter).
-- `docs/ARCHITECTURE.md`: components, backend API, storage schema outline (schema 4: lore, summaries, retrieval; section 13), repo layout, implementation defaults, dependency inventory.
-- `docs/SECURITY-MODEL.md`: threat model, controls, negative security tests (S1 to S17).
+- `docs/ARCHITECTURE.md`: components, backend API, storage schema outline (schema 5: lore, summaries, retrieval, search, macros, appearance; sections 13-14), repo layout, implementation defaults, dependency inventory.
+- `docs/SECURITY-MODEL.md`: threat model, controls, negative security tests (S1 to S22).
 - `docs/PROVIDER-SPEC.md`: adapter contract, normalized events, errors, timeouts, allowed request paths, Strata and LM Studio profiles.
 - `docs/PHASE1-ACCEPTANCE.md`: Phase 1 scope, non-goals, owner prerequisites, acceptance tests, sign-off.
 - `docs/PHASE1-PLAN.md`: Phase 1 build order (seven steps), per-step files, tests and done criteria, working rules.
 - `docs/GOBBONET-REFERENCE.md`: pinned GobboNet commit, source map, excluded paths.
-- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-4 are implemented (see handover for open verification); milestone 5 (lore, summaries, retrieval) is implemented, 6-8 remain.
+- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-4 are implemented (see handover for open verification); milestones 5 (lore, summaries, retrieval) and 6 (web search, macros, appearance presets) are implemented, 7-8 remain.
 - `docs/IMPLEMENTATION-HANDOVER.md`: unfinished parity working-tree changes, checks performed, remaining work and review risks for model handover; update or retire when superseded.
 - `docs/REUSE-LOG.md`: element-by-element GobboNet source/design attribution and Labbonet authorship boundaries (DR-003).
 - `docs/GOBBONET-PROVENANCE.json`: pinned-source hashes and exact reused CSS spans; keep synchronized with the reuse inventory.
@@ -26,7 +26,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `README.md`: public project summary; `.gitignore`: Go template from the initial GitHub commit.
 - `devlog.md`: implementation history (Devlog Loop); read before starting each step, add an entry when a step is done.
 - `docs/evidence/`: screenshots and verification records supporting acceptance tests.
-- `go.mod`, `cmd/`, `internal/` (including `internal/interchange`, card/snapshot parsing, `internal/generate` detached jobs/limits/memory coordination, `internal/memory` storybook parser, retrieval engine and memory settings), `migrations/`: Phase 1 and parity backend source, built per `docs/PHASE1-PLAN.md`. `frontend/AGENTS.md` owns the browser source/presentation contracts; this file retains project architecture, provider/security and acceptance ownership.
+- `go.mod`, `cmd/`, `internal/` (including `internal/interchange`, card/snapshot parsing, `internal/generate` detached jobs/limits/memory coordination and web-search orchestration, `internal/memory` storybook parser, retrieval engine and memory settings, `internal/search` web-search settings/query/response sanitising, `internal/mods` macro and appearance validation, `internal/egress/search.go` the fixed-destination search client), `migrations/`: Phase 1 and parity backend source, built per `docs/PHASE1-PLAN.md`. `frontend/AGENTS.md` owns the browser source/presentation contracts; this file retains project architecture, provider/security and acceptance ownership.
 
 ## Local Contracts
 
@@ -37,6 +37,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - **Git workflow (owner preference, 2026-10-18):** commit directly to `main` and push. No feature branches or PRs unless the owner asks for one. Before each push of code, run the verification in `docs/PHASE1-PLAN.md` section 1; never push a failing `main`.
 - **Attribution requirement (owner, 2026-10-18):** document every reused GobboNet element, credit Elodine / GoblinCorps, and distinguish copied source, adapted presentation/behavior and Labbonet-origin implementation. Update the reuse inventory, provenance and notices as material is added/changed/removed; retain per-file origin and modification notices.
 - Keep security commitments from the proposal (loopback default, endpoint allowlist, no executable downloads, no firewall or antivirus changes, no arbitrary JS extensions).
+- **Web search (milestone 6):** the only outbound path that is not a registered endpoint. Its destination is the constant in `internal/egress/search.go`; do not make it configurable, add its path to the provider allowlist, or call `NewSearchClientFor` outside tests (a test enforces this). Search stays off by default, needs the stored key plus a per-message request, and the key must never reach records, params, errors, logs or backups. MODS stays declarative: macros are text and appearance presets are the allowlisted values in `internal/mods`; no stylesheet text, URL or script support.
 - **Visual requirement (owner, 2026-10-17):** match the pinned GobboNet interface pixel for pixel except where Labbonet's model dynamics require differences. The basic functional shell is not visually accepted. Compare the rendered result at full-window and Codex side-panel widths; log any adapted presentation files in `docs/REUSE-LOG.md` and retain notices.
 
 ## Work Guidance

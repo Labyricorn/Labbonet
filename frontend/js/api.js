@@ -101,6 +101,20 @@ export const api = {
   conversationMemory: (id) => request("GET", `/api/conversations/${id}/memory`),
   saveSummary: (id, text, expected_seq) => request("PUT", `/api/conversations/${id}/summary`, { text, expected_seq }),
   summariseNow: (id) => request("POST", `/api/conversations/${id}/summary/compress`),
+
+  // MODS (macros, appearance) and web search.
+  listMacros: () => request("GET", "/api/macros"),
+  saveMacro: (macro) => request(macro.id ? "PUT" : "POST", macro.id ? `/api/macros/${macro.id}` : "/api/macros", macro),
+  deleteMacro: (macro) => request("DELETE", `/api/macros/${macro.id}?revision=${macro.revision}`),
+  previewMacros: (text) => request("POST", "/api/macros/preview", { text }),
+  appearance: () => request("GET", "/api/appearance"),
+  saveAppearance: (body) => request("PUT", "/api/appearance", body),
+  searchSettings: () => request("GET", "/api/search/settings"),
+  saveSearchSettings: (body) => request("PUT", "/api/search/settings", body),
+  setSearchKey: (value) => request("PUT", "/api/search/credential", { value }),
+  clearSearchKey: () => request("DELETE", "/api/search/credential"),
+  testSearch: () => request("POST", "/api/search/test"),
+  searchRecords: (id) => request("GET", `/api/conversations/${id}/search`),
 };
 
 // readEvents decodes an SSE response over fetch. EventSource can't be used: generate needs

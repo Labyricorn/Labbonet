@@ -81,6 +81,8 @@ These are the only paths the egress client may request (`SECURITY-MODEL.md` sect
 
 Paths with model IDs in the URL (for example `/api/v0/models/{model}`) are not used.
 
+The web-search service (milestone 6) is not a provider endpoint and is not in this table: `POST https://ollama.com/api/web_search` is requested only by `egress.SearchClient`, whose host and path are constants (`SECURITY-MODEL.md` section 16, `ARCHITECTURE.md` section 14).
+
 ## 2. Capability profile
 
 Stored per model, filled from discovery and editable by the user.
@@ -179,6 +181,7 @@ Consequence for Labbonet: sending a chat to a `not-loaded` model is a model-mana
 | LM Studio streaming format, `usage`, reasoning field, cancellation | Observed for the loaded Gemma model; section 5.3 and `evidence/step7-live.json` |
 | LM Studio authenticated mode | Phase 1 acceptance (needs the owner to enable it) |
 | LM Studio embeddings response shape | Live check deferred (section 5.4); needs a loaded embedding model |
+| Web-search service request/response and key behavior | Shape taken from the pinned GobboNet proxy target and the service's published API [docs]; no live request yet (needs an owner key). Fake-server tests only |
 | Strata cancellation | Observed: `/status` idle 116 ms after stop; `evidence/step7-live.json` |
 | Strata cold-load timeout | Pending owner window (deferred by owner); `Strata_Protocol.md` section 10 |
 | Strata authenticated mode | Phase 1 acceptance (needs the owner to set `api_key`) |

@@ -482,6 +482,16 @@ func (s *Store) ResetData(ctx context.Context, scope string) error {
 			}
 		}
 	}
+	if scope == "all" {
+		// MODS data is content, not credentials: macros and appearance go; the web-search
+		// key and its settings stay, like endpoint credentials.
+		if _, err = tx.ExecContext(ctx, `DELETE FROM macros`); err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE appearance_settings SET data_json='{}',revision=revision+1 WHERE id=1`); err != nil {
+			return err
+		}
+	}
 	if scope == "cast" || scope == "all" {
 		if _, err = tx.ExecContext(ctx, `UPDATE conversation_cast SET revision=revision+1`); err != nil {
 			return err

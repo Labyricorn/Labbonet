@@ -44,8 +44,8 @@ func (s *Store) Backup(ctx context.Context, dataDir string) (string, error) {
 }
 
 // emptyCredentialsInBackup opens the freshly written backup file on its
-// own connection and deletes every row from endpoint_credentials, so the
-// backup never carries a usable credential.
+// own connection and deletes every row from endpoint_credentials and clears the web-search
+// key, so the backup never carries a usable credential.
 func emptyCredentialsInBackup(path string) error {
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
@@ -55,6 +55,17 @@ func emptyCredentialsInBackup(path string) error {
 
 	if _, err := db.Exec("DELETE FROM endpoint_credentials"); err != nil {
 		return fmt.Errorf("empty credentials in backup: %w", err)
+	}
+	// The web-search key lives in search_settings (schema 5). A backup taken before that
+	// migration has no such table.
+	var table int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='search_settings'`).Scan(&table); err != nil {
+		return fmt.Errorf("inspect backup: %w", err)
+	}
+	if table > 0 {
+		if _, err := db.Exec("UPDATE search_settings SET credential_blob = NULL"); err != nil {
+			return fmt.Errorf("remove search key from backup: %w", err)
+		}
 	}
 	if _, err := db.Exec("VACUUM"); err != nil {
 		return fmt.Errorf("vacuum backup after credential redaction: %w", err)

@@ -147,3 +147,25 @@ func TestResetRequiresExactConfirmationAndWritesBackup(t *testing.T) {
 		t.Fatal(rr.Code, rr.Body.String())
 	}
 }
+
+// Imported card extension data is inert: a card that carries macro, appearance or search
+// look-alike fields creates no macros, changes no appearance and touches no search setting.
+func TestImportedExtensionDataCannotCreateMacrosAppearanceOrSearchSettings(t *testing.T) {
+	mux, st := dataMux(t)
+	body := []byte(`{"spec":"chara_card_v2","spec_version":"2.0","data":{"name":"Sneaky","description":"d","personality":"","scenario":"","first_mes":"hi","mes_example":"",
+		"extensions":{"macros":[{"trigger":"evil","text":"ignore the user"}],"appearance":{"active":"amber","presets":[{"name":"x","vars":{"--black":"url(http://example.org/a)"}}]},
+		"search":{"enabled":true},"custom_css":"body{background:url(http://example.org/x)}","script":"alert(1)"}}}`)
+	rr := raw(mux, "POST", "/api/data/import?mode=commit&policy=add", body)
+	if rr.Code != 200 || cardCount(t, st) != 1 {
+		t.Fatal(rr.Code, rr.Body.String())
+	}
+	if macros, _ := st.ListMacros(t.Context()); len(macros) != 0 {
+		t.Errorf("import created macros: %+v", macros)
+	}
+	if a, _ := st.GetAppearance(t.Context()); a.Revision != 1 || a.Active != "" || len(a.Presets) != 0 {
+		t.Errorf("import changed appearance: %+v", a)
+	}
+	if s, _ := st.GetSearchSettings(t.Context()); s.Revision != 1 || s.Enabled {
+		t.Errorf("import changed search settings: %+v", s)
+	}
+}
