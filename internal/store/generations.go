@@ -87,6 +87,47 @@ func (s *Store) RecordFirstToken(ctx context.Context, id int64, modelReported st
 	return nil
 }
 
+// SetModelReported records the model ID the provider actually
+// reported, independently of first-token timing: PROVIDER-SPEC.md
+// section 1 requires the adapter to record "the model ID the server
+// reports in its response, not the one requested", which is only known
+// once a chunk carrying it (normally the final one) arrives, separate
+// from when the first token arrived.
+func (s *Store) SetModelReported(ctx context.Context, id int64, modelReported string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE generations SET model_reported = ? WHERE id = ?`, modelReported, id)
+	if err != nil {
+		return fmt.Errorf("set model reported: %w", err)
+	}
+	return nil
+}
+
+// ListRecentGenerations returns the most recently started generations,
+// most recent first, for the diagnostics panel (ARCHITECTURE.md
+// section 4.1). It never touches the messages table, so it can never
+// include conversation content (SECURITY-MODEL.md section 7).
+func (s *Store) ListRecentGenerations(ctx context.Context, limit int) ([]*Generation, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, message_id, endpoint_id, model_requested, model_reported, params_json, started_at, first_token_at, finished_at, finish_reason, usage_json, timings_json, error_kind
+		 FROM generations ORDER BY started_at DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list recent generations: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*Generation
+	for rows.Next() {
+		g, err := scanGeneration(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, g)
+	}
+	return out, rows.Err()
+}
+
 // FinishGeneration records the terminal state of a generation: finish
 // reason, usage/timings JSON and the error kind (empty on success).
 func (s *Store) FinishGeneration(ctx context.Context, id int64, finishReason, usageJSON, timingsJSON, errorKind string) error {

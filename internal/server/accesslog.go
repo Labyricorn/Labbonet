@@ -33,3 +33,14 @@ func (w *statusWriter) WriteHeader(status int) {
 	w.status = status
 	w.ResponseWriter.WriteHeader(status)
 }
+
+// Flush forwards to the underlying ResponseWriter's Flush, if it has
+// one. Embedding http.ResponseWriter only promotes the methods in that
+// interface (Header/Write/WriteHeader); without this, wrapping a
+// flushable ResponseWriter in statusWriter would silently drop SSE
+// streaming's ability to flush each chunk as it's written.
+func (w *statusWriter) Flush() {
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}

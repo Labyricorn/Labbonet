@@ -67,6 +67,26 @@ func TestConversations_CreateGetListModelSwitchDelete(t *testing.T) {
 	}
 }
 
+func TestConversations_Rename(t *testing.T) {
+	ctx := t.Context()
+	st, _ := newTestStore(t)
+
+	conv, err := st.CreateConversation(ctx, "Untitled", nil, nil, "", "{}")
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if err := st.RenameConversation(ctx, conv.ID, "Renamed chat"); err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	got, err := st.GetConversation(ctx, conv.ID)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if got.Title != "Renamed chat" {
+		t.Fatalf("title = %q, want %q", got.Title, "Renamed chat")
+	}
+}
+
 func TestConversations_WithoutModelChosenYet(t *testing.T) {
 	ctx := t.Context()
 	st, _ := newTestStore(t)

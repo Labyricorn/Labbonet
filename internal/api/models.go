@@ -71,7 +71,7 @@ type testResponse struct {
 // call, SECURITY-MODEL.md section 5) and records the result as the
 // endpoint's detected_service.
 func (m *Models) Test(w http.ResponseWriter, r *http.Request) {
-	id, err := parseEndpointID(r)
+	id, err := parseIDParam(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -126,7 +126,7 @@ type capabilitiesJSON struct {
 // Refresh handles POST /api/endpoints/{id}/models/refresh: discovers
 // models from the provider and records them in the cached inventory.
 func (m *Models) Refresh(w http.ResponseWriter, r *http.Request) {
-	id, err := parseEndpointID(r)
+	id, err := parseIDParam(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -179,7 +179,7 @@ func (m *Models) Refresh(w http.ResponseWriter, r *http.Request) {
 // List handles GET /api/endpoints/{id}/models: the cached inventory
 // from the last refresh, with no outbound network call.
 func (m *Models) List(w http.ResponseWriter, r *http.Request) {
-	id, err := parseEndpointID(r)
+	id, err := parseIDParam(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

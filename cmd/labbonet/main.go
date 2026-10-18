@@ -18,6 +18,7 @@ import (
 	"github.com/Labyricorn/Labbonet/frontend"
 	"github.com/Labyricorn/Labbonet/internal/api"
 	"github.com/Labyricorn/Labbonet/internal/egress"
+	"github.com/Labyricorn/Labbonet/internal/generate"
 	"github.com/Labyricorn/Labbonet/internal/secrets"
 	"github.com/Labyricorn/Labbonet/internal/server"
 	"github.com/Labyricorn/Labbonet/internal/store"
@@ -97,10 +98,27 @@ func run(args []string) error {
 	srv.Handle("PUT /api/endpoints/{id}/credential", http.HandlerFunc(endpoints.SetCredential))
 	srv.Handle("DELETE /api/endpoints/{id}/credential", http.HandlerFunc(endpoints.ClearCredential))
 
-	models := &api.Models{Store: st, Protector: protector, Egress: egress.NewClient()}
+	egressClient := egress.NewClient()
+	models := &api.Models{Store: st, Protector: protector, Egress: egressClient}
 	srv.Handle("POST /api/endpoints/{id}/test", http.HandlerFunc(models.Test))
 	srv.Handle("POST /api/endpoints/{id}/models/refresh", http.HandlerFunc(models.Refresh))
 	srv.Handle("GET /api/endpoints/{id}/models", http.HandlerFunc(models.List))
+
+	conversations := &api.Conversations{Store: st}
+	srv.Handle("GET /api/conversations", http.HandlerFunc(conversations.List))
+	srv.Handle("POST /api/conversations", http.HandlerFunc(conversations.Create))
+	srv.Handle("GET /api/conversations/{id}", http.HandlerFunc(conversations.Get))
+	srv.Handle("PATCH /api/conversations/{id}", http.HandlerFunc(conversations.Patch))
+	srv.Handle("DELETE /api/conversations/{id}", http.HandlerFunc(conversations.Delete))
+
+	registry := generate.NewRegistry()
+	runner := &generate.Runner{Store: st, Protector: protector, Egress: egressClient, Slots: generate.NewSlots(), Registry: registry}
+	gen := &api.Generate{Runner: runner}
+	srv.Handle("POST /api/conversations/{id}/generate", http.HandlerFunc(gen.Generate))
+	srv.Handle("POST /api/generations/{id}/cancel", http.HandlerFunc(gen.Cancel))
+
+	diagnostics := &api.Diagnostics{Store: st}
+	srv.Handle("GET /api/diagnostics", http.HandlerFunc(diagnostics.List))
 
 	ln, err := srv.Listen()
 	if err != nil {
@@ -128,6 +146,13 @@ func run(args []string) error {
 		return err
 	case <-ctx.Done():
 	}
+
+	// ARCHITECTURE.md section 6: "cancel running generations (partial
+	// text saved)". http.Server.Shutdown alone only waits for in-flight
+	// handlers to return; it never cancels their contexts, so a
+	// streaming request would otherwise hold the shutdown open until
+	// the upstream provider itself finishes or the client disconnects.
+	registry.CancelAll()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

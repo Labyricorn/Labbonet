@@ -142,7 +142,7 @@ type patchEndpointRequest struct {
 // concurrency_limit. The base URL and privacy class are fixed at
 // registration; delete and re-register to change the host.
 func (e *Endpoints) Patch(w http.ResponseWriter, r *http.Request) {
-	id, err := parseEndpointID(r)
+	id, err := parseIDParam(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -196,7 +196,7 @@ func (e *Endpoints) Patch(w http.ResponseWriter, r *http.Request) {
 // Delete handles DELETE /api/endpoints/{id}; its credential and model
 // inventory go with it via ON DELETE CASCADE.
 func (e *Endpoints) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := parseEndpointID(r)
+	id, err := parseIDParam(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -216,7 +216,7 @@ type setCredentialRequest struct {
 // the value (DPAPI) and stores only the opaque blob. The value is never
 // echoed back or logged (SECURITY-MODEL.md S12, S13).
 func (e *Endpoints) SetCredential(w http.ResponseWriter, r *http.Request) {
-	id, err := parseEndpointID(r)
+	id, err := parseIDParam(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -250,7 +250,7 @@ func (e *Endpoints) SetCredential(w http.ResponseWriter, r *http.Request) {
 
 // ClearCredential handles DELETE /api/endpoints/{id}/credential.
 func (e *Endpoints) ClearCredential(w http.ResponseWriter, r *http.Request) {
-	id, err := parseEndpointID(r)
+	id, err := parseIDParam(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -262,7 +262,7 @@ func (e *Endpoints) ClearCredential(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func parseEndpointID(r *http.Request) (int64, error) {
+func parseIDParam(r *http.Request) (int64, error) {
 	raw := r.PathValue("id")
 	id, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || id <= 0 {

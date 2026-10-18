@@ -59,6 +59,61 @@ func TestGenerations_CreateFirstTokenFinishProvenance(t *testing.T) {
 	}
 }
 
+func TestGenerations_SetModelReported(t *testing.T) {
+	ctx := t.Context()
+	st, _ := newTestStore(t)
+
+	conv, err := st.CreateConversation(ctx, "Chat", nil, nil, "", "{}")
+	if err != nil {
+		t.Fatalf("create conversation: %v", err)
+	}
+	msg, err := st.CreateMessage(ctx, conv.ID, nil, "assistant", "", "", "streaming")
+	if err != nil {
+		t.Fatalf("create message: %v", err)
+	}
+	gen, err := st.CreateGeneration(ctx, msg.ID, nil, "requested-model", "{}")
+	if err != nil {
+		t.Fatalf("create generation: %v", err)
+	}
+	if err := st.SetModelReported(ctx, gen.ID, "actually-this-model"); err != nil {
+		t.Fatalf("set model reported: %v", err)
+	}
+	got, err := st.GetGeneration(ctx, gen.ID)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if got.ModelReported != "actually-this-model" {
+		t.Fatalf("model_reported = %q", got.ModelReported)
+	}
+}
+
+func TestListRecentGenerations(t *testing.T) {
+	ctx := t.Context()
+	st, _ := newTestStore(t)
+
+	conv, err := st.CreateConversation(ctx, "Chat", nil, nil, "", "{}")
+	if err != nil {
+		t.Fatalf("create conversation: %v", err)
+	}
+	for i := 0; i < 3; i++ {
+		msg, err := st.CreateMessage(ctx, conv.ID, nil, "assistant", "", "", "streaming")
+		if err != nil {
+			t.Fatalf("create message: %v", err)
+		}
+		if _, err := st.CreateGeneration(ctx, msg.ID, nil, "m", "{}"); err != nil {
+			t.Fatalf("create generation: %v", err)
+		}
+	}
+
+	list, err := st.ListRecentGenerations(ctx, 2)
+	if err != nil {
+		t.Fatalf("list recent: %v", err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("len(list) = %d, want 2 (limit applied)", len(list))
+	}
+}
+
 // A-C8: an unknown/renamed model ID still records the reported model,
 // distinct from the one requested.
 func TestGenerations_ReportedModelDiffersFromRequested(t *testing.T) {

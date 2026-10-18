@@ -68,6 +68,18 @@ func (s *Store) ListConversations(ctx context.Context) ([]*Conversation, error) 
 	return out, rows.Err()
 }
 
+// RenameConversation sets a conversation's title.
+func (s *Store) RenameConversation(ctx context.Context, id int64, title string) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE conversations SET title = ?, updated_at = ? WHERE id = ?`,
+		title, formatTime(time.Now().UTC()), id,
+	)
+	if err != nil {
+		return fmt.Errorf("rename conversation: %w", err)
+	}
+	return nil
+}
+
 // SetConversationModel changes a conversation's current endpoint/model
 // (a model switch keeps all prior messages, PHASE1-PLAN.md step 5).
 func (s *Store) SetConversationModel(ctx context.Context, id int64, endpointID *int64, modelID *string) error {
