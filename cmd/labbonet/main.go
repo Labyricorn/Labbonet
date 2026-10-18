@@ -17,6 +17,7 @@ import (
 	"github.com/Labyricorn/Labbonet/frontend"
 	"github.com/Labyricorn/Labbonet/internal/api"
 	"github.com/Labyricorn/Labbonet/internal/server"
+	"github.com/Labyricorn/Labbonet/internal/store"
 )
 
 func main() {
@@ -52,6 +53,12 @@ func run(args []string) error {
 		return fmt.Errorf("create session manager: %w", err)
 	}
 
+	st, err := store.Open(filepath.Join(*dataDir, "labbonet.db"))
+	if err != nil {
+		return fmt.Errorf("open database: %w", err)
+	}
+	defer st.Close()
+
 	var frontendFS fs.FS
 	if *frontendDir != "" {
 		frontendFS = server.DirFrontend(*frontendDir)
@@ -69,6 +76,7 @@ func run(args []string) error {
 		return err
 	}
 	srv.Handle("GET /api/health", http.HandlerFunc(api.Health))
+	srv.Handle("POST /api/backup", api.BackupHandler(st, *dataDir))
 
 	ln, err := srv.Listen()
 	if err != nil {
