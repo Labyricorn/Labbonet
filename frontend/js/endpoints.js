@@ -9,6 +9,11 @@ export function mountEndpointsView(root) {
 
   const heading = document.createElement("h2");
   heading.textContent = "Endpoints";
+  const diagnosticsBtn = document.createElement("button");
+  diagnosticsBtn.type = "button";
+  diagnosticsBtn.className = "btn btn-sm";
+  diagnosticsBtn.textContent = "Diagnostics";
+  diagnosticsBtn.addEventListener("click", () => document.querySelector('[data-view="diagnostics"]').click());
 
   const form = document.createElement("form");
   form.className = "endpoint-form";
@@ -29,6 +34,7 @@ export function mountEndpointsView(root) {
 
   const submitBtn = document.createElement("button");
   submitBtn.type = "submit";
+  submitBtn.className = "btn btn-fill";
   submitBtn.textContent = "Register";
 
   const errorEl = document.createElement("p");
@@ -39,7 +45,7 @@ export function mountEndpointsView(root) {
   const list = document.createElement("div");
   list.className = "endpoint-list";
 
-  root.append(heading, form, list);
+  root.append(heading, diagnosticsBtn, form, list);
 
   async function refresh() {
     let endpoints = [];
@@ -99,6 +105,7 @@ export function mountEndpointsView(root) {
 
     const testBtn = document.createElement("button");
     testBtn.type = "button";
+    testBtn.className = "btn btn-sm";
     testBtn.textContent = "Test";
     testBtn.addEventListener("click", async () => {
       testBtn.disabled = true;
@@ -119,6 +126,7 @@ export function mountEndpointsView(root) {
 
     const refreshModelsBtn = document.createElement("button");
     refreshModelsBtn.type = "button";
+    refreshModelsBtn.className = "btn btn-sm";
     refreshModelsBtn.textContent = "Refresh models";
     refreshModelsBtn.addEventListener("click", async () => {
       refreshModelsBtn.disabled = true;
@@ -133,6 +141,7 @@ export function mountEndpointsView(root) {
 
     const credBtn = document.createElement("button");
     credBtn.type = "button";
+    credBtn.className = "btn btn-sm";
     credBtn.textContent = ep.credential_set ? "Clear credential" : "Set credential";
     credBtn.addEventListener("click", async () => {
       try {
@@ -160,7 +169,7 @@ export function mountEndpointsView(root) {
 
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
-    deleteBtn.className = "danger";
+    deleteBtn.className = "btn btn-danger btn-sm";
     deleteBtn.textContent = "Delete";
     deleteBtn.addEventListener("click", async () => {
       if (!confirm(`Delete endpoint "${ep.name}"? Its credential and model inventory go with it.`)) return;

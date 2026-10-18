@@ -22,7 +22,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `README.md`: public project summary; `.gitignore`: Go template from the initial GitHub commit.
 - `devlog.md`: implementation history (Devlog Loop); read before starting each step, add an entry when a step is done.
 - `docs/evidence/`: screenshots and verification records supporting acceptance tests.
-- `go.mod`, `cmd/`, `internal/`, `frontend/`, `migrations/`: Phase 1 source, built step by step per `docs/PHASE1-PLAN.md`. No child AGENTS.md yet; this file is the local contract until a subtree earns its own (Core DOX Child Doc Shape).
+- `go.mod`, `cmd/`, `internal/`, `migrations/`: Phase 1 backend source, built per `docs/PHASE1-PLAN.md`. `frontend/AGENTS.md` owns the browser source/presentation contracts; this file retains project architecture, provider/security and acceptance ownership.
 
 ## Local Contracts
 
@@ -50,4 +50,4 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 
 ## Child DOX Index
 
-None.
+- `frontend/AGENTS.md`: browser shell, ES modules, pinned presentation reuse, rendering, vendored assets and visual verification. Backend/protocol/acceptance documents remain owned here.

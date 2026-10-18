@@ -24,6 +24,7 @@ export function mountDiagnosticsView(root) {
   heading.textContent = "Diagnostics";
   const refreshBtn = document.createElement("button");
   refreshBtn.type = "button";
+  refreshBtn.className = "btn btn-sm";
   refreshBtn.textContent = "Refresh";
   const table = document.createElement("table");
   table.className = "diagnostics-table";

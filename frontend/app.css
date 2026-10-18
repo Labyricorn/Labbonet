@@ -1,336 +1,71 @@
-:root {
-  color-scheme: light;
-  --bg: #fafafa;
-  --fg: #1a1a1a;
-  --border: #d8d8d8;
-  --accent: #2b6cb0;
-  --danger: #b00020;
-  --ok: #0a7a2a;
-  --muted: #6b6b6b;
+/* Labbonet integration for the pinned GobboNet presentation styles.
+   Upstream attribution and modifications: css/ and docs/REUSE-LOG.md. */
+:root { color-scheme: dark; --danger: var(--red-neon); --muted: var(--cyan-dim); }
+[hidden], .view[hidden] { display: none !important; }
+button, input, textarea, select { font-family: var(--font); }
+button:disabled { opacity: .45; cursor: default; }
+#chat { min-height: 0; }
+.view { flex: 1; min-height: 0; min-width: 0; overflow: auto; }
+#view-chat { display: flex; flex-direction: column; overflow: hidden; }
+.messages { min-height: 0; }
+#msg-input { field-sizing: content; }
+.message { flex-shrink: 0; overflow-wrap: anywhere; }
+.message-content { min-width: 0; }
+.message-content table { border-collapse: collapse; }
+.message-content td, .message-content th { border: 1px solid var(--border); padding: 5px 8px; }
+.thread-title { display: flex; align-items: center; min-width: 0; }
+.thread-title::before { flex-shrink: 0; }
+.chat-header .thread-title::before { content: "sysadmin@labbonet:~# "; }
+#thread-title { min-width: 0; width: 100%; color: inherit; background: transparent; border: 0; padding: 0; font: inherit; text-overflow: ellipsis; }
+#thread-title:disabled { opacity: 1; -webkit-text-fill-color: var(--white); }
+#thread-title:focus { outline: 1px solid var(--cyan-dim); box-shadow: none; }
+.sidebar-primary-actions { display: flex; gap: 6px; margin-bottom: 8px; }
+.sidebar-primary-actions #home-sidebar { flex: 1; }
+.sidebar-primary-actions #new-conversation { flex: 2; }
+.thread-list { list-style: none; }
+.thread-body { background: transparent; border: 0; font: inherit; text-align: left; cursor: pointer; padding: 0; }
+.thread-ctrl:focus-within, .thread-item:focus-within .thread-ctrl { max-width: 200px; opacity: 1; }
+.thread-item { cursor: pointer; }
+.sidebar-footer-btns + .sidebar-footer-btns { margin-top: 6px; }
+.sidebar-footer .btn:disabled { opacity: .5; }
+.about-dialog { margin: auto; max-width: 600px; width: calc(100% - 32px); padding: 24px; color: var(--cyan-mid); background: var(--surface); border: 1px solid var(--cyan-dim); border-radius: var(--radius); box-shadow: var(--glow-cyan); }
+.about-dialog::backdrop { background: rgba(0,0,0,.75); }
+.about-dialog h2 { color: var(--white); letter-spacing: 3px; }
+.about-dialog p { margin: 16px 0; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.status-label.error { color: var(--red-neon); }
+.status-badge { display: inline-block; margin-top: 8px; font-size: 10px; text-transform: uppercase; color: var(--magenta); border: 1px solid var(--magenta-dim); border-radius: 3px; padding: 2px 6px; }
+.status-error .status-badge, .status-interrupted .status-badge { color: var(--red-neon); border-color: var(--red-neon); }
+.endpoints-view, .diagnostics-view { padding: 24px; }
+.endpoints-view h2, .diagnostics-view h2 { color: var(--white); font-size: 18px; letter-spacing: 3px; margin-bottom: 20px; text-transform: uppercase; }
+.endpoint-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 24px; }
+.endpoint-form input:not([type=checkbox]) { flex: 1; min-width: 180px; }
+.endpoint-form input:not([type=checkbox]), .view select { background: var(--black); border: 1px solid var(--cyan-dim); color: var(--cyan-bright); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; }
+.ack-external { font-size: 11px; display: flex; align-items: center; gap: 6px; }
+.form-error { color: var(--red-neon); font-size: 12px; }
+.endpoint-list { display: flex; flex-direction: column; gap: 16px; }
+.endpoint-row { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--cyan-dim); border-radius: var(--radius); padding: 16px; }
+.endpoint-info strong { color: var(--white); }
+.endpoint-url { font-size: 12px; overflow-wrap: anywhere; }
+.endpoint-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.privacy-badge.privacy-local, .privacy-badge.privacy-lan, .privacy-badge.privacy-external, .credential-badge, .detected-service { font-size: 10px; border: 1px solid var(--cyan-dim); color: var(--cyan-bright); padding: 2px 6px; border-radius: 3px; margin-left: 5px; animation: none; filter: none; }
+.privacy-badge.privacy-external { border-color: var(--red-neon); color: var(--red-neon); }
+.plain-http-warning { color: var(--magenta); font-size: 11px; margin-top: 8px; }
+.diagnostics-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+.diagnostics-table th { color: var(--cyan-bright); text-transform: uppercase; letter-spacing: .5px; }
+.diagnostics-table td, .diagnostics-table th { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+.diagnostics-table td { color: var(--white); }
+.reauth-banner { position: fixed; top: 0; left: 0; right: 0; padding: 10px; background: var(--red-neon); color: white; text-align: center; z-index: 10000; }
+@media (max-width: 1000px) {
+  .chat-header .thread-title::before { content: "~# "; }
 }
-
-* {
-  box-sizing: border-box;
+@media (max-width: 700px) {
+  .chat-header { flex-wrap: wrap; }
+  .header-model-wrap { order: 5; flex-basis: 100%; }
+  #header-model-select { max-width: calc(100vw - 80px); }
+  .thread-title { flex: 1; }
+  .endpoints-view, .diagnostics-view { padding: 16px 12px; }
 }
-
-body {
-  font-family: system-ui, sans-serif;
-  margin: 0;
-  color: var(--fg);
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.app-header h1 {
-  font-size: 1.25rem;
-  margin: 0;
-}
-
-.app-header nav {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.app-header nav button {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 0.25rem;
-  padding: 0.35rem 0.8rem;
-  cursor: pointer;
-}
-
-.app-header nav button.active {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
-
-#status {
-  margin: 0 0 0 auto;
-  font-size: 0.85rem;
-}
-
-#status.ok {
-  color: var(--ok);
-}
-
-#status.error {
-  color: var(--danger);
-}
-
-main {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-}
-
-.view {
-  flex: 1;
-  overflow: auto;
-  padding: 1rem 1.5rem;
-}
-
-/* Chat view */
-
-/* Author rules with display:flex/etc. below have the same specificity
-   as the UA's own `[hidden] { display: none }` default, and author
-   rules win ties over UA defaults regardless of source order; without
-   this, a hidden .chat-view (or any other .view with its own display
-   override) would render anyway. */
-.view[hidden] {
-  display: none !important;
-}
-
-.chat-view {
-  display: flex;
-  padding: 0;
-  height: 100%;
-}
-
-.conversation-sidebar {
-  width: 240px;
-  border-right: 1px solid var(--border);
-  padding: 1rem;
-  overflow: auto;
-}
-
-.new-conversation {
-  width: 100%;
-  margin-bottom: 0.75rem;
-  padding: 0.5rem;
-  cursor: pointer;
-}
-
-.conversation-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.conversation-list li {
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-
-.conversation-list li:hover {
-  background: var(--border);
-}
-
-.conversation-list li.selected {
-  background: var(--accent);
-  color: white;
-}
-
-.chat-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.chat-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.chat-title {
-  flex: 1;
-  font-size: 1rem;
-  padding: 0.3rem;
-  border: 1px solid transparent;
-  border-radius: 0.25rem;
-}
-
-.chat-title:focus {
-  border-color: var(--accent);
-}
-
-.chat-thread {
-  flex: 1;
-  overflow: auto;
-  padding: 1rem;
-}
-
-.message {
-  margin-bottom: 1rem;
-  padding: 0.6rem 0.8rem;
-  border-radius: 0.5rem;
-  max-width: 80%;
-}
-
-.message-user {
-  background: var(--accent);
-  color: white;
-  margin-left: auto;
-}
-
-.message-assistant {
-  background: white;
-  border: 1px solid var(--border);
-}
-
-.message-content :last-child {
-  margin-bottom: 0;
-}
-
-.reasoning {
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-
-.reasoning summary {
-  cursor: pointer;
-}
-
-.status-badge {
-  display: inline-block;
-  margin-top: 0.4rem;
-  font-size: 0.75rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 0.25rem;
-  background: var(--border);
-}
-
-.status-error .status-badge,
-.status-cancelled .status-badge,
-.status-interrupted .status-badge {
-  background: var(--danger);
-  color: white;
-}
-
-.chat-composer {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border-top: 1px solid var(--border);
-}
-
-.chat-composer textarea {
-  flex: 1;
-  resize: vertical;
-  min-height: 2.5rem;
-  padding: 0.5rem;
-}
-
-.chat-composer button {
-  align-self: flex-end;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-}
-
-/* Endpoints view */
-
-.endpoint-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.endpoint-form input {
-  padding: 0.4rem;
-}
-
-.ack-external {
-  font-size: 0.85rem;
-}
-
-.form-error {
-  color: var(--danger);
-  width: 100%;
-  margin: 0;
-}
-
-.endpoint-row {
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.endpoint-url {
-  color: var(--muted);
-}
-
-.privacy-badge,
-.detected-service,
-.credential-badge {
-  font-size: 0.75rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 0.25rem;
-  margin-left: 0.3rem;
-  background: var(--border);
-}
-
-.plain-http-warning {
-  color: var(--danger);
-  font-size: 0.85rem;
-  margin: 0.3rem 0 0;
-}
-
-.endpoint-actions {
-  margin-top: 0.5rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.endpoint-actions button,
-.chat-header button {
-  cursor: pointer;
-  padding: 0.3rem 0.6rem;
-}
-
-button.danger {
-  color: var(--danger);
-}
-
-/* Diagnostics view */
-
-.diagnostics-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.diagnostics-table th,
-.diagnostics-table td {
-  text-align: left;
-  padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
-}
-
-/* Shared */
-
-.empty-state {
-  color: var(--muted);
-  padding: 2rem;
-}
-
-.reauth-banner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: var(--danger);
-  color: white;
-  text-align: center;
-  padding: 0.5rem;
-  z-index: 1000;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

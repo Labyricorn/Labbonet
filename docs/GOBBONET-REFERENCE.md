@@ -59,4 +59,6 @@ These implement behaviors Labbonet excludes (AGENTS.md local contracts). Do not 
 
 ## 4. Feature-parity inventory
 
+The 2026-10-17 owner-directed visual adaptation reuses only presentation CSS and selected HTML structure from this pin. Exact file mappings and notices are in `REUSE-LOG.md`. The working Phase 1 preview is available for comparison; no claim of completed pixel equality or owner visual acceptance is implied by functional test results.
+
 The feature list and its treatment live in `Initial_Project_Proposal.md` section 19. When a feature is implemented, mark it there with the Labbonet phase; keep implementation details out of that table (DR-003 criterion "feature-parity inventory maintained separately").

@@ -1,5 +1,8 @@
 main.view {
   display: block;
+  padding: 24px;
+  height: 100dvh;
+  overflow: auto;
 }
 
 .render-test-case {
@@ -20,7 +23,7 @@ main.view {
 .render-preview {
   margin-top: 0.5rem;
   padding: 0.5rem;
-  background: #fafafa;
+  background: var(--surface);
   border-radius: 0.25rem;
 }
 

@@ -1,0 +1,58 @@
+/* Copyright (C) 2026 Elodine / GoblinCorps. AGPL-3.0-or-later.
+   Source: GobboNet css/12-organisation.css @ 314bdc9cae204ae38fdc1002ac6a9fb1437c109f.
+   Modified by the Labbonet project, 2026-10-17: thread search styles extracted without folder/tag features. */
+.thread-search-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--black);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.thread-search-wrap:focus-within {
+  border-color: var(--cyan-dim);
+  box-shadow: 0 0 6px rgba(0, 243, 255, 0.15);
+}
+.thread-search-icon {
+  padding: 0 7px 0 10px;
+  font-size: 13px;
+  color: var(--cyan-dim);
+  pointer-events: none;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.thread-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--cyan-bright);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 7px 4px;
+  min-width: 0;
+  letter-spacing: 0.5px;
+}
+.thread-search-input::placeholder { color: rgba(0, 243, 255, 0.25); }
+.thread-search-clear {
+  background: none;
+  border: none;
+  color: var(--cyan-dim);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 9px;
+  line-height: 1;
+  font-family: var(--font);
+  transition: color var(--transition);
+  flex-shrink: 0;
+}
+.thread-search-clear:hover { color: var(--red-neon); }
+
+@media (max-width: 700px) {
+  .thread-search-input { font-size: 16px; } /* prevent iOS zoom */
+}
+
+

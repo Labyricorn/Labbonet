@@ -1,26 +1,64 @@
 <!doctype html>
+<!-- Copyright (C) 2026 Elodine / GoblinCorps. AGPL-3.0-or-later.
+     Adapted from GobboNet chat.html @ 314bdc9cae204ae38fdc1002ac6a9fb1437c109f.
+     Modified by the Labbonet project, 2026-10-17: safe Phase 1 views and provider controls. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Labbonet</title>
+<title>LABBONET // LOCAL_TERMINAL</title>
+<link rel="stylesheet" href="/css/01-tokens.css">
+<link rel="stylesheet" href="/css/02-layout.css">
+<link rel="stylesheet" href="/css/03-threads.css">
+<link rel="stylesheet" href="/css/04-chat.css">
+<link rel="stylesheet" href="/css/components.css">
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/10-responsive.css">
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<header class="app-header">
-  <h1>Labbonet</h1>
-  <nav>
-    <button type="button" data-view="chat">Chat</button>
-    <button type="button" data-view="endpoints">Endpoints</button>
-    <button type="button" data-view="diagnostics">Diagnostics</button>
-  </nav>
-  <p id="status">Checking backend health&hellip;</p>
-</header>
-<main>
-  <section id="view-chat" class="view"></section>
-  <section id="view-endpoints" class="view" hidden></section>
-  <section id="view-diagnostics" class="view" hidden></section>
-</main>
+<div id="app">
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-header-row"><h1>LABBONET</h1><button type="button" class="sidebar-close-btn" aria-label="Close sidebar">&times;</button></div>
+      <div class="sidebar-primary-actions">
+        <button type="button" class="btn btn-sm" data-view="chat" id="home-sidebar">&#8962; HOME</button>
+        <button type="button" class="btn btn-fill btn-sm" id="new-conversation">+ NEW_THREAD</button>
+      </div>
+      <div class="thread-search-wrap">
+        <span class="thread-search-icon" aria-hidden="true">&#128269;</span>
+        <input type="text" id="thread-search" class="thread-search-input" placeholder="Search threads..." aria-label="Search threads" autocomplete="off" spellcheck="false">
+        <button type="button" id="thread-search-clear" class="thread-search-clear" aria-label="Clear search" hidden>&times;</button>
+      </div>
+    </div>
+    <ul class="thread-list" id="thread-list" aria-label="Conversations"></ul>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" disabled title="Characters are not available in this version">// CHARS</button><button type="button" class="btn btn-amber btn-block" data-view="endpoints">// CONFIG</button></div>
+      <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" disabled title="Extensions are unavailable">// MODS</button><button type="button" class="btn btn-block" id="backup-button">// DATA</button></div>
+      <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" disabled title="Scheduling is not available in this version">// SCHED</button><button type="button" class="btn btn-block" id="about-button">// ABOUT</button></div>
+    </div>
+  </aside>
+  <div id="sidebar-overlay"></div>
+  <main id="chat">
+    <header class="chat-header">
+      <button type="button" class="toggle-sidebar" aria-label="Toggle sidebar">&#9776;</button>
+      <button type="button" class="home-btn" data-view="chat" aria-label="Home">&#8962;</button>
+      <div class="header-model-wrap" id="header-model-wrap"><span class="header-model-label">MODEL</span><div id="model-slot"></div></div>
+      <span class="thread-title"><input id="thread-title" aria-label="Conversation title" value="No thread selected" disabled></span>
+      <span class="status-label" id="status">Checking...</span><span class="status-dot" id="status-dot"></span>
+      <span class="privacy-badge" title="Loopback-only backend; provider destination is selected explicitly">&#128274;</span>
+    </header>
+    <section id="view-chat" class="view"></section>
+    <section id="view-endpoints" class="view" hidden></section>
+    <section id="view-diagnostics" class="view" hidden></section>
+  </main>
+</div>
+<dialog id="about-dialog" class="about-dialog">
+  <h2>LABBONET</h2>
+  <p>Local, multi-provider AI chat. AGPLv3-or-later.</p>
+  <p>Interface adapted from GobboNet, copyright © 2026 Elodine / GoblinCorps. Labbonet is not affiliated with or endorsed by GobboNet.</p>
+  <div class="dialog-actions"><button type="button" class="btn" data-view="diagnostics">DIAGNOSTICS</button><button type="button" class="btn" id="close-about">CLOSE</button></div>
+</dialog>
 <script src="/vendor/markdown-it.min.js"></script>
 <script src="/vendor/purify.min.js"></script>
 <script type="module" src="/app.js"></script>

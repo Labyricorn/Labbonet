@@ -51,9 +51,11 @@ Boundaries:
 
 - Served by the backend from files embedded with `go:embed` (the binary is self-contained). A `--frontend-dir` development flag serves from disk instead.
 - Plain HTML, CSS and ES modules. No framework, no bundler.
-- Markdown rendering with raw HTML disabled, followed by sanitization (candidates: `markdown-it` MIT with `html: false`, and `DOMPurify` Apache-2.0/MPL-2.0). Final choice and versions are recorded in `frontend/vendor/VENDOR.md` when added.
+- Markdown rendering with raw HTML disabled (`markdown-it` with `html: false`), followed by DOMPurify sanitization. Pinned versions, licenses and hashes are in `frontend/vendor/VENDOR.md`.
 - Phase 1 views: conversation list, chat thread with streaming output and a stop button, endpoint manager (register, test, credential set/clear), model selector grouped by endpoint (proposal section 18), diagnostics panel.
 - Reasoning content (`reasoning_content`) is shown in a collapsible block, separate from the answer.
+- Owner visual requirement: match the pinned GobboNet interface pixel for pixel except for model dynamics. Presentation files in `frontend/css/` are selectively adapted from the pinned source with notices and entries in `REUSE-LOG.md`; `app.css` contains Labbonet integration rules. No upstream JS, inline handlers/styles or excluded behaviors are imported. The pinned tree omits its referenced Atkinson font file, so its original Cascadia/Consolas fallback stack is used.
+- The reference sidebar retains its footer positions: CONFIG opens endpoint controls (including Diagnostics), DATA creates a credential-free backup, ABOUT shows attribution and a Diagnostics entry. Characters, extensions and scheduling remain visibly disabled under the current Phase 1 scope. Visual acceptance is separate from functional verification and awaits owner review.
 
 ## 4. Backend
 

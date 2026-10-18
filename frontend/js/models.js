@@ -11,6 +11,8 @@ export async function mountModelSelector(root, currentEndpointId, currentModelId
   root.innerHTML = "";
   const select = document.createElement("select");
   select.className = "model-selector";
+  select.id = "header-model-select";
+  select.setAttribute("aria-label", "Model and endpoint");
 
   const placeholder = document.createElement("option");
   placeholder.value = "";
@@ -56,10 +58,18 @@ export async function mountModelSelector(root, currentEndpointId, currentModelId
     select.appendChild(group);
   }
 
-  select.addEventListener("change", () => {
+  let savedValue = select.value;
+  select.addEventListener("change", async () => {
     if (select.value === "") return;
     const target = optionTargets[Number(select.value)];
-    onChange(target.endpointId, target.modelId);
+    select.disabled = true;
+    try {
+      await onChange(target.endpointId, target.modelId);
+      savedValue = select.value;
+    } catch {
+      select.value = savedValue;
+    }
+    finally { select.disabled = false; }
   });
 
   root.appendChild(select);

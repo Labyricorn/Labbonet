@@ -1,0 +1,93 @@
+/* Copyright (C) 2026 Elodine / GoblinCorps. AGPL-3.0-or-later.
+   Source: GobboNet css/13-components.css @ 314bdc9cae204ae38fdc1002ac6a9fb1437c109f.
+   Modified by the Labbonet project, 2026-10-17: extracted model selector and reasoning styles only. */
+.header-model-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.header-model-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: rgba(0,255,65,0.5);
+  text-transform: uppercase;
+  user-select: none;
+  white-space: nowrap;
+}
+#header-model-select {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(0,243,255,0.85);
+  background: transparent;
+  border: 1px solid rgba(0,243,255,0.18);
+  border-radius: 3px;
+  padding: 2px 4px;
+  cursor: pointer;
+  max-width: 180px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='rgba(0,243,255,0.4)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 5px center;
+  padding-right: 18px;
+}
+#header-model-select:hover {
+  border-color: rgba(0,243,255,0.45);
+  color: rgba(0,243,255,1);
+}
+#header-model-select option {
+  background: #0a0a0f;
+  color: rgba(0,243,255,0.85);
+}
+
+.cot-block {
+  margin: 4px 0 8px 0;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.02);
+  overflow: hidden;
+  font-size: 13px;
+}
+.cot-block.cot-active {
+  border-color: rgba(0,255,65,0.2);
+  background: rgba(0,255,65,0.03);
+}
+.cot-summary {
+  padding: 6px 12px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  user-select: none;
+  list-style: none;
+}
+.cot-summary::-webkit-details-marker { display: none; }
+.cot-summary::before {
+  content: '▸ ';
+  display: inline-block;
+  transition: transform 0.15s;
+}
+.cot-block[open] .cot-summary::before {
+  transform: rotate(90deg);
+}
+.cot-active .cot-summary {
+  color: rgba(0,255,65,0.7);
+}
+.cot-content {
+  padding: 8px 12px 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  line-height: 1.5;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.cot-content p { margin: 4px 0; }
+
+
