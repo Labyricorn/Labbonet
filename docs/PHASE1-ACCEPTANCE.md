@@ -103,6 +103,10 @@ All tests S1 to S17 in `SECURITY-MODEL.md` section 10 pass.
 
 ## 6. Sign-off
 
+Live progress (2026-10-17 America/Los_Angeles): `evidence/step7-live.json` records A-C1/A-C2/A-C3, A-C9, A-ST7/A-LM7 and A-B4. The two replies in the exit conversation retain distinct endpoint/requested/reported model provenance. The shutdown check kept 188 content characters and 195 reasoning characters as `cancelled`, removed the lock, and returned SQLite `integrity_check: ok`. A-B1/S17 ran under a standard Windows account (`WindowsPrincipal.IsInRole(Administrator)` was false). S16 inspection found no forbidden application command calls; the binary substring `netsh` was inside dependency symbols `NetShareAdd`/`NetShareDel`, not a `netsh` invocation. The sole application process launcher opens the default browser with `cmd /c start`.
+
+The owner explicitly deferred P3-P5: **A-ST5, A-ST6 and A-LM6 remain pending, with no waivers implied**. The owner also rejected the functional shell's visual resemblance to GobboNet; frontend visual acceptance remains open. The saved `evidence/step7-exit-ui.png` is evidence of the working conversation, not visual approval. Detailed security/acceptance document review and final sign-off remain pending.
+
 Phase 1 is complete when every test above passes or has an owner-approved waiver recorded here, and the DR-002, DR-005, DR-006, DR-012 and DR-015 acceptance criteria in `decision_register.md` are ticked with a pointer to the evidence.
 
 | Date | Result | Waivers | Approved by |

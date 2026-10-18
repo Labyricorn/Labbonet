@@ -4,7 +4,7 @@ Inherits the root `G:\.vibe\AGENTS.md` (DOX framework and Devlog Loop).
 
 ## Purpose
 
-Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application modeled on GobboNet (design reference only). Planning is complete; Phase 1 implementation is under way per `docs/PHASE1-PLAN.md` (steps 1-6 of 7 done; step 7 awaits owner prerequisites).
+Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application modeled on GobboNet (design reference only). Phase 1 steps 1-6 are implemented; step 7 live checks are in progress, provider auth/cold-start windows are deferred, and frontend visual acceptance remains open.
 
 ## Ownership
 
@@ -32,6 +32,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - Labbonet is AGPLv3-or-later (DR-004), matching GobboNet. GobboNet source may be reused selectively (DR-003 B) if upstream copyright and license notices are kept, changes are marked and each reused file is logged (source path, upstream commit). Dependencies must be AGPLv3-compatible. Docs must state no affiliation with GobboNet. Never reuse code that implements an excluded behavior (installer or PowerShell logic, firewall changes, `0.0.0.0` listening, recursive-delete uninstall, unrestricted JS hooks, local engine management).
 - **Git workflow (owner preference, 2026-10-18):** commit directly to `main` and push. No feature branches or PRs unless the owner asks for one. Before each push of code, run the verification in `docs/PHASE1-PLAN.md` section 1; never push a failing `main`.
 - Keep security commitments from the proposal (loopback default, endpoint allowlist, no executable downloads, no firewall or antivirus changes, no arbitrary JS extensions).
+- **Visual requirement (owner, 2026-10-17):** match the pinned GobboNet interface pixel for pixel except where Labbonet's model dynamics require differences. The basic functional shell is not visually accepted. Compare the rendered result at full-window and Codex side-panel widths; log any adapted presentation files in `docs/REUSE-LOG.md` and retain notices.
 
 ## Work Guidance
 

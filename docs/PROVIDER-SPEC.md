@@ -135,9 +135,19 @@ A second server on `http://127.0.0.1:1234` (Express, same API shape, 28 models a
 Read 2026-10-18 at `lmstudio.ai/docs/developer/...`:
 
 - REST API v0 (LM Studio 0.3.6 or newer): `GET /api/v0/models`, `GET /api/v0/models/{model}`, `POST /api/v0/chat/completions`, `POST /api/v0/completions`, `POST /api/v0/embeddings`. The docs recommend the newer v1 REST API for new projects. Labbonet uses the OpenAI-compatible `/v1/*` paths for inference and `/api/v0/models` only for load state.
-- v0 chat responses include `stats` (`tokens_per_second`, `time_to_first_token` in seconds, `generation_time`, `stop_reason`). Whether the OpenAI-compatible stream carries `stats` is **[untested]**.
+- v0 chat responses include `stats` (`tokens_per_second`, `time_to_first_token` in seconds, `generation_time`, `stop_reason`). The OpenAI-compatible stream observation is recorded in 5.3.
 - **Authentication:** off by default; "Require Authentication" in Developer > Server Settings; token sent as `Authorization: Bearer <token>`.
 - **Server settings:** Server Port, Serve on Local Network, Enable CORS, Just in Time Model Loading, Require Authentication.
+
+### 5.3 Live Phase 1 stream (2026-10-17 America/Los_Angeles) [observed]
+
+After the owner loaded `google/gemma-4-26b-a4b-qat`, `/api/v0/models` confirmed `state: loaded`, `type: vlm`, context 262144. Bounded generations used only this loaded model. Evidence: `evidence/step7-live.json`.
+
+- `/v1/chat/completions` requires `Content-Type: application/json`; omission returned HTTP 415. The egress request builder now supplies it for JSON bodies.
+- SSE includes `choices[].delta.reasoning_content`, content deltas in the full application reply, a finish chunk with the reported model, then a separate `usage` chunk with empty `choices`, and `[DONE]`.
+- Observed usage keys: `prompt_tokens`, `completion_tokens`, `total_tokens`, `completion_tokens_details` (including `reasoning_tokens`). No `stats` or Strata-style `timings` object appeared in this run; this is a model/host observation, not a universal LM Studio claim.
+- When provider timings are absent, the adapter measures TTFT from request start to the first nonempty content/reasoning delta and estimates tokens/sec from completion usage over the observed interval after that delta. Short or buffered streams can make that estimate noisy. Provider timings take precedence when present.
+- Cancellation persisted `cancelled`; a subsequent four-token request completed in 0.331 s. No load, unload, settings or TTL operation was used.
 
 ## 6. LM Studio JIT loading and auto-evict [docs]
 
@@ -156,8 +166,9 @@ Consequence for Labbonet: sending a chat to a `not-loaded` model is a model-mana
 
 | Item | Needed for |
 |---|---|
-| LM Studio streaming format, `usage`, reasoning field, cancellation | Phase 1 acceptance (A-LM tests) |
+| LM Studio streaming format, `usage`, reasoning field, cancellation | Observed for the loaded Gemma model; section 5.3 and `evidence/step7-live.json` |
 | LM Studio authenticated mode | Phase 1 acceptance (needs the owner to enable it) |
 | LM Studio embeddings response shape | Phase 4 |
-| Strata cancellation and cold-load timeout | Phase 1 acceptance (`Strata_Protocol.md` section 10) |
+| Strata cancellation | Observed: `/status` idle 116 ms after stop; `evidence/step7-live.json` |
+| Strata cold-load timeout | Pending owner window (deferred by owner); `Strata_Protocol.md` section 10 |
 | Strata authenticated mode | Phase 1 acceptance (needs the owner to set `api_key`) |

@@ -18,6 +18,28 @@ func mustParseURL(t *testing.T, raw string) *url.URL {
 	return u
 }
 
+// LM Studio rejects chat requests without an explicit JSON media type
+// with HTTP 415, even though Strata tolerates the missing header.
+func TestDo_JSONBodyAcceptedByStrictProvider(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "JSON content type required", http.StatusUnsupportedMediaType)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	target := Target{BaseURL: mustParseURL(t, srv.URL), PrivacyClass: ClassLocal}
+	resp, err := NewClient().Do(context.Background(), target, http.MethodPost, "/v1/chat/completions", strings.NewReader(`{"model":"m","messages":[]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("provider returned HTTP %d, want 200", resp.StatusCode)
+	}
+}
+
 func TestCheckDialAddress(t *testing.T) {
 	cases := []struct {
 		name    string

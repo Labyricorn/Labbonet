@@ -173,7 +173,7 @@ Meaning:
 | URL and auth recorded | Done (`http://127.0.0.1:8080`, no key) |
 | Model discovery tested | Done (`/v1/models`) |
 | Streaming tested | Done (SSE, usage, timings) |
-| Cancellation tested | Not done. Needs a test that aborts a long generation and checks `/status`. |
+| Cancellation tested | Done in the live Phase 1 run: partial reply saved as `cancelled`; `/status` reported `busy: false` after 116 ms (`docs/evidence/step7-live.json`). |
 | Timeout behavior tested | Not done. Needs a cold-load test. |
-| Strata model accessible through the app | Pending app implementation. Served model is Qwen3.8-Flash-Next ("Qwen 111B" dropped). |
+| Strata model accessible through the app | Done: live browser chat and cross-provider continuation (`docs/evidence/step6-chat.png`, `docs/evidence/step7-live.json`). Run used the server-reported `qwen3.8-flash-next-iq3_s`. |
 | Authenticated mode tested | Not done. Needs a Strata instance with `api_key` set. |

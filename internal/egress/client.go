@@ -116,6 +116,11 @@ func (c *Client) newRequest(ctx context.Context, target Target, method, path str
 	if err != nil {
 		return nil, fmt.Errorf("egress: build request: %w", err)
 	}
+	// All allowed provider request bodies are JSON. LM Studio requires
+	// the explicit media type rather than inferring it from the body.
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	if target.Credential != "" {
 		req.Header.Set("Authorization", "Bearer "+target.Credential)
 	}

@@ -1,0 +1,370 @@
+{
+  "date": "2026-10-17 America/Los_Angeles",
+  "checks": {
+    "A-C3": {
+      "result": "pass",
+      "message_count": 4,
+      "history_kept": true
+    },
+    "A-C9": {
+      "result": "pass",
+      "generation_ids": [
+        3,
+        4
+      ]
+    },
+    "A-B4": {
+      "result": "pass",
+      "evidence": "shutdown"
+    },
+    "S17": {
+      "result": "pass",
+      "administrator_token": false,
+      "note": "WindowsPrincipal.IsInRole(Administrator) returned false; app startup, streaming, storage and cancellation ran under this account"
+    },
+    "S16": {
+      "result": "pass",
+      "note": "Only application process launch is cmd /c start for the optional default-browser opener; no process-kill call in application source",
+      "binary_substring_review": "netsh occurs only within NetShareAdd/NetShareDel dependency symbol names; source has no netsh invocation"
+    }
+  },
+  "lm_model": {
+    "id": "google/gemma-4-26b-a4b-qat",
+    "state": "loaded",
+    "type": "vlm",
+    "max_context_length": 262144
+  },
+  "strata_stream": {
+    "events": {
+      "start": 1,
+      "delta": 33,
+      "done": 1,
+      "usage": 1,
+      "timings": 1
+    },
+    "generation_id": 1,
+    "started": 293400.8668873,
+    "first_event": 293400.8745652,
+    "finished": 293402.7849954
+  },
+  "lm_stream": {
+    "events": {
+      "start": 1,
+      "delta": 100,
+      "done": 1,
+      "usage": 1,
+      "timings": 1
+    },
+    "generation_id": 2,
+    "started": 293402.8140069,
+    "first_event": 293402.861687,
+    "finished": 293407.3949563
+  },
+  "exit_conversation_id": 1,
+  "lm_wire": {
+    "top_fields": [
+      "choices",
+      "created",
+      "id",
+      "model",
+      "object",
+      "system_fingerprint",
+      "usage"
+    ],
+    "delta_fields": [
+      "reasoning_content",
+      "role"
+    ],
+    "usage_fields": [
+      "completion_tokens",
+      "completion_tokens_details",
+      "prompt_tokens",
+      "total_tokens"
+    ],
+    "stats_fields": [],
+    "reported": [
+      "google/gemma-4-26b-a4b-qat"
+    ],
+    "finishes": [
+      "length"
+    ]
+  },
+  "concurrency_conversation_ids": [
+    2,
+    3
+  ],
+  "concurrency_streams": [
+    {
+      "events": {
+        "start": 1,
+        "delta": 8,
+        "done": 1,
+        "usage": 1,
+        "timings": 1
+      },
+      "generation_id": 3,
+      "started": 293408.0457388,
+      "first_event": 293408.0666532,
+      "finished": 293410.1606787
+    },
+    {
+      "events": {
+        "start": 1,
+        "delta": 8,
+        "done": 1,
+        "usage": 1,
+        "timings": 1
+      },
+      "generation_id": 4,
+      "started": 293408.045986,
+      "first_event": 293410.1627953,
+      "finished": 293410.6212288
+    }
+  ],
+  "cancel_Strata": {
+    "conversation_id": 4,
+    "status": "cancelled",
+    "generation_id": 5,
+    "cancelled": true,
+    "cancel_call_ms": 1
+  },
+  "strata_status_after_stop": {
+    "busy": false,
+    "queued": 0,
+    "phase": "thinking",
+    "prompt_tokens": 58,
+    "generated": 3,
+    "max_tokens": 64,
+    "reasoning_recoveries": 0
+  },
+  "strata_idle_after_stop_ms": 116,
+  "cancel_LM Studio": {
+    "conversation_id": 5,
+    "status": "cancelled",
+    "generation_id": 6,
+    "cancelled": true,
+    "cancel_call_ms": 11
+  },
+  "lm_followup_seconds": 0.331,
+  "diagnostics": [
+    {
+      "generation_id": 7,
+      "endpoint_id": 2,
+      "model_requested": "google/gemma-4-26b-a4b-qat",
+      "model_reported": "google/gemma-4-26b-a4b-qat",
+      "status": "complete",
+      "finish_reason": "length",
+      "error_kind": "",
+      "started_at": "2026-10-18T05:05:49.6546185Z",
+      "first_token_at": "2026-10-18T05:05:49.9735673Z",
+      "finished_at": "2026-10-18T05:05:49.9797688Z",
+      "duration_ms": 325.1503,
+      "usage": {
+        "prompt_tokens": 20,
+        "completion_tokens": 4,
+        "cached_tokens": 0
+      },
+      "timings": {
+        "ttft_ms": 311.2761,
+        "tokens_per_second": 859.3833924159416
+      }
+    },
+    {
+      "generation_id": 6,
+      "endpoint_id": 2,
+      "model_requested": "google/gemma-4-26b-a4b-qat",
+      "model_reported": "",
+      "status": "cancelled",
+      "finish_reason": "",
+      "error_kind": "",
+      "started_at": "2026-10-18T05:05:49.147074Z",
+      "first_token_at": "2026-10-18T05:05:49.5894357Z",
+      "finished_at": "2026-10-18T05:05:49.6035574Z",
+      "duration_ms": 456.48339999999996,
+      "usage": {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "cached_tokens": 0
+      },
+      "timings": {
+        "ttft_ms": 0,
+        "tokens_per_second": 0
+      }
+    },
+    {
+      "generation_id": 5,
+      "endpoint_id": 1,
+      "model_requested": "qwen3.8-flash-next-iq3_s",
+      "model_reported": "",
+      "status": "cancelled",
+      "finish_reason": "",
+      "error_kind": "",
+      "started_at": "2026-10-18T05:05:47.3014134Z",
+      "first_token_at": "2026-10-18T05:05:49.0124385Z",
+      "finished_at": "2026-10-18T05:05:49.0184363Z",
+      "duration_ms": 1717.0229,
+      "usage": {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "cached_tokens": 0
+      },
+      "timings": {
+        "ttft_ms": 0,
+        "tokens_per_second": 0
+      }
+    },
+    {
+      "generation_id": 4,
+      "endpoint_id": 1,
+      "model_requested": "qwen3.8-flash-next-iq3_s",
+      "model_reported": "qwen3.8-flash-next-iq3_s",
+      "status": "complete",
+      "finish_reason": "length",
+      "error_kind": "",
+      "started_at": "2026-10-18T05:05:44.7205924Z",
+      "first_token_at": "2026-10-18T05:05:46.9859744Z",
+      "finished_at": "2026-10-18T05:05:47.2751507Z",
+      "duration_ms": 2554.5583,
+      "usage": {
+        "prompt_tokens": 56,
+        "completion_tokens": 8,
+        "cached_tokens": 51
+      },
+      "timings": {
+        "ttft_ms": 128.7,
+        "tokens_per_second": 26.2
+      }
+    },
+    {
+      "generation_id": 3,
+      "endpoint_id": 1,
+      "model_requested": "qwen3.8-flash-next-iq3_s",
+      "model_reported": "qwen3.8-flash-next-iq3_s",
+      "status": "complete",
+      "finish_reason": "length",
+      "error_kind": "",
+      "started_at": "2026-10-18T05:05:44.7174878Z",
+      "first_token_at": "2026-10-18T05:05:46.5337869Z",
+      "finished_at": "2026-10-18T05:05:46.8145242Z",
+      "duration_ms": 2097.0364,
+      "usage": {
+        "prompt_tokens": 56,
+        "completion_tokens": 8,
+        "cached_tokens": 0
+      },
+      "timings": {
+        "ttft_ms": 1775,
+        "tokens_per_second": 27.3
+      }
+    },
+    {
+      "generation_id": 2,
+      "endpoint_id": 2,
+      "model_requested": "google/gemma-4-26b-a4b-qat",
+      "model_reported": "google/gemma-4-26b-a4b-qat",
+      "status": "complete",
+      "finish_reason": "stop",
+      "error_kind": "",
+      "started_at": "2026-10-18T05:05:39.4836197Z",
+      "first_token_at": "2026-10-18T05:05:40.0556981Z",
+      "finished_at": "2026-10-18T05:05:44.0489269Z",
+      "duration_ms": 4565.3072,
+      "usage": {
+        "prompt_tokens": 57,
+        "completion_tokens": 105,
+        "cached_tokens": 0
+      },
+      "timings": {
+        "ttft_ms": 559.6989,
+        "tokens_per_second": 26.30467097052837
+      }
+    },
+    {
+      "generation_id": 1,
+      "endpoint_id": 1,
+      "model_requested": "qwen3.8-flash-next-iq3_s",
+      "model_reported": "qwen3.8-flash-next-iq3_s",
+      "status": "complete",
+      "finish_reason": "stop",
+      "error_kind": "",
+      "started_at": "2026-10-18T05:05:37.5269588Z",
+      "first_token_at": "2026-10-18T05:05:38.7483233Z",
+      "finished_at": "2026-10-18T05:05:39.4392761Z",
+      "duration_ms": 1912.3173,
+      "usage": {
+        "prompt_tokens": 62,
+        "completion_tokens": 36,
+        "cached_tokens": 0
+      },
+      "timings": {
+        "ttft_ms": 1189.3,
+        "tokens_per_second": 51.8
+      }
+    }
+  ],
+  "conversation_provenance": [
+    {
+      "message_id": 1,
+      "role": "user",
+      "status": "complete",
+      "content_length": 33,
+      "reasoning_length": 0,
+      "generation_id": null,
+      "endpoint_id": null,
+      "model_requested": null,
+      "model_reported": null
+    },
+    {
+      "message_id": 2,
+      "role": "assistant",
+      "status": "complete",
+      "content_length": 6,
+      "reasoning_length": 105,
+      "generation_id": 1,
+      "endpoint_id": 1,
+      "model_requested": "qwen3.8-flash-next-iq3_s",
+      "model_reported": "qwen3.8-flash-next-iq3_s"
+    },
+    {
+      "message_id": 3,
+      "role": "user",
+      "status": "complete",
+      "content_length": 85,
+      "reasoning_length": 0,
+      "generation_id": null,
+      "endpoint_id": null,
+      "model_requested": null,
+      "model_reported": null
+    },
+    {
+      "message_id": 4,
+      "role": "assistant",
+      "status": "complete",
+      "content_length": 6,
+      "reasoning_length": 349,
+      "generation_id": 2,
+      "endpoint_id": 2,
+      "model_requested": "google/gemma-4-26b-a4b-qat",
+      "model_reported": "google/gemma-4-26b-a4b-qat"
+    }
+  ],
+  "shutdown": {
+    "conversation_id": 7,
+    "generation_id": 8,
+    "status": "cancelled",
+    "content_length": 188,
+    "reasoning_length": 195,
+    "integrity_check": "ok",
+    "lock_exists": false
+  },
+  "binary_forbidden_command_matches": [
+    "netsh"
+  ],
+  "source_forbidden_command_matches": [],
+  "deferred_by_owner": [
+    "A-ST5",
+    "A-ST6",
+    "A-LM6"
+  ],
+  "sign_off": "pending owner review; no waivers inferred"
+}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/Labyricorn/Labbonet/internal/providers"
 )
@@ -76,6 +77,7 @@ func (a *Adapter) StreamChat(ctx context.Context, req providers.ChatRequest, emi
 		return providers.Result{}, fmt.Errorf("openai: marshal chat request: %w", err)
 	}
 
+	started := time.Now()
 	resp, err := a.egress.Do(ctx, a.target, http.MethodPost, "/v1/chat/completions", bytes.NewReader(raw))
 	if err != nil {
 		return providers.Result{}, mapRequestError(err)
@@ -92,6 +94,9 @@ func (a *Adapter) StreamChat(ctx context.Context, req providers.ChatRequest, emi
 	}
 
 	var result providers.Result
+	var firstToken time.Time
+	var completionTokens int
+	var sawTimings bool
 	scanner := newSSEScanner(resp.Body)
 	for scanner.Scan() {
 		line, ok := parseSSELine(scanner.Text())
@@ -106,6 +111,16 @@ func (a *Adapter) StreamChat(ctx context.Context, req providers.ChatRequest, emi
 			return result, &providers.Error{Kind: providers.ErrProtocolError, Message: "malformed stream chunk", Err: err}
 		}
 		for _, ev := range events {
+			switch ev.Kind {
+			case providers.EventDelta:
+				if firstToken.IsZero() && (ev.Content != "" || ev.Reasoning != "") {
+					firstToken = time.Now()
+				}
+			case providers.EventUsage:
+				completionTokens = ev.CompletionTokens
+			case providers.EventTimings:
+				sawTimings = true
+			}
 			if ev.Kind == providers.EventDone {
 				result.FinishReason = ev.FinishReason
 				result.ModelReported = ev.ModelReported
@@ -120,6 +135,19 @@ func (a *Adapter) StreamChat(ctx context.Context, req providers.ChatRequest, emi
 			return result, &providers.Error{Kind: providers.ErrCancelled, Message: "generation cancelled", Err: ctx.Err()}
 		}
 		return result, &providers.Error{Kind: providers.ErrProtocolError, Message: "stream read error", Err: err}
+	}
+	// Some OpenAI-compatible streams (including the observed LM Studio
+	// /v1 stream) omit stats. Keep provider timings authoritative when
+	// supplied; otherwise report client-observed timing, including
+	// reasoning as generated output and usage that arrives after done.
+	if !sawTimings && !firstToken.IsZero() {
+		timing := providers.Event{Kind: providers.EventTimings, TTFTMillis: float64(firstToken.Sub(started)) / float64(time.Millisecond)}
+		if seconds := time.Since(firstToken).Seconds(); seconds > 0 && completionTokens > 0 {
+			timing.TokensPerSecond = float64(completionTokens) / seconds
+		}
+		if err := emit(timing); err != nil {
+			return result, err
+		}
 	}
 	return result, nil
 }

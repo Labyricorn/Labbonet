@@ -381,7 +381,7 @@ A standard provider interface minimizes special cases and makes future endpoints
 - [x] Model discovery tested.
 - [x] Streaming generation tested.
 - [ ] Cancellation and timeout behavior tested.
-- [ ] Strata model successfully accessible through the application (served model: Qwen3.8-Flash-Next; the "111B" label is dropped).
+- [x] Strata model successfully accessible through the application (`docs/evidence/step6-chat.png`, `docs/evidence/step7-live.json`; served model: Qwen3.8-Flash-Next).
 
 ### Consequences
 
@@ -435,7 +435,7 @@ WebLLM weights, browser-specific compilation artifacts, and other runtime caches
 - Backup and restoration tested.
 - Database migrations demonstrated.
 
-Progress 2026-10-18: data ownership, schema versioning approach and cache-versus-durable boundaries are documented in `docs/ARCHITECTURE.md` section 5; demonstrations are Phase 1 tests A-B5 to A-B8.
+Progress: data ownership, schema versioning and cache-versus-durable boundaries are documented in `docs/ARCHITECTURE.md` section 5. A-B5 to A-B8 pass in storage tests; live cross-provider persistence and clean Ctrl+C shutdown are recorded in `docs/evidence/step7-live.json`. Final owner review remains pending.
 
 ### Consequences
 
@@ -754,7 +754,7 @@ The browser should never receive provider secrets merely to render the interface
 - Secrets excluded from normal exports and logs.
 - Negative security tests implemented.
 
-Progress 2026-10-18: credential mechanism selected as an implementation default (Windows DPAPI, current user); endpoint validation rules documented and threat model drafted in `docs/SECURITY-MODEL.md` (awaiting owner review); negative tests specified there (S1 to S17), not yet implemented.
+Progress: Windows DPAPI current-user credentials and endpoint validation are implemented. S1-S13/S15 are covered by Go tests, S14 by the browser render page, and S16/S17 by live inspection (`docs/evidence/step7-live.json`). The threat model and authentication design still await owner review; live provider authentication tests were explicitly deferred by the owner.
 
 ### Consequences
 
@@ -924,7 +924,7 @@ Characters, hybrid RAG, and more advanced orchestration would build upon the est
 - Non-goals explicitly listed.
 - End-to-end scenario demonstrated on two independent endpoints.
 
-Progress 2026-10-18: acceptance tests and non-goals drafted in `docs/PHASE1-ACCEPTANCE.md` (awaiting owner approval). The two endpoints are Strata (`127.0.0.1:8080`) and LM Studio (`10.138.11.11:1234`).
+Progress: acceptance tests and non-goals are in `docs/PHASE1-ACCEPTANCE.md` (awaiting owner approval). The two-endpoint exit scenario passed with retained history and provenance (`docs/evidence/step7-live.json`), using Strata and the owner-loaded Gemma model on LM Studio. Visual resemblance to GobboNet was rejected by the owner and needs a frontend revision before UI acceptance.
 
 ### Consequences
 
@@ -1103,6 +1103,8 @@ This section records changes to decision status over the life of the project.
 | 2026-10-18 | DR-002, 003, 004, 006, 012, 015 | Phase 1 prerequisite docs added in `docs/` (architecture, security model, provider spec, acceptance tests, GobboNet reference, reuse log); stale text in the register, proposal and Strata protocol corrected; LM Studio host `10.138.11.11:1234` verified by read-only probes | No status changes. DR-003 criteria ticked; progress notes added to the others. Implementation defaults (no standalone PoC, `modernc.org/sqlite`, DPAPI, `127.0.0.1:4815`) approved by the owner as defaults, not as DRs. |
 
 Fifteen decisions are accepted. Only DR-014 (routing and failover) is deferred.
+
+Implementation evidence, 2026-10-17 America/Los_Angeles: step 6 committed as `2024e27`; step 7 cross-provider streaming, concurrency, cancellation and shutdown evidence added under `docs/evidence/`. No decision statuses changed. Owner deferred provider auth/cold-start windows and requested closer visual resemblance to GobboNet. Final Phase 1 sign-off remains open.
 
 When an option is approved, an entry should be added here with the date, approved choice, and any relevant conditions.
 

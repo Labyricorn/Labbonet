@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Labyricorn/Labbonet/internal/egress"
 	"github.com/Labyricorn/Labbonet/internal/providers"
@@ -25,6 +26,36 @@ const strataSSE = ": keep-alive\n\n" +
 
 func chatReq() providers.ChatRequest {
 	return providers.ChatRequest{Messages: []providers.Message{{Role: "user", Content: "hi"}}}
+}
+
+// LM Studio's observed /v1 stream has usage after the finish chunk,
+// but no stats. Diagnostics still needs client-measured timing.
+func TestStreamChat_ClientTimingWhenProviderOmitsStats(t *testing.T) {
+	sse := `data: {"choices":[{"delta":{"reasoning_content":"thinking"},"finish_reason":null}]}` + "\n\n" +
+		`data: {"choices":[{"delta":{"content":"OK"},"finish_reason":"stop"}],"model":"gemma"}` + "\n\n" +
+		`data: {"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":4}}` + "\n\n" + "data: [DONE]\n\n"
+	srv := fakeprovider.New(fakeprovider.Script{ChatSSE: sse, ChatFirstByteDelay: 50 * time.Millisecond})
+	defer srv.Close()
+	a := New(egress.NewClient(), targetFor(t, srv.URL))
+	a.profile = ProfileLMStudio
+	var timings []providers.Event
+	_, err := a.StreamChat(context.Background(), chatReq(), func(ev providers.Event) error {
+		if ev.Kind == providers.EventDelta {
+			// Give the synthetic stream a measurable generation interval
+			// even on Windows clocks with coarse timer resolution.
+			time.Sleep(10 * time.Millisecond)
+		}
+		if ev.Kind == providers.EventTimings {
+			timings = append(timings, ev)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(timings) != 1 || timings[0].TTFTMillis < 50 || timings[0].TokensPerSecond <= 0 {
+		t.Fatalf("timings = %+v, want one client timing including the first-byte delay and throughput", timings)
+	}
 }
 
 func TestStreamChat_StrataExample(t *testing.T) {
