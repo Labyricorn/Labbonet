@@ -1,6 +1,6 @@
 # GobboNet application parity plan
 
-**Status:** proposed implementation plan, awaiting owner approval.
+**Status:** owner authorized implementation with “implement this plan” (2026-10-17); milestone 1 backend/UI implemented in the working tree, verification closeout still in progress. Attribution inventory audited 2026-10-18. See `IMPLEMENTATION-HANDOVER.md` for working-tree status.
 **Requested:** 2026-10-17, "Add full functionality from Gabbonet to Labbonet."
 **Reference:** GobboNet 1.7.6, commit `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`.
 
@@ -71,6 +71,6 @@ Each milestone is a working vertical slice: migration and store, API/service, re
 - Before every code push: `gofmt -l .`, `go vet ./...`, `go test ./...`, `go build ./cmd/labbonet`; retain the CGO-disabled build check and `node --check` for changed browser modules. Main must pass. Update reuse log before copying, architecture/provider/security/acceptance records as changed, closest AGENTS and devlog after each milestone.
 - Final inventory must distinguish implemented, verified, owner-pending, provider-blocked and intentionally excluded. A feature with only a button, storage schema or untested code is not complete.
 
-## Approval requested
+## Scope authorization
 
-Approve this scope and sequence, including moving GobboNet parity ahead of WebLLM and the listed security/provider adaptations. After approval, start milestone 1 and continue through the milestones under the existing direct-to-main workflow. Scope approval is not Phase 1 sign-off, visual acceptance or approval to operate the user's provider settings.
+The owner authorized this scope and sequence with “implement this plan” on 2026-10-17, including moving GobboNet parity ahead of WebLLM and the listed security/provider adaptations. Implement milestone 1 and continue through the milestones under the existing direct-to-main workflow. Scope authorization is not Phase 1 sign-off, visual acceptance or approval to operate the user's provider settings.

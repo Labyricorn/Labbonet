@@ -1,0 +1,244 @@
+{
+  "audited_on": "2026-10-18",
+  "repository": "https://github.com/ElodineOfficial/GobboNet",
+  "commit": "314bdc9cae204ae38fdc1002ac6a9fb1437c109f",
+  "version": "1.7.6",
+  "copyright": "Copyright (C) 2026 Elodine / GoblinCorps",
+  "license": "AGPL-3.0-or-later",
+  "scope": "Current working tree, including unfinished milestone 1. Source lineage, not a feature or visual acceptance claim.",
+  "files": [
+    {
+      "local": "frontend/css/01-tokens.css",
+      "source": "css/01-tokens.css",
+      "treatment": "adapted",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            1,
+            27
+          ],
+          "local": [
+            4,
+            30
+          ]
+        },
+        {
+          "upstream": [
+            35,
+            136
+          ],
+          "local": [
+            32,
+            133
+          ]
+        }
+      ],
+      "upstream_sha256": "a9f80783bba7e290baae2455a60295b4adbf572029bb80243a2aab18949d6b83",
+      "comparison": "equal text lines; CRLF/LF normalized; Labbonet notice and trailing blank lines excluded"
+    },
+    {
+      "local": "frontend/css/02-layout.css",
+      "source": "css/02-layout.css",
+      "treatment": "copy with notices",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            1,
+            138
+          ],
+          "local": [
+            4,
+            141
+          ]
+        }
+      ],
+      "upstream_sha256": "5fc156ec9878e1b8e5d540c544d0ac9d8c2a4591334254ce3b9a068ab8945145",
+      "comparison": "equal text lines; CRLF/LF normalized; Labbonet notice and trailing blank lines excluded"
+    },
+    {
+      "local": "frontend/css/03-threads.css",
+      "source": "css/03-threads.css",
+      "treatment": "copy with notices",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            1,
+            190
+          ],
+          "local": [
+            4,
+            193
+          ]
+        }
+      ],
+      "upstream_sha256": "d4f11699eb3f049eb39f7c4bb47fa254b16fb81a49cf77a72852f8cdfad25fc0",
+      "comparison": "equal text lines; CRLF/LF normalized; Labbonet notice and trailing blank lines excluded"
+    },
+    {
+      "local": "frontend/css/04-chat.css",
+      "source": "css/04-chat.css",
+      "treatment": "copy with notices",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            1,
+            607
+          ],
+          "local": [
+            4,
+            610
+          ]
+        }
+      ],
+      "upstream_sha256": "9fc59ee58f77577eda2eefea81ffd00d7e940dab1cf9f698be1fa9dfc93df166",
+      "comparison": "equal text lines; CRLF/LF normalized; Labbonet notice and trailing blank lines excluded"
+    },
+    {
+      "local": "frontend/css/05-modals.css",
+      "source": "css/05-modals.css",
+      "treatment": "copy with notices",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            1,
+            141
+          ],
+          "local": [
+            4,
+            144
+          ]
+        }
+      ],
+      "upstream_sha256": "8df12f17f5c7720ee861492711011bab36d059451fe82a9e519027efce1f707e",
+      "comparison": "equal text lines; CRLF/LF normalized; Labbonet notice and trailing blank lines excluded"
+    },
+    {
+      "local": "frontend/css/06-cards.css",
+      "source": "css/06-cards.css",
+      "treatment": "copy with notices",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            1,
+            293
+          ],
+          "local": [
+            4,
+            296
+          ]
+        }
+      ],
+      "upstream_sha256": "8609b83ff5c7b739deff50241759065659536f399df94f2e912a1078ba68b0dc",
+      "comparison": "equal text lines; CRLF/LF normalized; Labbonet notice and trailing blank lines excluded"
+    },
+    {
+      "local": "frontend/css/10-responsive.css",
+      "source": "css/10-responsive.css",
+      "treatment": "copy with notices",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            1,
+            380
+          ],
+          "local": [
+            4,
+            383
+          ]
+        }
+      ],
+      "upstream_sha256": "122904072970f2419843579c3bf26a908837cea0464914d641cd63c6d733d8c5",
+      "comparison": "equal text lines; CRLF/LF normalized; Labbonet notice and trailing blank lines excluded"
+    },
+    {
+      "local": "frontend/css/search.css",
+      "source": "css/12-organisation.css",
+      "treatment": "excerpt",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            9,
+            62
+          ],
+          "local": [
+            4,
+            57
+          ]
+        }
+      ],
+      "upstream_sha256": "9490079e6ee183828b752182e015376f86401387f5a010bb1ea160d82c6c22de",
+      "comparison": "equal text lines; CRLF/LF normalized; Labbonet notice and trailing blank lines excluded"
+    },
+    {
+      "local": "frontend/css/components.css",
+      "source": "css/13-components.css",
+      "treatment": "reordered excerpts",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            204,
+            245
+          ],
+          "local": [
+            4,
+            45
+          ]
+        },
+        {
+          "upstream": [
+            7,
+            52
+          ],
+          "local": [
+            47,
+            92
+          ]
+        }
+      ],
+      "upstream_sha256": "c1500a9243c7dd6a5476f9199535ad4fd65bfb4a9c152699c101021c8b20ec2d",
+      "comparison": "equal text lines; CRLF/LF normalized; Labbonet notice and trailing blank lines excluded"
+    },
+    {
+      "local": "frontend/index.html",
+      "source": "chat.html",
+      "upstream_sha256": "061a03d27a017c6090f8dc2da229ff88bdd0748d2ac3cb94659c3cb79897b8eb",
+      "treatment": "presentation structure adaptation; Labbonet runtime implementation",
+      "elements": "Sidebar, header, footer control labels/pairs, search and shell structure"
+    },
+    {
+      "local": "frontend/js/conversations.js",
+      "source": "chat.html",
+      "upstream_sha256": "061a03d27a017c6090f8dc2da229ff88bdd0748d2ac3cb94659c3cb79897b8eb",
+      "treatment": "presentation structure adaptation; Labbonet runtime implementation",
+      "elements": "Thread row/title/action presentation and sidebar search structure"
+    },
+    {
+      "local": "frontend/js/chat.js",
+      "source": "chat.html",
+      "upstream_sha256": "061a03d27a017c6090f8dc2da229ff88bdd0748d2ac3cb94659c3cb79897b8eb",
+      "treatment": "presentation structure adaptation; Labbonet runtime implementation",
+      "elements": "Welcome, message/avatar/role header, reasoning disclosure and composer structure"
+    },
+    {
+      "local": "frontend/js/cast.js",
+      "source": "chat.html",
+      "upstream_sha256": "061a03d27a017c6090f8dc2da229ff88bdd0748d2ac3cb94659c3cb79897b8eb",
+      "treatment": "presentation structure adaptation; Labbonet runtime implementation",
+      "elements": "CAST character/persona library, card rows, reorder controls, editor field grouping"
+    },
+    {
+      "local": "internal/prompt/assemble.go",
+      "source": "js/08-rag.js",
+      "upstream_sha256": "8588ddb4fe3094a31923cfc4007380ba5d271d96b442b6ccaca9cf49afa709c6",
+      "treatment": "behavior reference; Labbonet implementation",
+      "elements": "Persona description cadence and tail position (behavior reference, independently implemented)"
+    },
+    {
+      "local": "internal/cast/card.go",
+      "source": "js/17-personas.js",
+      "upstream_sha256": "621ff1bd0922f3025a81a12142671688728a271873bf78d369be7c31a87a517c",
+      "treatment": "behavior reference; Labbonet implementation",
+      "elements": "Frequency zero disables description but retains identity (behavior reference, independently implemented)"
+    }
+  ]
+}

@@ -11,7 +11,7 @@ Phase 1 browser interface and the owner-directed GobboNet presentation adaptatio
 - `index.html`, `app.js`: shell, navigation, health and shared controls.
 - `css/`: pinned GobboNet presentation files and extracted components, with reuse notices.
 - `app.css`: Labbonet integration and provider-specific presentation.
-- `js/`: API/SSE client, conversation/chat, models/endpoints, diagnostics and safe rendering.
+- `js/`: API/SSE client, conversation/chat/cast, models/endpoints, diagnostics and safe rendering.
 - `vendor/`: pinned renderer/sanitizer, licenses and hash inventory.
 - `tests/`: development-only render checks; not embedded.
 - `embed.go`: shipped assets. Backend, storage, protocol and acceptance records remain parent-owned.
@@ -20,9 +20,10 @@ Phase 1 browser interface and the owner-directed GobboNet presentation adaptatio
 
 - Owner requirement: match the pinned GobboNet interface pixel for pixel except where model dynamics require differences. Functional tests do not constitute visual acceptance.
 - Use only the pin in `../docs/GOBBONET-REFERENCE.md`. Log reuse in `../docs/REUSE-LOG.md` before copying; retain notices and mark changes. Never import excluded behavior code.
+- Attribution: every reused visual element/structure and behavior reference must identify its GobboNet origin and Labbonet implementation boundary in `../docs/REUSE-LOG.md`; keep `../docs/GOBBONET-PROVENANCE.json` and `../NOTICE.md` consistent. Mixed frontend modules need explicit source/design vs runtime implementation notices.
 - Model output and reasoning go through `renderMarkdown`. No raw untrusted HTML, inline handlers/styles, eval, remote scripts or font loads. Keep the parent security model/CSP.
 - Send through the backend API with its session/header controls. Keep endpoint/privacy/model state visible and retain the unloaded-model confirmation. Never perform provider model management from the browser.
-- Deferred or excluded controls must not imply working features; currently CHARS/MODS/SCHED are disabled. Provider changes must finish before Send is enabled.
+- Deferred or excluded controls must not imply working features; currently MODS/SCHED are disabled; CHARS provides the cast library/editor. Provider changes must finish before Send is enabled.
 
 ## Work Guidance
 

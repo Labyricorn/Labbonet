@@ -172,3 +172,10 @@ Consequence for Labbonet: sending a chat to a `not-loaded` model is a model-mana
 | Strata cancellation | Observed: `/status` idle 116 ms after stop; `evidence/step7-live.json` |
 | Strata cold-load timeout | Pending owner window (deferred by owner); `Strata_Protocol.md` section 10 |
 | Strata authenticated mode | Phase 1 acceptance (needs the owner to set `api_key`) |
+
+
+## Cast prompt client adaptation (parity milestone 1, in progress)
+
+Characters may supply `temperature`, `top_p` and reply maximum tokens; explicit generation request values override them. Unsupported min-p/XTC/DRY/token-bias controls are shown unavailable until provider contracts are verified. This adds no load/unload/settings calls and does not alter loaded-model protection.
+
+The client resolves card/persona macros, carousel and persona description before queuing, snapshots the final request, and budgets against cached model context (8192 fallback when unknown), optionally reduced by a character limit. Reply fallback is 256. Budgeting uses UTF-8 bytes plus message framing and whole-turn trimming, not a verified tokenizer. Prompt rejection happens before user/assistant persistence. Card/image UI testing is not verification of an inference-server capability; no new live-provider claims are made here.

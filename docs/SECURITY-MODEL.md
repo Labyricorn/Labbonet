@@ -124,3 +124,12 @@ Each one is an automated test in `tests/` unless marked manual.
 | S15 | Chat to an LM Studio model in state `not-loaded` without confirmation | Request not sent |
 | S16 | Search the binary and source for firewall, `netsh`, PowerShell and process-kill calls | None found (manual or scripted check) |
 | S17 | Run as a standard user without elevation | All Phase 1 features work (manual) |
+
+
+## 11. In-progress cast/prompt controls
+
+The parity milestone 1 endpoints retain the existing session, Host, Origin, fetch-site and `X-Labbonet` checks. Card data is inert, strict JSON (4 MiB request cap), with bounded fields/macros and optimistic revisions. PNG/JPEG files are embedded, limited to 1 MiB and 4096 / 16 MP, checked by full raster decoding; remote image URLs and user-supplied SVG are refused. No provider management paths or executable card hooks are added.
+
+Prompt expansion has depth/size/cycle bounds and uses no interpreter. Rejected prompts persist no turns. Whole-turn budgeting is a conservative client estimate, not a model tokenizer guarantee. Cards and resolved prompt provenance are read before endpoint queuing; history-count/cast-revision/streaming checks prevent overlapping same-thread turns. Historical speaker identity survives card changes/deletion. Prompt provenance does not duplicate image assets; portraits remain in message snapshots.
+
+Model/greeting text is sanitized or rendered with text nodes. Hex colors enter fixed CSSOM rules only after validation; card text cannot supply selectors, stylesheet text or URLs. CSP and endpoint allowlist are unchanged. New tests cover image corruption, parameter/template rejection, conflicts, atomic ordering, upgrades/redacted backups, prompt/speaker snapshots and immediate cancellation. Owner security-document review and original deferred provider windows remain open.

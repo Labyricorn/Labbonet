@@ -112,3 +112,24 @@ Phase 1 is complete when every test above passes or has an owner-approved waiver
 | Date | Result | Waivers | Approved by |
 |---|---|---|---|
 | | | | |
+
+
+## Parity milestone 1 verification progress (2026-10-18)
+
+Implementation is wired; this is additional progress, not Phase 1 sign-off or completed application parity.
+
+| Check | Result / evidence |
+|---|---|
+| Two characters and two personas survive store reopen | Automated pass: `internal/store/cast_test.go` |
+| Revisions, wrong kinds, stale delete/selection, atomic order, frozen defaults and historical names | Store/API tests pass; browser two-tab stale-save conflict displayed instead of overwriting |
+| Populated schema 1 upgrade, credentials preserved live/redacted from pre-upgrade backup; rollback on failure | Automated pass: `internal/store/cast_migration_test.go` |
+| Fake provider gets resolved prompt/card params; queued card edit cannot change request or speaker | Automated pass: `internal/generate/cast_test.go` |
+| Invalid macro/oversized prompt/images/params; no new turns on prompt rejection; immediate cancel | Cast/prompt/generate/API tests pass |
+| Browser CRUD creation/copy/reorder/defaults, per-thread selection, explicit greeting, reload and historical speaker after switch | Exercised on isolated temp database at port 4817; `evidence/cast-library-wide.png`, `cast-library-panel.png`, `cast-chat-wide.png` |
+| CSP-safe text/dialog colors, sanitizer | Computed colors match saved hex values, no inline style nodes/attributes; five S14 cases pass; no warnings/errors before intentional conflict |
+| Public source attribution | `evidence/gobbonet-attribution-about.png`; `REUSE-LOG.md`, `GOBBONET-PROVENANCE.json`, root `NOTICE.md` |
+| Unsaved-editor Escape protection | Browser emitted `Discard unsaved card changes?`; native-dialog dismiss/retain path still needs a reliable walkthrough (browser connection stalled during prompt handling) |
+| Browser file upload/preview/removal | Pending: extension file chooser refused local file access because Chrome's “Allow access to file URLs” permission is off. No permission/settings change made. Full raster validation is tested separately. |
+| Exact pinned visual comparison, owner acceptance, deferred provider windows | Open; not inferred from implementation/tests |
+
+No live inference requests or model-management operations were made in this continuation. The browser work used a separate temporary data directory; the owner's database was not migrated by this verification instance.
