@@ -178,6 +178,28 @@ func run(args []string) error {
 	srv.Handle("POST /api/search/test", http.HandlerFunc(modsAPI.TestSearch))
 	srv.Handle("GET /api/conversations/{id}/search", http.HandlerFunc(modsAPI.SearchRecords))
 
+	scheduler := &generate.Scheduler{Store: st, Jobs: jobs}
+	if n, err := scheduler.Start(); err != nil {
+		return fmt.Errorf("start scheduler: %w", err)
+	} else if n > 0 {
+		fmt.Printf("Marked %d scheduled run(s) left running by the previous run as interrupted.\n", n)
+	}
+	schedules := &api.Schedules{Store: st, Sched: scheduler}
+	srv.Handle("GET /api/schedules", http.HandlerFunc(schedules.List))
+	srv.Handle("POST /api/schedules", http.HandlerFunc(schedules.Save))
+	srv.Handle("PUT /api/schedules/{id}", http.HandlerFunc(schedules.Save))
+	srv.Handle("DELETE /api/schedules/{id}", http.HandlerFunc(schedules.Delete))
+	srv.Handle("POST /api/schedules/{id}/duplicate", http.HandlerFunc(schedules.Duplicate))
+	srv.Handle("POST /api/schedules/{id}/run", http.HandlerFunc(schedules.Run))
+	srv.Handle("GET /api/schedules/{id}/runs", http.HandlerFunc(schedules.Runs))
+	srv.Handle("POST /api/schedule-runs/{id}/cancel", http.HandlerFunc(schedules.CancelRun))
+	profiles := &api.Profiles{Store: st}
+	srv.Handle("GET /api/profiles", http.HandlerFunc(profiles.List))
+	srv.Handle("POST /api/profiles", http.HandlerFunc(profiles.Save))
+	srv.Handle("PUT /api/profiles/{id}", http.HandlerFunc(profiles.Save))
+	srv.Handle("DELETE /api/profiles/{id}", http.HandlerFunc(profiles.Delete))
+	srv.Handle("POST /api/profiles/{id}/apply", http.HandlerFunc(profiles.Apply))
+
 	diagnostics := &api.Diagnostics{Store: st}
 	srv.Handle("GET /api/diagnostics", http.HandlerFunc(diagnostics.List))
 
@@ -213,10 +235,13 @@ func run(args []string) error {
 	// handlers to return; it never cancels their contexts, so a
 	// streaming request would otherwise hold the shutdown open until
 	// the upstream provider itself finishes or the client disconnects.
+	// The scheduler stops first so no timed run starts while the process is closing.
+	scheduler.Stop()
 	registry.CancelAll()
 	// Let cancelled jobs store their partial text before the database closes.
 	waitCtx, waitCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	jobs.Wait(waitCtx)
+	scheduler.Wait(waitCtx)
 	waitCancel()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

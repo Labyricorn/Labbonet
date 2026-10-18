@@ -14,20 +14,15 @@ import { loadPrefs, savePrefs, decorateCode, sourceToggle, addAttachments, creat
 import { renderMarkdown } from "./render.js";
 import { mountModelSelector } from "./models.js";
 import { createSearchToggle, renderSources, loadSources } from "./search.js";
+import { mountHome } from "./home.js";
 
 let castLifecycle;
 
 export function mountChatPanel(panel) {
   castLifecycle?.abort();
+  castLifecycle = new AbortController();
   panel.innerHTML = "";
-  const empty = document.createElement("div");
-  empty.className = "welcome";
-  const heading = document.createElement("h2");
-  heading.textContent = "SYSTEMS ONLINE";
-  const hint = document.createElement("p");
-  hint.textContent = "// select a thread or create a new one";
-  empty.append(heading, hint);
-  panel.appendChild(empty);
+  mountHome(panel, castLifecycle.signal);
   const title = document.getElementById("thread-title");
   title.value = "No thread selected";
   title.disabled = true;

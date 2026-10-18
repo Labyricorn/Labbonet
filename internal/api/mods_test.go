@@ -62,28 +62,29 @@ func TestMacroAPI(t *testing.T) {
 	}](t, rr)
 	id := strconv.FormatInt(m.ID, 10)
 
-	for name, c := range map[string]struct {
+	for _, c := range []struct {
+		name         string
 		method, path string
 		body         any
 		want         int
 	}{
-		"duplicate":       {"POST", "/api/macros", map[string]any{"trigger": "WRAP_UP", "text": "x"}, 400},
-		"reserved":        {"POST", "/api/macros", map[string]any{"trigger": "user", "text": "x"}, 400},
-		"bad trigger":     {"POST", "/api/macros", map[string]any{"trigger": "a b", "text": "x"}, 400},
-		"cycle":           {"POST", "/api/macros", map[string]any{"trigger": "loop", "text": "{{loop}}"}, 400},
-		"edit w/o rev":    {"PUT", "/api/macros/" + id, map[string]any{"trigger": "wrap_up", "text": "x"}, 400},
-		"edit stale rev":  {"PUT", "/api/macros/" + id, map[string]any{"trigger": "wrap_up", "text": "x", "revision": 9}, 409},
-		"edit ok":         {"PUT", "/api/macros/" + id, map[string]any{"trigger": "wrap_up", "text": "finish up", "revision": m.Revision}, 200},
-		"edit missing":    {"PUT", "/api/macros/999", map[string]any{"trigger": "ghost", "text": "x", "revision": 1}, 404},
-		"bad id":          {"PUT", "/api/macros/abc", map[string]any{"trigger": "a", "text": "x", "revision": 1}, 400},
-		"delete bad rev":  {"DELETE", "/api/macros/" + id + "?revision=x", nil, 400},
-		"delete stale":    {"DELETE", "/api/macros/" + id + "?revision=1", nil, 409},
-		"delete missing":  {"DELETE", "/api/macros/999", nil, 404},
-		"preview":         {"POST", "/api/macros/preview", map[string]any{"text": "do {{WRAP_UP}} {{char}}"}, 200},
-		"preview invalid": {"POST", "/api/macros/preview", map[string]any{"text": strings.Repeat("x", 20000)}, 400},
+		{"duplicate", "POST", "/api/macros", map[string]any{"trigger": "WRAP_UP", "text": "x"}, 400},
+		{"reserved", "POST", "/api/macros", map[string]any{"trigger": "user", "text": "x"}, 400},
+		{"bad trigger", "POST", "/api/macros", map[string]any{"trigger": "a b", "text": "x"}, 400},
+		{"cycle", "POST", "/api/macros", map[string]any{"trigger": "loop", "text": "{{loop}}"}, 400},
+		{"edit w/o rev", "PUT", "/api/macros/" + id, map[string]any{"trigger": "wrap_up", "text": "x"}, 400},
+		{"edit stale rev", "PUT", "/api/macros/" + id, map[string]any{"trigger": "wrap_up", "text": "x", "revision": 9}, 409},
+		{"edit ok", "PUT", "/api/macros/" + id, map[string]any{"trigger": "wrap_up", "text": "finish up", "revision": m.Revision}, 200},
+		{"edit missing", "PUT", "/api/macros/999", map[string]any{"trigger": "ghost", "text": "x", "revision": 1}, 404},
+		{"bad id", "PUT", "/api/macros/abc", map[string]any{"trigger": "a", "text": "x", "revision": 1}, 400},
+		{"delete bad rev", "DELETE", "/api/macros/" + id + "?revision=x", nil, 400},
+		{"delete stale", "DELETE", "/api/macros/" + id + "?revision=1", nil, 409},
+		{"delete missing", "DELETE", "/api/macros/999", nil, 404},
+		{"preview", "POST", "/api/macros/preview", map[string]any{"text": "do {{WRAP_UP}} {{char}}"}, 200},
+		{"preview invalid", "POST", "/api/macros/preview", map[string]any{"text": strings.Repeat("x", 20000)}, 400},
 	} {
 		if rr := doJSON(t, mux, c.method, c.path, c.body); rr.Code != c.want {
-			t.Errorf("%s: %s %s = %d %s, want %d", name, c.method, c.path, rr.Code, strings.TrimSpace(rr.Body.String()), c.want)
+			t.Errorf("%s: %s %s = %d %s, want %d", c.name, c.method, c.path, rr.Code, strings.TrimSpace(rr.Body.String()), c.want)
 		}
 	}
 	rr = doJSON(t, mux, "POST", "/api/macros/preview", map[string]any{"text": "do {{WRAP_UP}} {{char}}"})

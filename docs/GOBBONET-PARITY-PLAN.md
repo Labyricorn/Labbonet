@@ -1,6 +1,6 @@
 # GobboNet application parity plan
 
-**Status:** owner authorized implementation with “implement this plan” (2026-10-17); milestone 1 committed (1a7e106); milestone 2 (card interchange and DATA), milestone 3 (conversation tree, variants, organization), milestone 4 (detached generation, chat tools) milestone 5 (lore, summaries, retrieval) and milestone 6 (web search, MODS macros and appearance presets) implemented; browser upload via real file chooser and several milestone 3 UI paths unverified (see handover). Attribution inventory audited 2026-10-18. See `IMPLEMENTATION-HANDOVER.md` for working-tree status.
+**Status:** owner authorized implementation with “implement this plan” (2026-10-17); milestone 1 committed (1a7e106); milestone 2 (card interchange and DATA), milestone 3 (conversation tree, variants, organization), milestone 4 (detached generation, chat tools) milestone 5 (lore, summaries, retrieval) milestone 6 (web search, MODS macros and appearance presets) and milestone 7 (scheduler, dashboard and settings profiles) implemented; browser upload via real file chooser and several milestone 3 UI paths unverified (see handover). Attribution inventory audited 2026-10-18. See `IMPLEMENTATION-HANDOVER.md` for working-tree status.
 **Requested:** 2026-10-17, "Add full functionality from Gabbonet to Labbonet."
 **Reference:** GobboNet 1.7.6, commit `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`.
 

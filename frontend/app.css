@@ -195,3 +195,17 @@ button:disabled { opacity: .45; cursor: default; }
 .web-source a { color: var(--magenta); }
 .web-source-host { color: var(--cyan-dim); font-size: 11px; }
 .web-source-snippet { color: var(--cyan-mid); font-size: 11px; }
+/* Labbonet-original scheduler/dashboard integration. Existing dialog/button styling
+   derives from the pinned GobboNet presentation; see docs/REUSE-LOG.md. */
+.home-dashboard { overflow-y: auto; padding: 24px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-content: start; }
+.home-dashboard > h2, .home-dashboard > .form-error, .home-dashboard > fieldset:last-of-type { grid-column: 1 / -1; }
+.home-dashboard .memory-section { min-width: 0; margin: 0; }
+.home-dashboard .btn { margin: 4px; max-width: 100%; overflow-wrap: anywhere; white-space: normal; }
+.home-dashboard select, .home-dashboard input:not([type=checkbox]) { max-width: 100%; }
+.home-dashboard input:not([type=checkbox]), .schedule-form input:not([type=checkbox]), .schedule-form textarea { background: var(--black); color: var(--white); border: 1px solid var(--cyan-dim); padding: 6px; }
+.schedule-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.schedule-item { display: block; overflow-wrap: anywhere; }
+.schedule-form { display: grid; gap: 12px; }
+.schedule-form input:not([type=checkbox]), .schedule-form select, .schedule-form textarea { width: 100%; min-width: 0; box-sizing: border-box; }
+.schedule-form .cast-control-label { min-width: 0; }
+@media (max-width: 700px) { .home-dashboard { grid-template-columns: minmax(0, 1fr); padding: 12px; } }

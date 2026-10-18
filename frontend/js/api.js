@@ -51,6 +51,17 @@ async function request(method, path, body) {
 }
 
 export const api = {
+  listSchedules: () => request("GET", "/api/schedules"),
+  saveSchedule: (s) => request(s.id ? "PUT" : "POST", s.id ? `/api/schedules/${s.id}` : "/api/schedules", s),
+  deleteSchedule: (s) => request("DELETE", `/api/schedules/${s.id}?revision=${s.revision}`),
+  duplicateSchedule: (id) => request("POST", `/api/schedules/${id}/duplicate`),
+  runSchedule: (id) => request("POST", `/api/schedules/${id}/run`),
+  scheduleRuns: (id) => request("GET", `/api/schedules/${id}/runs`),
+  cancelScheduleRun: (id) => request("POST", `/api/schedule-runs/${id}/cancel`),
+  listProfiles: () => request("GET", "/api/profiles"),
+  saveProfile: (p) => request(p.id ? "PUT" : "POST", p.id ? `/api/profiles/${p.id}` : "/api/profiles", p),
+  deleteProfile: (p) => request("DELETE", `/api/profiles/${p.id}?revision=${p.revision}`),
+  applyProfile: (id) => request("POST", `/api/profiles/${id}/apply`),
   listCards: () => request("GET", "/api/cast"),
   saveCard: (card) => request(card.id ? "PUT" : "POST", card.id ? `/api/cast/${card.id}` : "/api/cast", card),
   deleteCard: (card) => request("DELETE", `/api/cast/${card.id}`, {revision: card.revision}),

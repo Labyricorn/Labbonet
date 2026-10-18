@@ -2,7 +2,7 @@
 
 Secure, local, multi-provider AI chat. One interface for Strata, LM Studio, Ollama, llama.cpp and in-browser WebLLM, with characters, lorebooks and hybrid RAG. Loopback-first, no installers. AGPLv3.
 
-**Current development version: V0-2-0.** GobboNet feature/style parity milestones 1-6 are implemented (7-8 remain); owner visual acceptance remains open. Remaining Phase 1 provider auth/cold-start checks and final Phase 1 sign-off are deferred until **V2-0-0**.
+**Current development version: V0-2-0.** GobboNet parity milestones 1-7 are implemented, including server schedules, dashboard and shared-database settings profiles. Milestone 8 verification and owner visual acceptance remain open. Remaining Phase 1 provider auth/cold-start checks and final Phase 1 sign-off are deferred until **V2-0-0**.
 
 Labbonet is an inference client and workflow orchestrator, not an engine installer. It connects to inference services you already run, treats them as interchangeable providers, and keeps conversations independent of the model that answered them.
 

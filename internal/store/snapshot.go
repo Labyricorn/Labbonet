@@ -491,6 +491,12 @@ func (s *Store) ResetData(ctx context.Context, scope string) error {
 		if _, err = tx.ExecContext(ctx, `UPDATE appearance_settings SET data_json='{}',revision=revision+1 WHERE id=1`); err != nil {
 			return err
 		}
+		// Schedules and profiles are settings content too; their ledgers cascade.
+		for _, q := range []string{`DELETE FROM schedules`, `DELETE FROM profiles`} {
+			if _, err = tx.ExecContext(ctx, q); err != nil {
+				return err
+			}
+		}
 	}
 	if scope == "cast" || scope == "all" {
 		if _, err = tx.ExecContext(ctx, `UPDATE conversation_cast SET revision=revision+1`); err != nil {

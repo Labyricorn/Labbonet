@@ -60,6 +60,21 @@ Review of the registered material: presentation CSS/structure only; no engine, i
 
 ## Labbonet-origin implementation boundary
 
+### Milestone 7 additions (2026-10-18)
+
+`frontend/js/schedule.js` and `home.js` reference GobboNet `js/22-scheduler.js`
+(schedule editor, enable/duplicate/run status), `js/13-dashboard.js` (home schedule
+and character shortcuts), `js/06-state-sync.js` and `js/21-data.js` (named settings
+profiles), all at pin `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`, Copyright (C)
+2026 Elodine / GoblinCorps. No source is copied. The safe DOM, API, timezone display,
+revision handling and server scheduler are original Labbonet implementations.
+Existing credited button/dialog classes are reused; new integration CSS is original.
+Backend implementations are `internal/schedule`, `internal/profile`,
+`internal/generate/scheduler.go`, store/API schedule and profile files and schema 6.
+Profiles capture settings in one database; isolated data partitions are not implemented.
+The timer lives in the server instead of the browser; missed runs are recorded rather
+than replayed. No engine management or automatic model loading is added.
+
 This inventory documents the current implementation's source lineage, not exclusive ownership of generic programming ideas. Within this tree, no GobboNet backend or JavaScript runtime source has been copied. The exceptions are the explicitly credited presentation structures and behavior references above.
 
 | Area | Labbonet-origin work |

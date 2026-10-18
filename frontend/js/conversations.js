@@ -294,7 +294,9 @@ export function mountChatView(panel) {
   async function selectConversation(id) {
     selectedId = id;
     renderList();
-    document.getElementById("home-sidebar").click();
+    // Show the chat view without firing HOME's dashboard navigation handler.
+    for (const el of document.querySelectorAll(".view")) el.hidden = el.id !== "view-chat";
+    for (const btn of document.querySelectorAll("[data-view]")) btn.classList.toggle("active", btn.dataset.view === "chat");
     if (matchMedia("(max-width: 700px)").matches) {
       document.getElementById("sidebar").classList.add("collapsed");
       document.getElementById("sidebar-overlay").classList.remove("open");
@@ -312,6 +314,18 @@ export function mountChatView(panel) {
       const conv = await api.createConversation({ title: "New thread" });
       await refreshList();
       await selectConversation(conv.id);
+    } catch (err) { alert(err.message); }
+  });
+  for (const home of document.querySelectorAll('[data-view="chat"]')) home.addEventListener("click", () => { selectedId = null; mountChatPanel(panel); renderList(); });
+  document.addEventListener("open-thread", event => selectConversation(event.detail.id));
+  document.addEventListener("new-thread", async event => {
+    try {
+      const conv = await api.createConversation({ title: "New thread" });
+      if (event.detail?.character_id) {
+        const cast = await api.getCast(conv.id);
+        await api.saveCast(conv.id, { ...cast, character_id: event.detail.character_id, greeting: 0 });
+      }
+      await refreshList(); await selectConversation(conv.id);
     } catch (err) { alert(err.message); }
   });
   newFolderBtn.addEventListener("click", async () => {
