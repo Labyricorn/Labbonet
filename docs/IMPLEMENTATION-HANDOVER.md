@@ -2,7 +2,8 @@
 
 Updated 2026-10-18 (America/Los_Angeles). Supersedes the milestone 1–7 working-tree
 handover. Development version: **V0-2-0**. The milestone 8 implementation/audit pass
-is complete; full application parity and owner visual acceptance are not claimed.
+is complete; full functional parity remains incomplete. Owner visual approval
+passed on 2026-10-18; real embedding/search/summarizer verification is owner-deferred.
 
 ## Current records
 
@@ -48,19 +49,21 @@ results are in `devlog.md` and `evidence/m8-verification.json`; rerun before cod
 
 ## Remaining work
 
-1. Owner visual acceptance and decisions on the explicit compatibility limitations in
-   the acceptance record. They are not waivers. Do not call the application fully
-   GobboNet-equivalent based on this pass.
-2. Real embedding/search/summarizer and the listed long-stream/touch/browser-closed
-   schedule checks remain uncertified. Use only already-loaded models and owner
-   credentials; never operate model-management endpoints.
+1. Complete the explicit functional compatibility gaps in the acceptance record.
+   Owner visual approval passed on 2026-10-18 for the current implementation; it
+   does not waive these gaps or establish full GobboNet functional equivalence.
+2. Real embedding/search/summarizer verification is owner-deferred (2026-10-18),
+   without a specified resumption date/version. Do not run or mark it passed until
+   resumed. The separate long-stream/touch/browser-closed schedule checks remain
+   uncertified. On resumption use only already-loaded models/owner credentials;
+   never operate model-management endpoints.
 3. Snapshot settings/schedule/profile interchange, CHARX sidecar modules, exact token
    budgets, per-card compression model, isolated data profiles, per-schedule reply
    caps, folder-aware schedule picker and desktop notifications are still limited
    or absent as listed in the acceptance record. Credential-free database backups
    retain the broader database; interchange remains cards/threads only.
 4. P3-P5, A-ST5/A-ST6/A-LM6 and final Phase 1 sign-off remain **owner-deferred until
-   V2-0-0**, neither passed nor waived. This does not defer current visual acceptance.
+   V2-0-0**, neither passed nor waived. Visual approval separately passed on 2026-10-18.
 
 ## Working rules
 

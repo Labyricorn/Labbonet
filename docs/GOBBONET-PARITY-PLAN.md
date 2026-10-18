@@ -1,6 +1,6 @@
 # GobboNet application parity plan
 
-**Status:** owner-authorized implementation (2026-10-17); milestones 1-7 and milestone 8's implementation/audit pass are implemented. Current verification, explicit compatibility limits and owner-pending visual acceptance are recorded in `MILESTONE8-ACCEPTANCE.md`. Full application parity and pixel equality are not claimed. Attribution audited 2026-10-18; current handover is `IMPLEMENTATION-HANDOVER.md`.
+**Status:** owner-authorized implementation (2026-10-17); milestones 1-7 and milestone 8's implementation/audit pass are implemented. Current verification, explicit compatibility limits and owner-passed visual approval (2026-10-18) are recorded in `MILESTONE8-ACCEPTANCE.md`. Full application parity and pixel equality are not claimed. Attribution audited 2026-10-18; current handover is `IMPLEMENTATION-HANDOVER.md`.
 **Requested:** 2026-10-17, "Add full functionality from Gabbonet to Labbonet."
 **Reference:** GobboNet 1.7.6, commit `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`.
 
@@ -10,7 +10,7 @@ Labbonet is not affiliated with GobboNet or its authors. This plan covers the pi
 
 Propose completing GobboNet application parity before the original Phase 2 WebLLM work and Phase 5 multi-model expansion. Those Labbonet additions remain on the roadmap; they are not prerequisites for reproducing GobboNet. This is a proposed sequencing change to proposal section 20, not an amendment of accepted decisions. DR-014 automatic routing remains deferred.
 
-Current development version is **V0-2-0** (owner, 2026-10-18). Remaining Phase 1 provider auth/cold-start checks (A-ST5/A-ST6/A-LM6; P3-P5) and final Phase 1 sign-off are **deferred until V2-0-0**, not waived or passed, and do not block this parity work. GobboNet feature/style implementation and owner visual acceptance remain in current scope.
+Current development version is **V0-2-0** (owner, 2026-10-18). Remaining Phase 1 provider auth/cold-start checks (A-ST5/A-ST6/A-LM6; P3-P5) and final Phase 1 sign-off are **deferred until V2-0-0**, not waived or passed, and do not block this parity work. Functional parity work remains in current scope. Owner visual approval passed on 2026-10-18; real embedding/search/summarizer verification is separately owner-deferred without a resumption date/version.
 
 "All" includes secondary interactions, settings, import/export formats, recovery paths and mobile-width presentation, not just enabling CHARS, MODS and SCHED. Every row below needs an implementation, verification evidence, or a documented provider/security adaptation before parity can be claimed.
 
@@ -73,8 +73,10 @@ in-app confirmations/notices, health-derived About/build copy and pinned landing
 presentation/starter tiles. It closes the real file-chooser, dirty-editor, code/file
 action, profile-delete and folder stale-tab browser gaps. Chrome has 13 render passes
 without CSP violations; wide and 420 CSS px comparisons are saved. Full parity,
-pixel equality and owner visual approval are **not** inferred: compatibility limits
-and remaining live/browser checks are listed in the acceptance record.
+independently measured pixel equality are **not** inferred. The owner explicitly
+passed visual approval on 2026-10-18 and deferred real embedding/search/summarizer
+verification. Compatibility gaps and other browser checks remain open as listed
+in the acceptance record.
 
 - Keep Go backend / SQLite / plain ES modules / vendored browser assets. Add focused packages for prompt assembly, cards/interchange, jobs, memory/retrieval, search and scheduling as their milestones need them; backend/API contracts remain owned by project AGENTS. Extend frontend ownership when modules are added.
 - Use additive, tested migrations with a pre-upgrade backup and transactional import. A migration must preserve existing endpoints, credentials, conversations, messages and generation provenance. Profile deletion must never recursively delete arbitrary filesystem paths.

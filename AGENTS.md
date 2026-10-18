@@ -4,7 +4,7 @@ Inherits the root `G:\.vibe\AGENTS.md` (DOX framework and Devlog Loop).
 
 ## Purpose
 
-Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application modeled on GobboNet (credited selective presentation reuse and functional/design reference). Current development version: **V0-2-0**. Phase 1 steps 1-6 are implemented; remaining provider auth/cold-start checks and final Phase 1 sign-off are deferred until **V2-0-0**. GobboNet feature/style parity and frontend visual acceptance remain current work.
+Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application modeled on GobboNet (credited selective presentation reuse and functional/design reference). Current development version: **V0-2-0**. Phase 1 steps 1-6 are implemented; remaining provider auth/cold-start checks and final Phase 1 sign-off are deferred until **V2-0-0**. GobboNet functional parity remains current work. Owner visual approval passed on 2026-10-18; real embedding/search/summarizer verification is owner-deferred.
 
 ## Ownership
 
@@ -17,8 +17,8 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `docs/PHASE1-ACCEPTANCE.md`: Phase 1 scope, non-goals, owner prerequisites, acceptance tests, sign-off.
 - `docs/PHASE1-PLAN.md`: Phase 1 build order (seven steps), per-step files, tests and done criteria, working rules.
 - `docs/GOBBONET-REFERENCE.md`: pinned GobboNet commit, source map, excluded paths.
-- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-7 and milestone 8's audit/fixes are implemented; full parity and owner visual acceptance remain subject to the acceptance record.
-- `docs/MILESTONE8-ACCEPTANCE.md`: row-by-row parity audit, browser/regression evidence, compatibility limitations, exceptions and owner-pending visual acceptance. It does not grant Phase 1 sign-off.
+- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-7 and milestone 8's audit/fixes are implemented; full parity remains limited by the acceptance record; owner visual approval passed on 2026-10-18.
+- `docs/MILESTONE8-ACCEPTANCE.md`: row-by-row parity audit, browser/regression evidence, compatibility limitations, exceptions and owner acceptance/deferral statuses. It does not grant Phase 1 sign-off.
 - `docs/IMPLEMENTATION-HANDOVER.md`: current parity closeout, remaining verification and review risks; update or retire when superseded.
 - `docs/REUSE-LOG.md`: element-by-element GobboNet source/design attribution and Labbonet authorship boundaries (DR-003).
 - `docs/GOBBONET-PROVENANCE.json`: pinned-source hashes and exact reused CSS spans; keep synchronized with the reuse inventory.
@@ -41,11 +41,11 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - **Attribution requirement (owner, 2026-10-18):** document every reused GobboNet element, credit Elodine / GoblinCorps, and distinguish copied source, adapted presentation/behavior and Labbonet-origin implementation. Update the reuse inventory, provenance and notices as material is added/changed/removed; retain per-file origin and modification notices.
 - Keep security commitments from the proposal (loopback default, endpoint allowlist, no executable downloads, no firewall or antivirus changes, no arbitrary JS extensions).
 - **Web search (milestone 6):** the only outbound path that is not a registered endpoint. Its destination is the constant in `internal/egress/search.go`; do not make it configurable, add its path to the provider allowlist, or call `NewSearchClientFor` outside tests (a test enforces this). Search stays off by default, needs the stored key plus a per-message request, and the key must never reach records, params, errors, logs or backups. MODS stays declarative: macros are text and appearance presets are the allowlisted values in `internal/mods`; no stylesheet text, URL or script support.
-- **Visual requirement (owner, 2026-10-17):** match the pinned GobboNet interface pixel for pixel except where Labbonet's model dynamics require differences. The basic functional shell is not visually accepted. Compare the rendered result at full-window and Codex side-panel widths; log any adapted presentation files in `docs/REUSE-LOG.md` and retain notices.
+- **Visual requirement (owner, 2026-10-17):** match the pinned GobboNet interface pixel for pixel except where Labbonet's model dynamics require differences. The earlier basic shell was rejected; the owner passed visual approval for the current V0-2-0 implementation on 2026-10-18. Compare the rendered result at full-window and Codex side-panel widths; log any adapted presentation files in `docs/REUSE-LOG.md` and retain notices.
 
 ## Work Guidance
 
-- **Release scope (owner, 2026-10-18):** current development is **V0-2-0**. Defer A-ST5/A-ST6/A-LM6 (provider authentication and Strata cold-start checks; prerequisites P3-P5) and final Phase 1 sign-off until **V2-0-0**. Track them as deferred, not passed or waived; they do not block V0-2-0 GobboNet parity work. This does not defer functional/security regression checks or GobboNet style/visual acceptance.
+- **Release scope (owner, 2026-10-18):** current development is **V0-2-0**. Defer A-ST5/A-ST6/A-LM6 (provider authentication and Strata cold-start checks; prerequisites P3-P5) and final Phase 1 sign-off until **V2-0-0**. Track them as deferred, not passed or waived; they do not block V0-2-0 GobboNet parity work. Functional/security regressions remain required. Owner visual approval passed on 2026-10-18. Real embedding/search/summarizer verification is separately owner-deferred, without a specified resumption date/version; do not mark it passed or waive remaining implementation gaps.
 
 - 15 of 16 decisions are accepted (2026-10-18); only DR-014 (routing) is deferred. Acceptance criteria in each record still apply during implementation. Gate 1 is cleared, so Phase 1 can start.
 - Providers: Strata at `http://127.0.0.1:8080` (served model Qwen3.8-Flash-Next) and LM Studio at `http://10.138.11.11:1234` (trusted LAN, plain HTTP). Open provider tests are listed in `docs/PHASE1-ACCEPTANCE.md` section 4.5.

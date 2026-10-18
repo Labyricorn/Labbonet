@@ -57,7 +57,7 @@ Boundaries:
 - Phase 1 views: conversation list, chat thread with streaming output and a stop button, endpoint manager (register, test, credential set/clear), model selector grouped by endpoint (proposal section 18), diagnostics panel.
 - Reasoning content (`reasoning_content`) is shown in a collapsible block, separate from the answer.
 - Owner visual requirement: match the pinned GobboNet interface pixel for pixel except for model dynamics. Presentation files in `frontend/css/` are selectively adapted from the pinned source with notices and entries in `REUSE-LOG.md`; `app.css` contains Labbonet integration rules. Upstream HTML presentation structures are adapted in the shell/chat/cast modules; JavaScript runtime logic is Labbonet work. No upstream JS runtime, inline handlers/styles or excluded behaviors are imported. Authorship boundaries are recorded in `REUSE-LOG.md`, pinned source hashes/spans in `GOBBONET-PROVENANCE.json`, and public credit in root `NOTICE.md`. The pinned tree omits its referenced Atkinson font file, so its original Cascadia/Consolas fallback stack is used.
-- The reference sidebar retains three footer pairs: CHARS/CONFIG, MODS/DATA and SCHED/ABOUT. These open their implemented screens; DATA contains backup/interchange/reset. ABOUT supplies version/build copy, Memory settings and Diagnostics; active-thread Memory remains available through its header chip. Executable extensions remain excluded. Visual acceptance is separate from functional verification and awaits owner review.
+- The reference sidebar retains three footer pairs: CHARS/CONFIG, MODS/DATA and SCHED/ABOUT. These open their implemented screens; DATA contains backup/interchange/reset. ABOUT supplies version/build copy, Memory settings and Diagnostics; active-thread Memory remains available through its header chip. Executable extensions remain excluded. Visual acceptance is separate from functional verification; the owner passed it on 2026-10-18 for the current implementation.
 
 ## 4. Backend
 
@@ -191,7 +191,7 @@ Licenses above are from general knowledge and must be confirmed from each packag
 - Persona descriptions follow the pinned cadence: frequency zero disables description; otherwise first user turn and multiples of N, immediately before final user message. Names/portraits remain independent of description injection. This is separately credited behavior reference, implemented in Go.
 - Atomic turn creation checks history count, cast revision and absence of a streaming assistant, then inserts both speakers and generation provenance. Conflicting same-thread submissions return 409. Endpoint slots still serialize different threads for a shared endpoint. Cancellation is registered before exposing generation ID to callbacks.
 - Existing-schema upgrades first create a credential-free backup; live encrypted credentials, endpoints, conversations, messages and generation provenance remain intact. Tests cover populated v1 upgrades and migration rollback.
-- Browser: CHARS has character/persona CRUD/copy/order/defaults, local-image file input/preview/remove, inert macro editor, greeting/carousel variants and supported presets. Per-thread selectors persist; speaker rendering uses historical snapshots. Validated hex colors use CSSOM, fixed CSS integration and safe DOM quote spans; no inline styles or CSP change. Unsupported samplers show a reason. Browser upload end-to-end and remaining editor acceptance are recorded in the handover; owner visual acceptance is open.
+- Browser: CHARS has character/persona CRUD/copy/order/defaults, local-image file input/preview/remove, inert macro editor, greeting/carousel variants and supported presets. Per-thread selectors persist; speaker rendering uses historical snapshots. Validated hex colors use CSSOM, fixed CSS integration and safe DOM quote spans; no inline styles or CSP change. Unsupported samplers show a reason. Browser upload end-to-end and remaining editor acceptance are recorded in the handover; owner visual approval passed on 2026-10-18.
 
 ## 10. Card interchange and DATA (parity milestone 2)
 
@@ -299,4 +299,6 @@ All routes retain the existing session/Origin/header checks. Credentials never e
   starter text is original Labbonet content. About derives its build version from
   health. Static assets send `Cache-Control: no-cache` because URLs are unversioned.
 - See `MILESTONE8-ACCEPTANCE.md` for inventory disposition and compatibility limits.
-  No completed pixel equality, owner approval or Phase 1 sign-off is implied.
+  Owner visual approval explicitly passed on 2026-10-18. Independently measured pixel
+  equality and Phase 1 sign-off are not implied; real embedding/search/summarizer
+  verification is owner-deferred without a specified resumption date/version.

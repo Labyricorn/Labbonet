@@ -924,7 +924,7 @@ Characters, hybrid RAG, and more advanced orchestration would build upon the est
 - Non-goals explicitly listed.
 - End-to-end scenario demonstrated on two independent endpoints.
 
-Progress: acceptance tests and non-goals are in `docs/PHASE1-ACCEPTANCE.md` (awaiting owner approval). The two-endpoint exit scenario passed with retained history and provenance (`docs/evidence/step7-live.json`), using Strata and the owner-loaded Gemma model on LM Studio. Visual resemblance to GobboNet was rejected by the owner and needs a frontend revision before UI acceptance.
+Progress: acceptance tests and non-goals are in `docs/PHASE1-ACCEPTANCE.md` (awaiting owner approval). The two-endpoint exit scenario passed with retained history and provenance (`docs/evidence/step7-live.json`), using Strata and the owner-loaded Gemma model on LM Studio. The owner initially rejected the basic shell; following milestone 8 changes, visual approval explicitly passed on 2026-10-18. Remaining functional gaps are not waived.
 
 ### Consequences
 
@@ -1102,6 +1102,7 @@ This section records changes to decision status over the life of the project.
 | 2026-10-18 | DR-002, DR-006, DR-007, DR-008, DR-009, DR-010, DR-011, DR-012, DR-013, DR-015, DR-016 | Owner accepted all remaining proposals at their recommended options | PROPOSED to ACCEPTED. DR-001 and DR-004 remain OPEN; DR-014 remains DEFERRED. Each record's acceptance criteria are still to be met during implementation. |
 | 2026-10-18 | DR-002, 003, 004, 006, 012, 015 | Phase 1 prerequisite docs added in `docs/` (architecture, security model, provider spec, acceptance tests, GobboNet reference, reuse log); stale text in the register, proposal and Strata protocol corrected; LM Studio host `10.138.11.11:1234` verified by read-only probes | No status changes. DR-003 criteria ticked; progress notes added to the others. Implementation defaults (no standalone PoC, `modernc.org/sqlite`, DPAPI, `127.0.0.1:4815`) approved by the owner as defaults, not as DRs. |
 | 2026-10-18 | DR-005, DR-012, DR-015 acceptance scheduling | Owner identified current development as V0-2-0 and deferred remaining Phase 1 provider auth/cold-start checks (A-ST5/A-ST6/A-LM6; P3-P5) and final Phase 1 sign-off until V2-0-0 | No decision-status changes or test waivers. These checks/sign-off do not block current GobboNet feature/style parity; visual acceptance remains in scope. |
+| 2026-10-18 | Acceptance / verification scope | Owner explicitly passed visual approval for current V0-2-0 (`17ce260`) and deferred real embedding/search/summarizer verification | Visual approval PASSED. Real-service verification DEFERRED, not passed/waived; no resumption date/version specified. Functional gaps remain; DR-001–DR-016 statuses and V2-0-0 Phase 1 deferrals unchanged. |
 
 Fifteen decisions are accepted. Only DR-014 (routing and failover) is deferred.
 

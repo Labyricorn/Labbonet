@@ -92,6 +92,19 @@
   "owner_database_migrated": false,
   "browser_permission_changed": false,
   "full_parity": "limited; explicit remaining compatibility and browser/live limits in MILESTONE8-ACCEPTANCE.md",
-  "owner_visual_acceptance": "pending",
-  "phase1_remaining": "P3-P5/A-ST5/A-ST6/A-LM6 and final sign-off owner-deferred to V2-0-0; no waiver/pass inferred"
+  "owner_visual_acceptance": "passed",
+  "phase1_remaining": "P3-P5/A-ST5/A-ST6/A-LM6 and final sign-off owner-deferred to V2-0-0; no waiver/pass inferred",
+  "owner_visual_approval": {
+    "date": "2026-10-18",
+    "authority": "project owner, explicit chat instruction: Visual approval:passed",
+    "implementation_commit": "17ce260",
+    "scope": "current V0-2-0 visual presentation; functional gaps and Phase 1 sign-off not waived"
+  },
+  "real_embedding_search_summarizer_verification": {
+    "status": "owner-deferred",
+    "date": "2026-10-18",
+    "authority": "project owner, explicit chat instruction: Real embedding/search/summarizer:deferred",
+    "resume": "unspecified; on owner request",
+    "passed": false
+  }
 }

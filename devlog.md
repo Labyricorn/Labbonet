@@ -303,3 +303,18 @@ handover, notices/reuse/provenance/vendor inventories updated. `LICENSE` and par
 `G:\.vibe\AGENTS.md` intentionally unchanged: no license text or shared workflow/child
 boundary changes. No subagents, branch or PR. Results/hashes are recorded in
 `docs/evidence/m8-verification.json`; verified work is committed directly to main.
+
+## 2026-10-18 — Owner visual approval and real-service verification deferral
+
+**Owner instruction:** “Visual approval:passed” and “Real embedding/search/summarizer:deferred”.
+Recorded visual approval as passed for the current V0-2-0 implementation (`17ce260`).
+Recorded real embedding/search/summarizer verification as owner-deferred, not passed
+or waived, without inventing a resumption date/version. Remaining implementation
+gaps and prior V2-0-0 provider-auth/cold-start/Phase 1 sign-off deferrals are unchanged.
+
+**DOX:** updated project/frontend contracts, acceptance evidence/JSON, current handover,
+README, parity plan, architecture/provider/reference/Phase 1 records and decision log.
+Parent `G:\.vibe\AGENTS.md` unchanged: shared workflow/ownership boundaries unchanged.
+Prior devlog/evidence observations remain historical. No code/provider operations.
+Documentation consistency, JSON parsing and diff whitespace checks passed; code tests
+were not repeated for this documentation-only status change.

@@ -19,7 +19,7 @@ Phase 1 browser interface and the owner-directed GobboNet presentation adaptatio
 
 ## Local Contracts
 
-- Owner requirement: match the pinned GobboNet interface pixel for pixel except where model dynamics require differences. Functional tests do not constitute visual acceptance.
+- Owner requirement: match the pinned GobboNet interface pixel for pixel except where model dynamics require differences. Functional tests do not constitute visual acceptance. The owner explicitly passed visual approval for the current V0-2-0 implementation on 2026-10-18; preserve that approved presentation while completing functional work.
 - Use only the pin in `../docs/GOBBONET-REFERENCE.md`. Log reuse in `../docs/REUSE-LOG.md` before copying; retain notices and mark changes. Never import excluded behavior code.
 - Attribution: every reused visual element/structure and behavior reference must identify its GobboNet origin and Labbonet implementation boundary in `../docs/REUSE-LOG.md`; keep `../docs/GOBBONET-PROVENANCE.json` and `../NOTICE.md` consistent. Mixed frontend modules need explicit source/design vs runtime implementation notices.
 - Model output and reasoning go through `renderMarkdown`. No raw untrusted HTML, inline handlers/styles, eval, remote scripts or font loads. Keep the parent security model/CSP.

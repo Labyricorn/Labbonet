@@ -4,7 +4,8 @@
 Reference: GobboNet 1.7.6 at `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`.
 
 The milestone 8 implementation/audit pass is complete. **Full application parity
-and pixel equality are not claimed.** Owner visual acceptance remains pending;
+and independently measured pixel equality are not claimed.** Owner visual approval
+passed on 2026-10-18 for the implementation at `17ce260`;
 the limitations below are recorded, not silently waived. This record supplements
 the earlier milestone evidence and does not grant Phase 1 sign-off.
 
@@ -17,7 +18,7 @@ evidence, or an explicit limitation below.
 
 | Plan inventory row | Implementation and verification | Disposition |
 |---|---|---|
-| Home/dashboard | Pinned landing CSS, section headers, schedule/character tiles, original safe starter cards; install and reload exercised; wide/420 px captures | Implemented; owner visual review pending |
+| Home/dashboard | Pinned landing CSS, section headers, schedule/character tiles, original safe starter cards; install and reload exercised; wide/420 px captures | Implemented; owner visual approval passed 2026-10-18 |
 | Characters | Revisioned CRUD/copy/default/order, prompt fields, raster assets; store/API/prompt tests; real chooser upload/preview/remove/reupload/save now exercised | Implemented; context/sampler limits below |
 | Personas | CRUD/default/order/cadence and immutable mixed-cast identity; cast/store/runner tests and prior browser checks | Implemented |
 | Prompt templates | Macro precedence, dates, carousel, persona cadence, bounded prompt snapshots; prompt and runner tests | Verified with fake providers |
@@ -27,9 +28,9 @@ evidence, or an explicit limitation below.
 | Generation lifecycle | Detached jobs/snapshots/Stop/queue/restart tests; previous browser reconnect, caps/watchdog and actual process-restart evidence | Implemented; remaining provider checks unchanged |
 | Rendering and files | Native MathML, bounded explicit-language highlighting, exact code Copy/Save, `file:name.ext` Save, source toggle, real attachment chooser; 13 Chrome renderer checks | Verified; supported syntax/attachment limits below |
 | Scroll/editor behavior | Follow release/jump/source prefs and prior browser checks; dirty-card Keep/Back/Escape/Discard now verified using in-app dialogs | Implemented; long-stream/touch behavior not exhaustively certified |
-| Lore/summarization | Branch-aware summaries/history/editor/conflicts; scripted provider and store tests, prior browser inspector/editor checks, current narrow Memory access | Implemented; real summarizer not exercised in this pass |
-| Hybrid RAG | Parser/tag/warmth/ranking/dedupe/budget/cache tests and scripted embeddings; no unloaded embedding calls | Implemented; real semantic model requires an owner-loaded model |
-| Web search | Fixed service/enable/key/request gates, redaction and hostile result tests; previous fake-service browser evidence | Implemented; live service requires owner key |
+| Lore/summarization | Branch-aware summaries/history/editor/conflicts; scripted provider and store tests, prior browser inspector/editor checks, current narrow Memory access | Implemented; real summarizer verification owner-deferred |
+| Hybrid RAG | Parser/tag/warmth/ranking/dedupe/budget/cache tests and scripted embeddings; no unloaded embedding calls | Implemented; real embedding verification owner-deferred |
+| Web search | Fixed service/enable/key/request gates, redaction and hostile result tests; previous fake-service browser evidence | Implemented; real search verification owner-deferred |
 | MODS | Macro bounds/cycles, safe appearance allowlist/CSSOM, inert import tests and prior browser checks | Implemented adaptation; JS/arbitrary CSS excluded |
 | SCHED | Timezone/DST/claims/Stop/missed/restart tests and prior fake-provider browser checks; unavailable-model run ledger re-exercised without inference | Implemented; service coverage is not a browser-closed live run certification |
 | DATA | Atomic preview/commit/reset/rollback/credential-free backup tests; actual file chooser, GobboNet compatibility report and bulk-thread download verified | Implemented with narrowed interchange boundary |
@@ -76,9 +77,9 @@ evidence, or an explicit limitation below.
    capped at 64, 64 variants per message and expanded text at 64 MiB, in addition
    to existing file/card/conversation/message limits. CHARX sidecar modules beyond
    the main icon are still not mapped. These are reported compatibility limits.
-6. **UI differences/remaining checks:** explicit provider/privacy/model controls,
+6. **Approved UI adaptations/remaining checks:** explicit provider/privacy/model controls,
    cast selectors, memory tools, extra dashboard connection/profile sections and
-   safe dialogs remain adaptations for owner review. Memory lives in About and
+   safe dialogs are covered by the owner’s visual approval for the current implementation. Memory lives in About and
    the active-thread chip; the sidebar has the pinned three footer pairs. Folder
    creation is beside search. Starter character text is Labbonet-authored.
    Per-schedule reply cap, folder-aware schedule picker and browser-closed desktop
@@ -111,19 +112,23 @@ test. Chrome independently confirmed the final renderer/CSP result above.
 
 The reference fixture checks shell styling and breakpoints; its welcome state is
 not the same content as the populated Labbonet captures. It is **not** a pixel-diff
-proof of all dialogs. Remaining pixel-level/owner acceptance is explicitly open.
+proof of all dialogs. The owner passed visual approval on 2026-10-18. This approval does not turn the
+captures into an independent pixel-diff measurement or waive functional gaps.
 Panel images use direct 420 × 900 captures after rejecting the browser service's
 scaled-canvas screenshots during visual QA.
 
-## Gates and owner-pending work
+## Gates, owner approval and deferred work
 
 Required gates: `gofmt -l .`, `go vet ./...`, `go test ./...`, normal build,
 `CGO_ENABLED=0 go build ./...`, all frontend JS syntax checks and `git diff --check`.
 Final results are recorded in `devlog.md` and `evidence/m8-verification.json`.
 
-- Owner visual acceptance: **pending**, no approval inferred from this task.
+- Owner visual approval: **passed, 2026-10-18**, explicitly stated by the owner
+  in chat ("Visual approval:passed"). Applies to the current implementation; does
+  not waive functional gaps or grant Phase 1 sign-off.
 - Full parity: **limited**, with the concrete exceptions/uncertified cases above.
-- Real embedding/search/summarizer integration: **provider prerequisite or live
-  verification pending**, not silently classified as passed.
+- Real embedding/search/summarizer verification: **owner-deferred on 2026-10-18**,
+  not passed or waived. No resumption date/version specified; resume when the owner
+  requests it, subject to the existing loaded-model/credential controls.
 - A-ST5/A-ST6/A-LM6, P3-P5 and final Phase 1 sign-off: **owner-deferred until
   V2-0-0**, unchanged; no waiver or pass recorded.

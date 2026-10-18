@@ -1055,8 +1055,8 @@ The following inventory identifies the original treatment and current implementa
 | Character cards | Implemented, parity 1/2/8; bounded assets/interchange |
 | User personas | Implemented, parity 1; historical identity snapshots |
 | Lorebooks | Implemented, parity 5; tag retrieval verified |
-| Hybrid RAG | Implemented, parity 5; real embedding model verification pending |
-| Conversation summarization | Implemented, parity 5; scripted-provider verification |
+| Hybrid RAG | Implemented, parity 5; real embedding model verification owner-deferred 2026-10-18 |
+| Conversation summarization | Implemented, parity 5; scripted-provider verification; real summarizer verification owner-deferred 2026-10-18 |
 | Model selection | Core, expanded |
 | Multiple endpoint connections | Core, new |
 | WebLLM | Core, new |
@@ -1070,7 +1070,7 @@ The following inventory identifies the original treatment and current implementa
 | Import/export | Implemented, parity 2/3/8; cards/threads only, explicit compatibility limits |
 | Character-card V2/V3 compatibility | Implemented, parity 2; main-card/icon CHARX support |
 | Alternate character greetings | Implemented, parity 1 |
-| Web search | Implemented, parity 6; fixed service, live key verification pending |
+| Web search | Implemented, parity 6; fixed service, real search verification owner-deferred 2026-10-18 |
 | Macros and auto-continue | Implemented, parity 6/7; bounded scheduled follow-ups |
 | Scheduled prompts | Implemented, parity 7; server-running only, no unattended loading |
 | Multi-device access | Later phase |

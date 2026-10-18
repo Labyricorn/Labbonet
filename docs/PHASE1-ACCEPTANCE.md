@@ -105,13 +105,13 @@ All tests S1 to S17 in `SECURITY-MODEL.md` section 10 pass.
 
 Live progress (2026-10-17 America/Los_Angeles): `evidence/step7-live.json` records A-C1/A-C2/A-C3, A-C9, A-ST7/A-LM7 and A-B4. The two replies in the exit conversation retain distinct endpoint/requested/reported model provenance. The shutdown check kept 188 content characters and 195 reasoning characters as `cancelled`, removed the lock, and returned SQLite `integrity_check: ok`. A-B1/S17 ran under a standard Windows account (`WindowsPrincipal.IsInRole(Administrator)` was false). S16 inspection found no forbidden application command calls; the binary substring `netsh` was inside dependency symbols `NetShareAdd`/`NetShareDel`, not a `netsh` invocation. The sole application process launcher opens the default browser with `cmd /c start`.
 
-Owner release decision (2026-10-18): current development is **V0-2-0**. **P3-P5 and A-ST5, A-ST6, A-LM6 (provider auth/cold-start checks), together with final Phase 1 sign-off, are deferred until V2-0-0.** They are not passed or waived and do not block current GobboNet parity work. The owner also rejected the functional shell's visual resemblance to GobboNet; frontend visual acceptance remains open. The saved `evidence/step7-exit-ui.png` is evidence of the working conversation, not visual approval. Detailed security/acceptance document review remains open; final Phase 1 sign-off is scheduled for V2-0-0.
+Owner release decision (2026-10-18): current development is **V0-2-0**. **P3-P5 and A-ST5, A-ST6, A-LM6 (provider auth/cold-start checks), together with final Phase 1 sign-off, are deferred until V2-0-0.** They are not passed or waived and do not block current GobboNet parity work. The owner initially rejected the basic shell's visual resemblance; after the milestone 8 changes, the owner explicitly passed visual approval on 2026-10-18. The saved `evidence/step7-exit-ui.png` is evidence of the working conversation, not visual approval. Detailed security/acceptance document review remains open; final Phase 1 sign-off is scheduled for V2-0-0.
 
 When resumed for V2-0-0, Phase 1 is complete when every test above passes or has an owner-approved waiver recorded here, and the DR-002, DR-005, DR-006, DR-012 and DR-015 acceptance criteria in `decision_register.md` are ticked with a pointer to the evidence.
 
 | Date | Result | Waivers | Approved by |
 |---|---|---|---|
-| 2026-10-18 | Remaining provider auth/cold-start checks and final sign-off deferred until V2-0-0; current development V0-2-0 | No waiver or pass recorded; visual parity remains current scope | Project owner (chat instruction) |
+| 2026-10-18 | Remaining provider auth/cold-start checks and final sign-off deferred until V2-0-0; current development V0-2-0 | No waiver or pass recorded; visual approval subsequently passed on 2026-10-18; functional gaps remain | Project owner (chat instruction) |
 
 
 ## Parity milestone 1 verification progress (2026-10-18)
@@ -130,7 +130,7 @@ Implementation is wired; this is additional progress, not Phase 1 sign-off or co
 | Public source attribution | `evidence/gobbonet-attribution-about.png`; `REUSE-LOG.md`, `GOBBONET-PROVENANCE.json`, root `NOTICE.md` |
 | Unsaved-editor Escape protection | Browser emitted `Discard unsaved card changes?`; native-dialog dismiss/retain path still needs a reliable walkthrough (browser connection stalled during prompt handling) |
 | Browser file upload/preview/removal | Pending: extension file chooser refused local file access because Chrome's “Allow access to file URLs” permission is off. No permission/settings change made. Full raster validation is tested separately. |
-| Exact pinned visual comparison and owner visual acceptance | Open in V0-2-0; not inferred from implementation/tests |
+| Exact pinned visual comparison and owner visual acceptance | Owner visual approval passed 2026-10-18 for current V0-2-0 implementation; evidence in `MILESTONE8-ACCEPTANCE.md`; no independent all-screen pixel-diff claim |
 | Remaining Phase 1 provider auth/cold-start checks and final Phase 1 sign-off | Owner-deferred until V2-0-0; not passed or waived |
 
 No live inference requests or model-management operations were made in this continuation. The browser work used a separate temporary data directory; the owner's database was not migrated by this verification instance.
@@ -141,7 +141,8 @@ No live inference requests or model-management operations were made in this cont
 captures. Real chooser checks for portrait/import/attachment, dirty-editor outcomes,
 code/file actions, folder order/two-tab conflict, profile deletion and build copy now
 have browser verification. Chrome has 13 render passes with zero CSP violations and
-console warnings/errors. Full parity/pixel equality and owner visual approval are
-not claimed. Earlier unverified labels are historical, superseded only for the
+console warnings/errors. Full functional parity/independently measured pixel equality are not claimed.
+Owner visual approval passed on 2026-10-18; real embedding/search/summarizer
+verification is owner-deferred without a specified resumption date/version. Earlier unverified labels are historical, superseded only for the
 specific checks above. Provider auth/cold-start checks and final Phase 1 sign-off
 remain owner-deferred to V2-0-0; no status or waiver changes.
