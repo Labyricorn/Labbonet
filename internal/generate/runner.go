@@ -59,6 +59,13 @@ type Request struct {
 	RegenerateParentID *int64
 	// ExpectedRevision, when nonzero, must match the conversation's tree revision.
 	ExpectedRevision int64
+	// MaxReplyChars ends the reply at the first sentence end after this many characters
+	// (0 = no cap). ReasoningLimitChars stops a generation whose reasoning grows past it
+	// (0 = no watchdog).
+	MaxReplyChars       int
+	ReasoningLimitChars int
+	// Attachments are text files appended to the user message (new turns only).
+	Attachments []Attachment
 }
 
 // Runner drives one generation end to end (ARCHITECTURE.md section
@@ -87,6 +94,17 @@ type Runner struct {
 // chance to learn it before streaming starts, for example to let a
 // client cancel a generation whose first event hasn't arrived yet.
 func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generationID int64), emit func(providers.Event) error) error {
+	if err := validateLimits(req.MaxReplyChars, req.ReasoningLimitChars); err != nil {
+		return err
+	}
+	if req.RegenerateParentID != nil && len(req.Attachments) > 0 {
+		return fmt.Errorf("%w: a regenerated reply has no new message to attach to", ErrAttachment)
+	}
+	composed, attachedNames, err := ComposeUserContent(req.UserContent, req.Attachments)
+	if err != nil {
+		return err
+	}
+	req.UserContent = composed
 	conv, err := rn.Store.GetConversation(ctx, req.ConversationID)
 	if err != nil {
 		return fmt.Errorf("conversation not found: %w", err)
@@ -160,10 +178,14 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrPrompt, err)
 	}
+	// Attached file text is already part of the stored user message; provenance keeps names only.
+	provenance := req
+	provenance.Attachments = nil
 	paramsJSON, err := json.Marshal(struct {
-		Request Request
-		Prompt  prompt.Snapshot
-	}{req, snapshot})
+		Request  Request
+		Prompt   prompt.Snapshot
+		Attached []string `json:",omitempty"`
+	}{provenance, snapshot, attachedNames})
 	if err != nil {
 		return err
 	}
@@ -210,9 +232,22 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 	acc := newAccumulator()
 	lastFlush := time.Now()
 
+	capper := &replyCap{limit: req.MaxReplyChars}
+	var stopErr error
 	result, streamErr := adapter.StreamChat(runCtx, chatReq, func(ev providers.Event) error {
 		switch ev.Kind {
 		case providers.EventDelta:
+			// Emitted and stored text are the same: a capped delta is trimmed before either.
+			if keep, stop := capper.feed(ev.Content); stop {
+				ev.Content, stopErr = keep, errReplyCap
+			}
+			if req.ReasoningLimitChars > 0 && acc.reasoning.Len()+len(ev.Reasoning) > req.ReasoningLimitChars {
+				stopErr = errReasoningLimit
+				ev.Reasoning = truncateUTF8(ev.Reasoning, req.ReasoningLimitChars-acc.reasoning.Len())
+			}
+			if ev.Content == "" && ev.Reasoning == "" {
+				return stopErr
+			}
 			acc.add(ev)
 			if !acc.firstTokenRecorded {
 				acc.firstTokenRecorded = true
@@ -237,8 +272,17 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 				_ = persistWrite(func(c context.Context) error { return rn.Store.SetModelReported(c, gen.ID, modelReported) })
 			}
 		}
-		return emit(ev)
+		if err := emit(ev); err != nil {
+			return err
+		}
+		return stopErr
 	})
+	switch {
+	case errors.Is(streamErr, errReplyCap):
+		result.FinishReason, streamErr = "reply_cap", nil
+	case errors.Is(streamErr, errReasoningLimit):
+		result.FinishReason = "reasoning_limit"
+	}
 
 	// ARCHITECTURE.md section 4.2: "Partial text is always kept."
 	finalStatus, errorKind := rn.finalStatus(gen.ID, streamErr)
@@ -316,6 +360,9 @@ func (rn *Runner) recordFailure(messageID, generationID int64, err error) {
 func (rn *Runner) finalStatus(generationID int64, err error) (status, errorKind string) {
 	if err == nil {
 		return "complete", ""
+	}
+	if errors.Is(err, errReasoningLimit) {
+		return "error", "reasoning_limit"
 	}
 	var pe *providers.Error
 	if errors.As(err, &pe) {

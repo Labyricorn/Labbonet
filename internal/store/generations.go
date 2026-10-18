@@ -178,3 +178,33 @@ func scanGeneration(row rowScanner) (*Generation, error) {
 	}
 	return &g, nil
 }
+
+// RecoverInterrupted runs once at startup. A generation that was still streaming when
+// the previous process stopped (a crash or kill; a clean shutdown cancels first) can
+// never finish, so its message keeps whatever text was last flushed and is marked
+// "interrupted". Nothing is resubmitted. It returns the number of messages recovered.
+func (s *Store) RecoverInterrupted(ctx context.Context) (int, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `UPDATE messages SET status='interrupted' WHERE status='streaming'`)
+	if err != nil {
+		return 0, fmt.Errorf("recover interrupted messages: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	if _, err = tx.ExecContext(ctx, `UPDATE generations SET finished_at=?, error_kind='server_restart' WHERE finished_at IS NULL`, formatTime(time.Now().UTC())); err != nil {
+		return 0, fmt.Errorf("recover interrupted generations: %w", err)
+	}
+	return int(n), tx.Commit()
+}
+
+// StreamingGeneration returns the generation and message ID of the reply currently
+// streaming in a conversation, or ErrNotFound-style sql.ErrNoRows when none is.
+func (s *Store) StreamingGeneration(ctx context.Context, conversationID int64) (generationID, messageID int64, err error) {
+	err = s.db.QueryRowContext(ctx,
+		`SELECT g.id, m.id FROM messages m JOIN generations g ON g.message_id=m.id
+		 WHERE m.conversation_id=? AND m.status='streaming' AND g.finished_at IS NULL ORDER BY g.id DESC LIMIT 1`, conversationID).Scan(&generationID, &messageID)
+	return
+}

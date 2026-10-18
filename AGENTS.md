@@ -17,7 +17,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `docs/PHASE1-ACCEPTANCE.md`: Phase 1 scope, non-goals, owner prerequisites, acceptance tests, sign-off.
 - `docs/PHASE1-PLAN.md`: Phase 1 build order (seven steps), per-step files, tests and done criteria, working rules.
 - `docs/GOBBONET-REFERENCE.md`: pinned GobboNet commit, source map, excluded paths.
-- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-3 are implemented (see handover for open verification).
+- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-4 are implemented (see handover for open verification).
 - `docs/IMPLEMENTATION-HANDOVER.md`: unfinished parity working-tree changes, checks performed, remaining work and review risks for model handover; update or retire when superseded.
 - `docs/REUSE-LOG.md`: element-by-element GobboNet source/design attribution and Labbonet authorship boundaries (DR-003).
 - `docs/GOBBONET-PROVENANCE.json`: pinned-source hashes and exact reused CSS spans; keep synchronized with the reuse inventory.
@@ -26,7 +26,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `README.md`: public project summary; `.gitignore`: Go template from the initial GitHub commit.
 - `devlog.md`: implementation history (Devlog Loop); read before starting each step, add an entry when a step is done.
 - `docs/evidence/`: screenshots and verification records supporting acceptance tests.
-- `go.mod`, `cmd/`, `internal/` (including `internal/interchange`, card/snapshot parsing), `migrations/`: Phase 1 and parity backend source, built per `docs/PHASE1-PLAN.md`. `frontend/AGENTS.md` owns the browser source/presentation contracts; this file retains project architecture, provider/security and acceptance ownership.
+- `go.mod`, `cmd/`, `internal/` (including `internal/interchange`, card/snapshot parsing, and `internal/generate` detached jobs/limits), `migrations/`: Phase 1 and parity backend source, built per `docs/PHASE1-PLAN.md`. `frontend/AGENTS.md` owns the browser source/presentation contracts; this file retains project architecture, provider/security and acceptance ownership.
 
 ## Local Contracts
 

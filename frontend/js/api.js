@@ -89,32 +89,23 @@ export const api = {
   deleteFolder: (id) => request("DELETE", `/api/folders/${id}`),
 
   cancelGeneration: (id) => request("POST", `/api/generations/${id}/cancel`),
+  activeGeneration: (id) => request("GET", `/api/conversations/${id}/generation`),
   diagnostics: () => request("GET", "/api/diagnostics"),
   backup: () => request("POST", "/api/backup"),
 };
 
-// streamGenerate reads the SSE response of
-// POST /api/conversations/{id}/generate over fetch. EventSource can't
-// be used here: it only supports GET with no custom headers or body,
-// and this request needs both the X-Labbonet header and a JSON body.
-// onEvent is called once per decoded "data:" line (each a JSON object
-// per internal/api's sseEventPayload shape); the promise resolves once
-// the stream ends, however it ends.
-export async function streamGenerate(conversationId, body, onEvent, signal) {
-  const res = await fetch(`/api/conversations/${conversationId}/generate`, {
-    method: "POST",
-    headers: { [LABBONET_HEADER]: "1", "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal,
-  });
-
+// readEvents decodes an SSE response over fetch. EventSource can't be used: generate needs
+// a POST body and both calls need the X-Labbonet header. onEvent is called once per
+// decoded "data:" line (each a JSON object per internal/api's sseEventPayload shape); the
+// promise resolves once the stream ends, however it ends.
+async function readEvents(res, onEvent) {
   if (res.status === 401) {
     showReauthBanner();
     throw new ApiError(401, "Session expired. Reopen the launch URL printed at startup.");
   }
   if (!res.ok || !res.body) {
     const text = (await res.text().catch(() => "")).trim();
-    throw new ApiError(res.status, text || `generate failed with status ${res.status}`);
+    throw new ApiError(res.status, text || `stream failed with status ${res.status}`);
   }
 
   const reader = res.body.getReader();
@@ -136,6 +127,27 @@ export async function streamGenerate(conversationId, body, onEvent, signal) {
       onEvent(JSON.parse(json));
     }
   }
+}
+
+// streamGenerate starts a reply: POST /api/conversations/{id}/generate. The reply runs as a
+// detached job on the server, so aborting this fetch only stops watching it; re-attach with
+// attachGeneration. Events: snapshot, start, delta, usage, timings, done, end.
+export async function streamGenerate(conversationId, body, onEvent, signal) {
+  const res = await fetch(`/api/conversations/${conversationId}/generate`, {
+    method: "POST",
+    headers: { [LABBONET_HEADER]: "1", "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal,
+  });
+  await readEvents(res, onEvent);
+}
+
+// attachGeneration watches a running (or just finished) reply. The first event is a
+// snapshot of the text so far; a 404 means the server no longer holds the job and the
+// stored message is the record.
+export async function attachGeneration(generationId, onEvent, signal) {
+  const res = await fetch(`/api/generations/${generationId}/events`, { headers: { [LABBONET_HEADER]: "1" }, signal });
+  await readEvents(res, onEvent);
 }
 
 // Binary-safe helpers for DATA (import/export). Requests carry the same

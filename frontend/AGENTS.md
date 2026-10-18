@@ -11,7 +11,7 @@ Phase 1 browser interface and the owner-directed GobboNet presentation adaptatio
 - `index.html`, `app.js`: shell, navigation, health and shared controls.
 - `css/`: pinned GobboNet presentation files and extracted components, with reuse notices.
 - `app.css`: Labbonet integration and provider-specific presentation.
-- `js/`: API/SSE client, conversation sidebar (folders, pins, tags, drag order, content search), chat (message actions, variants, branch-aware generation), cast, DATA dialog (`data.js`), form dialogs (`dialogs.js`), models/endpoints, diagnostics and safe rendering.
+- `js/`: API/SSE client, conversation sidebar (folders, pins, tags, drag order, content search), chat (message actions, variants, branch-aware generation), cast, DATA dialog (`data.js`), form dialogs (`dialogs.js`), chat tools (`tools.js`: code Copy/Save, source toggle, text attachments, reply limits, scroll follow), models/endpoints, diagnostics and safe rendering.
 - `vendor/`: pinned renderer/sanitizer, licenses and hash inventory.
 - `tests/`: development-only render checks; not embedded.
 - `embed.go`: shipped assets. Backend, storage, protocol and acceptance records remain parent-owned.
@@ -24,6 +24,7 @@ Phase 1 browser interface and the owner-directed GobboNet presentation adaptatio
 - Model output and reasoning go through `renderMarkdown`. No raw untrusted HTML, inline handlers/styles, eval, remote scripts or font loads. Keep the parent security model/CSP.
 - Send through the backend API with its session/header controls. Keep endpoint/privacy/model state visible and retain the unloaded-model confirmation. Never perform provider model management from the browser.
 - Branch edits (edit, switch, delete) and sends echo the conversation `revision` and must reload on `409`; use `dialogs.js`, not `prompt()`, for text input. Message actions stay hidden while a reply streams.
+- Replies are detached server jobs: aborting a stream only stops watching. Stop must go through the cancel API; a reply still running when a thread opens is re-attached (`attachGeneration`). Attachment, reply-cap and reasoning-limit values are range-checked by the server; per-viewer prefs live in `localStorage` guarded by try/catch. Attachment, code and message text are only ever set via `textContent`/Blob.
 - Deferred or excluded controls must not imply working features; currently MODS/SCHED are disabled; CHARS provides the cast library/editor and DATA provides backup, import/export and typed-confirmation reset. Provider changes must finish before Send is enabled.
 
 ## Work Guidance

@@ -1,6 +1,6 @@
 # GobboNet application parity plan
 
-**Status:** owner authorized implementation with “implement this plan” (2026-10-17); milestone 1 committed (1a7e106); milestone 2 (card interchange and DATA) and milestone 3 (conversation tree, variants, organization) implemented; browser upload via real file chooser and several milestone 3 UI paths unverified (see handover). Attribution inventory audited 2026-10-18. See `IMPLEMENTATION-HANDOVER.md` for working-tree status.
+**Status:** owner authorized implementation with “implement this plan” (2026-10-17); milestone 1 committed (1a7e106); milestone 2 (card interchange and DATA) and milestone 3 (conversation tree, variants, organization) and milestone 4 (detached generation, chat tools) implemented; browser upload via real file chooser and several milestone 3 UI paths unverified (see handover). Attribution inventory audited 2026-10-18. See `IMPLEMENTATION-HANDOVER.md` for working-tree status.
 **Requested:** 2026-10-17, "Add full functionality from Gabbonet to Labbonet."
 **Reference:** GobboNet 1.7.6, commit `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`.
 
@@ -27,7 +27,7 @@ Source observations were checked through the GitHub file API at the exact pin. P
 | Card interchange | `16-card-io.js` | Missing | Native JSON and Tavern V1/V2/V3 JSON/PNG import; CHARX/ZIP import; V3 PNG with V2 backfill and sharing ZIP export; explicit compatibility report and inert unsupported extension data |
 | Thread organization | `09-threads.js`, `12-render.js` | Create/delete/rename/title search | Pins, folders, tags, content search, manual ordering and drag/drop, per-thread cast-aware export; persistence after reload |
 | Message history | `09-threads.js`, `10-chat.js` | Append-only chat | Edit/delete/copy, reroll, user and assistant variants, variant-specific continuation, fork at any turn and branch navigation; preserve provenance |
-| Generation lifecycle | `03-generation.js`, `10-chat.js` | SSE, Stop, partial persistence; disconnect interrupts | Detached backend jobs, reconnect/replay after navigation, explicit cancel, timer, stream/completed delivery, sentence-aware reply cap, bounded reasoning watchdog; provider-aware reasoning parsing |
+| Generation lifecycle | `03-generation.js`, `10-chat.js` | Detached jobs, re-attach with snapshot, Stop, partial persistence, restart recovery (milestone 4) | Detached backend jobs, reconnect/replay after navigation, explicit cancel, timer, stream/completed delivery, sentence-aware reply cap, bounded reasoning watchdog; provider-aware reasoning parsing |
 | Rendering and files | `18-utils.js`, `13-dashboard.js` | Sanitized Markdown and collapsible reasoning | Code highlighting/copy, math/source toggle, generated-file Save, text-file attachments with click/drop/remove; keep untrusted text inert |
 | Scroll and editor behavior | `14-scroll.js`, `22-scheduler.js` | Basic streaming scroll | Follow/unfollow modes, jump-to-bottom, scroll anchors, avatar scale, sticky editor and unsaved-change protection |
 | Lore and summarization | `07-prompt.js`, `13-dashboard.js` | Missing | Authored lore plus separate running summary, independent compression-model selection, token-aware archival, failure/gap reporting, summary history/inspector/copy/edit |

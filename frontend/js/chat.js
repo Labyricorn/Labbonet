@@ -9,7 +9,8 @@
 // variant-nav presentation classes; branch/revision behavior is Labbonet-original.
 // Element-by-element source and authorship boundary: docs/REUSE-LOG.md and root NOTICE.md.
 import { mountCastControls, decorateSpeaker, markDialog } from "./cast.js";
-import { api, streamGenerate } from "./api.js";
+import { api, streamGenerate, attachGeneration } from "./api.js";
+import { loadPrefs, savePrefs, decorateCode, sourceToggle, addAttachments, createFollow } from "./tools.js";
 import { renderMarkdown } from "./render.js";
 import { mountModelSelector } from "./models.js";
 
@@ -79,11 +80,74 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   stopBtn.hidden = true;
   composer.append(textarea, sendBtn, stopBtn);
 
+  // Chat tools (milestone 4): text-file attachments, reply limits, scroll follow, run status.
+  const prefs = loadPrefs();
+  const attachments = [];
+  const tools = document.createElement("div");
+  tools.className = "chat-tools";
+  const fileInput = document.createElement("input");
+  fileInput.type = "file"; fileInput.multiple = true; fileInput.hidden = true;
+  fileInput.setAttribute("aria-label", "Attach text files");
+  const attachBtn = actionButton("Attach", "tool-btn", "Attach text files (or drop them on the message box)", () => fileInput.click());
+  const chips = document.createElement("span"); chips.className = "attach-chips";
+  const limitSelect = (label, title, key, values) => {
+    const wrap = document.createElement("label"); wrap.className = "tool-field"; wrap.title = title;
+    const select = document.createElement("select");
+    for (const value of values) {
+      const option = document.createElement("option");
+      option.value = String(value); option.textContent = value === 0 ? "off" : value.toLocaleString();
+      select.append(option);
+    }
+    const stored = String(prefs[key]);
+    if (![...select.options].some((o) => o.value === stored)) prefs[key] = 0;
+    select.value = String(prefs[key]);
+    select.addEventListener("change", () => { prefs[key] = Number(select.value); savePrefs(prefs); });
+    wrap.append(`${label} `, select);
+    return wrap;
+  };
+  const followLabel = document.createElement("label"); followLabel.className = "tool-field";
+  followLabel.title = "Keep the newest text in view while a reply streams; scrolling up pauses it";
+  const followBox = document.createElement("input"); followBox.type = "checkbox"; followBox.checked = prefs.follow;
+  followBox.addEventListener("change", () => { prefs.follow = followBox.checked; savePrefs(prefs); });
+  followLabel.append(followBox, " follow");
+  const runStatus = document.createElement("span"); runStatus.className = "gen-status"; runStatus.setAttribute("aria-live", "polite");
+  tools.append(attachBtn, fileInput, chips,
+    limitSelect("reply cap", "End a reply at the first sentence end after this many characters", "replyCap", [0, 500, 1000, 2000, 4000]),
+    limitSelect("reasoning limit", "Stop a reply whose reasoning grows past this many characters", "reasoningLimit", [0, 2000, 8000, 32000]),
+    followLabel, runStatus);
+
+  function renderChips() {
+    chips.replaceChildren(...attachments.map((file, index) => {
+      const chip = document.createElement("span"); chip.className = "attach-chip";
+      const name = document.createElement("span"); name.textContent = `${file.name} (${Math.ceil(file.content.length / 1024)} KB)`;
+      const remove = document.createElement("button"); remove.type = "button"; remove.className = "attach-remove";
+      remove.textContent = "×"; remove.title = `Remove ${file.name}`; remove.setAttribute("aria-label", `Remove ${file.name}`);
+      remove.addEventListener("click", () => { attachments.splice(index, 1); renderChips(); });
+      chip.append(name, remove);
+      return chip;
+    }));
+  }
+  async function takeFiles(files) {
+    const problems = await addAttachments(attachments, [...files]);
+    renderChips();
+    if (problems.length) alert(problems.join("\n"));
+  }
+  fileInput.addEventListener("change", () => { takeFiles(fileInput.files).finally(() => { fileInput.value = ""; }); });
+  composer.addEventListener("dragover", (e) => { if (e.dataTransfer?.types.includes("Files")) { e.preventDefault(); composer.classList.add("drop-target"); } });
+  composer.addEventListener("dragleave", () => composer.classList.remove("drop-target"));
+  composer.addEventListener("drop", (e) => {
+    if (!e.dataTransfer?.files.length) return;
+    e.preventDefault(); composer.classList.remove("drop-target");
+    takeFiles(e.dataTransfer.files);
+  });
+
   const castSlot = document.createElement("div"); castSlot.className = "cast-slot";
   const threadWrap = document.createElement("div"); threadWrap.className = "cast-thread-wrap";
   const background = document.createElement("img"); background.className = "cast-background"; background.alt = ""; background.hidden = true;
-  threadWrap.append(background, thread);
-  panel.append(castSlot, threadWrap, composer);
+  const jumpBtn = actionButton("↓ Latest", "jump-bottom", "Jump to the newest message", () => {}); jumpBtn.hidden = true;
+  threadWrap.append(background, thread, jumpBtn);
+  panel.append(castSlot, threadWrap, tools, composer);
+  const follow = createFollow(thread, jumpBtn, () => prefs.follow);
 
   const conv = await api.getConversation(conversationId);
   titleInput.value = conv.title;
@@ -156,6 +220,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     if (msg.variants?.length > 1) bar.append(variantNav(msg));
     const copy = actionButton("Copy", "btn-copy", "Copy this message", () => copyText(msg.content, copy));
     bar.append(copy);
+    bar.append(sourceToggle(el.querySelector(".message-content"), msg.content, () => renderBody(msg)));
     bar.append(actionButton("Edit", "btn-edit", "Save an edited copy as a new variant", () => startEdit(msg, el)));
     if (msg.role === "assistant" && msg.parent_id) {
       bar.append(actionButton("Reroll", "btn-reroll", "Generate another reply to the same message", () => regenerate(msg.parent_id)));
@@ -210,6 +275,13 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     area.focus();
   }
 
+  function renderBody(msg) {
+    const node = renderMarkdown(msg.content);
+    markDialog(node);
+    decorateCode(node);
+    return node;
+  }
+
   function renderMessageNode(msg) {
     const el = document.createElement("div");
     el.className = `message message-${msg.role} status-${msg.status || "complete"}`;
@@ -240,8 +312,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
 
     const content = document.createElement("div");
     content.className = "message-content";
-    content.appendChild(renderMarkdown(msg.content));
-    markDialog(content);
+    content.appendChild(renderBody(msg));
     el.appendChild(content);
 
     if (msg.status && msg.status !== "complete") {
@@ -268,7 +339,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
       thread.appendChild(renderMessageNode(msg));
       if (msg.id === editing) startEdit(msg, thread.lastChild);
     }
-    thread.scrollTop = thread.scrollHeight;
+    follow?.update(true);
   }
 
   renderThread();
@@ -308,17 +379,120 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
 
   let currentGenerationId = null;
   let abortController = null;
+  let timer = null;
 
-  // generate streams one reply. body is either {content} (a new user turn appended to the
-  // visible branch) or {regenerate_parent_id} (a new reply variant to that user message).
-  async function generate(body, confirmLoad) {
-    sendBtn.disabled = true;
-    streaming = true;
-    castControls.setBusy(true);
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const leaving = () => lifecycle.signal.aborted;
+  // Navigating to another thread only stops watching: the reply keeps running on the server
+  // and is re-attached when this thread is opened again.
+  lifecycle.signal.addEventListener("abort", () => { clearInterval(timer); abortController?.abort(); });
+
+  function startTimer() {
+    const started = Date.now();
+    runStatus.textContent = "generating… 0s";
+    timer = setInterval(() => { runStatus.textContent = `generating… ${Math.floor((Date.now() - started) / 1000)}s`; }, 1000);
+  }
+
+  function endNote(end) {
+    if (!end?.ended) return "";
+    if (end.finish === "reply_cap") return "reply cap reached";
+    if (end.errorKind === "reasoning_limit") return "reasoning limit reached; reply stopped";
+    if (end.status === "cancelled") return "stopped";
+    if (end.status === "interrupted") return "interrupted";
+    if (end.status === "error") return `error: ${end.errorKind || "failed"}`;
+    return "";
+  }
+
+  function setBusy(on) {
+    streaming = on;
+    sendBtn.disabled = on || !currentModelId;
+    castControls.setBusy(on);
     const modelSelect = modelSlot.querySelector("select");
-    if (modelSelect) modelSelect.disabled = true;
-    stopBtn.hidden = false;
+    if (modelSelect) modelSelect.disabled = on;
+    stopBtn.hidden = !on;
+  }
+
+  // The reply being shown while it streams. consume() fills it from either a fresh POST or
+  // a re-attached event stream.
+  let live = null;
+  function refreshLive() {
+    const node = renderMessageNode(live.msg);
+    live.el.replaceWith(node);
+    live.el = node;
+    follow.update();
+  }
+
+  // consume reads one event stream into the live bubble and reports how it ended. A stream
+  // that stops without an "end" event (a dropped connection) leaves ended false so the
+  // caller can re-attach.
+  async function consume(open) {
+    const outcome = { ended: false };
     abortController = new AbortController();
+    try {
+      await open((ev) => {
+        if (ev.generation_id) currentGenerationId = ev.generation_id;
+        if (ev.kind === "snapshot") {
+          live.msg.content = ev.content || "";
+          live.msg.reasoning = ev.reasoning || "";
+          refreshLive();
+        } else if (ev.kind === "start") {
+          api.getConversation(conversationId).then((fresh) => {
+            const last = fresh.messages.at(-1);
+            if (last && live) {
+              live.msg.speaker = last.speaker;
+              decorateSpeaker(live.el, live.msg.speaker, "assistant");
+            }
+            const before = fresh.messages.at(-2);
+            if (live?.userEl && before) decorateSpeaker(live.userEl, before.speaker, "user");
+          }).catch(() => {});
+        } else if (ev.kind === "delta") {
+          live.msg.content += ev.content || "";
+          live.msg.reasoning += ev.reasoning || "";
+          refreshLive();
+        } else if (ev.kind === "end") {
+          Object.assign(outcome, { ended: true, status: ev.status, errorKind: ev.error_kind, finish: ev.finish_reason });
+        }
+      }, abortController.signal);
+    } catch (err) {
+      if (err.name === "AbortError") return outcome;
+      throw err;
+    }
+    return outcome;
+  }
+
+  // After a stream stops early, re-attach while the server still reports the reply running.
+  async function reattach(outcome) {
+    for (let attempt = 0; !outcome.ended && !leaving() && attempt < 30; attempt++) {
+      const active = await api.activeGeneration(conversationId).catch(() => null);
+      if (!active?.active) break;
+      try {
+        outcome = await consume((handler, signal) => attachGeneration(active.generation_id, handler, signal));
+      } catch {
+        await sleep(500);
+      }
+      if (!outcome.ended) await sleep(300);
+    }
+    return outcome;
+  }
+
+  async function settle(outcome) {
+    if (leaving()) return;
+    clearInterval(timer);
+    runStatus.textContent = endNote(outcome);
+    setBusy(false);
+    currentGenerationId = null;
+    live = null;
+    try { await reload(); } catch {
+      // The conversation may have just been deleted from elsewhere;
+      // leave the last rendered state as is.
+    }
+  }
+
+  // generate starts one reply. body is either {content, attachments} (a new user turn appended to
+  // the visible branch) or {regenerate_parent_id} (a new reply variant to that user message).
+  async function generate(body, confirmLoad) {
+    setBusy(true);
+    startTimer();
 
     const regenerating = body.regenerate_parent_id !== undefined;
     let shown = messages;
@@ -329,70 +503,62 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     renderThread(shown);
     let userEl = null;
     if (!regenerating) {
-      userEl = renderMessageNode({ role: "user", content: body.content, status: "complete", speaker: activePersona });
+      const names = (body.attachments || []).map((a) => `\n\n[Attached file: ${a.name}]`).join("");
+      userEl = renderMessageNode({ role: "user", content: body.content + names, status: "complete", speaker: activePersona });
       thread.appendChild(userEl);
     }
-    const assistantMsg = { role: "assistant", content: "", reasoning: "", status: "streaming", speaker: activeCharacter };
-    let assistantEl = renderMessageNode(assistantMsg);
-    thread.appendChild(assistantEl);
-    thread.scrollTop = thread.scrollHeight;
+    const msg = { role: "assistant", content: "", reasoning: "", status: "streaming", speaker: activeCharacter };
+    live = { msg, el: renderMessageNode(msg), userEl };
+    thread.appendChild(live.el);
+    follow.update(true);
 
+    let outcome = { ended: false };
     try {
-      await streamGenerate(
-        conversationId,
-        { ...body, revision, confirm_load: confirmLoad },
-        (ev) => {
-          if (ev.generation_id) currentGenerationId = ev.generation_id;
-          if (ev.kind === "start") {
-            api.getConversation(conversationId).then(fresh => {
-              const last = fresh.messages.at(-1);
-              if (last) {
-                assistantMsg.speaker = last.speaker;
-                decorateSpeaker(assistantEl, assistantMsg.speaker, "assistant");
-              }
-              const before = fresh.messages.at(-2);
-              if (userEl && before) decorateSpeaker(userEl, before.speaker, "user");
-            }).catch(() => {});
-          }
-          if (ev.kind === "delta") {
-            assistantMsg.content += ev.content || "";
-            assistantMsg.reasoning += ev.reasoning || "";
-            const refreshed = renderMessageNode(assistantMsg);
-            assistantEl.replaceWith(refreshed);
-            assistantEl = refreshed;
-            thread.scrollTop = thread.scrollHeight;
-          }
-        },
-        abortController.signal,
-      );
+      const payload = {
+        ...body, revision, confirm_load: confirmLoad,
+        max_reply_chars: prefs.replyCap || undefined, reasoning_limit_chars: prefs.reasoningLimit || undefined,
+      };
+      outcome = await reattach(await consume((handler, signal) => streamGenerate(conversationId, payload, handler, signal)));
     } catch (err) {
+      if (body.attachments?.length) { attachments.unshift(...body.attachments); renderChips(); }
       if (err.status === 409 && /not.loaded/i.test(err.message) && !confirmLoad) {
         const proceed = confirm(
           `Model "${currentModelId}" is not loaded. Loading it now may take a while and could evict ` +
             "another client's model from memory. Load it and continue?",
         );
         if (proceed) {
-          streaming = false;
-          sendBtn.disabled = false;
-          stopBtn.hidden = true;
+          clearInterval(timer);
+          setBusy(false);
+          if (body.attachments?.length) attachments.splice(0);
+          renderChips();
           await generate(body, true);
           return;
         }
-      } else if (err.name !== "AbortError") {
+      } else if (!leaving()) {
         alert(err.status === 409 ? `${err.message}. The thread was reloaded.` : `Generation failed: ${err.message}`);
       }
-    } finally {
-      streaming = false;
-      sendBtn.disabled = !currentModelId;
-      castControls.setBusy(false);
-      if (modelSelect) modelSelect.disabled = false;
-      stopBtn.hidden = true;
-      currentGenerationId = null;
-      try { await reload(); } catch {
-        // The conversation may have just been deleted from elsewhere;
-        // leave the last rendered state as is.
-      }
     }
+    await settle(outcome);
+  }
+
+  // resume re-attaches to a reply that is still running on the server (the tab was closed or
+  // the thread was left while it generated).
+  async function resume(generationId) {
+    const partial = messages.at(-1);
+    if (!partial || partial.status !== "streaming") return;
+    setBusy(true);
+    startTimer();
+    renderThread(messages.slice(0, -1));
+    live = { msg: { ...partial, content: partial.content || "", reasoning: partial.reasoning || "" }, el: null, userEl: null };
+    live.el = renderMessageNode(live.msg);
+    thread.appendChild(live.el);
+    follow.update(true);
+    let outcome = { ended: false };
+    try {
+      outcome = await consume((handler, signal) => attachGeneration(generationId, handler, signal));
+      outcome = await reattach(outcome);
+    } catch { /* the stored message is the record; settle reloads it */ }
+    await settle(outcome);
   }
 
   function regenerate(parentId) {
@@ -409,7 +575,9 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     const content = textarea.value.trim();
     if (!content) return;
     textarea.value = "";
-    generate({ content }, false);
+    const sent = attachments.splice(0);
+    renderChips();
+    generate(sent.length ? { content, attachments: sent } : { content }, false);
   });
 
   textarea.addEventListener("keydown", (e) => {
@@ -419,17 +587,21 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     }
   });
 
-  // A-C4: Stop cancels the running generation through the API (marked
-  // "cancelled"), not just the browser's own fetch (which alone would
-  // only ever produce "interrupted").
+  // A-C4: Stop cancels the running generation through the API (marked "cancelled"). The
+  // reply is a detached job, so aborting the browser's fetch alone would not stop it; only
+  // when the server does not know the job is the stream abandoned locally.
   stopBtn.addEventListener("click", async () => {
+    let cancelled = false;
     if (currentGenerationId) {
       try {
-        await api.cancelGeneration(currentGenerationId);
+        cancelled = (await api.cancelGeneration(currentGenerationId)).cancelled;
       } catch {
-        // Best effort; aborting the fetch below still stops the UI.
+        // Best effort; aborting the watch below still stops the UI.
       }
     }
-    abortController?.abort();
+    if (!cancelled) abortController?.abort();
   });
+
+  const running = await api.activeGeneration(conversationId).catch(() => null);
+  if (running?.active && !leaving()) resume(running.generation_id);
 }

@@ -141,9 +141,17 @@ func run(args []string) error {
 
 	registry := generate.NewRegistry()
 	runner := &generate.Runner{Store: st, Protector: protector, Egress: egressClient, Slots: generate.NewSlots(), Registry: registry}
-	gen := &api.Generate{Runner: runner}
+	jobs := generate.NewJobs(runner)
+	if n, err := st.RecoverInterrupted(context.Background()); err != nil {
+		return fmt.Errorf("recover interrupted generations: %w", err)
+	} else if n > 0 {
+		fmt.Printf("Marked %d reply(ies) left streaming by the previous run as interrupted.\n", n)
+	}
+	gen := &api.Generate{Runner: runner, Jobs: jobs}
 	srv.Handle("POST /api/conversations/{id}/generate", http.HandlerFunc(gen.Generate))
 	srv.Handle("POST /api/generations/{id}/cancel", http.HandlerFunc(gen.Cancel))
+	srv.Handle("GET /api/generations/{id}/events", http.HandlerFunc(gen.Events))
+	srv.Handle("GET /api/conversations/{id}/generation", http.HandlerFunc(gen.Active))
 
 	diagnostics := &api.Diagnostics{Store: st}
 	srv.Handle("GET /api/diagnostics", http.HandlerFunc(diagnostics.List))
@@ -181,6 +189,10 @@ func run(args []string) error {
 	// streaming request would otherwise hold the shutdown open until
 	// the upstream provider itself finishes or the client disconnects.
 	registry.CancelAll()
+	// Let cancelled jobs store their partial text before the database closes.
+	waitCtx, waitCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	jobs.Wait(waitCtx)
+	waitCancel()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
