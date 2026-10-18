@@ -1,0 +1,18 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 2rem;
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+#status.ok {
+  color: #0a7a2a;
+}
+
+#status.error {
+  color: #b00020;
+}
