@@ -13,7 +13,7 @@
 - **Strata is an OpenAI-compatible inference server.** The standard OpenAI adapter is sufficient. No dedicated Strata adapter is needed for chat.
 - **Source:** https://github.com/Niko1221/Strata (MIT license, Python server in `serve/`, native engine in `src/`). Docs read: `README.md`, `docs/DETAILS.md` (first ~200k of 216k chars), `docs/MODELS.md`, `SECURITY.md`, and the `serve/` file listing.
 - **Live instance:** `http://127.0.0.1:8080` on this machine answered as `"service": "strata"` (Python `BaseHTTP/0.6`, no API key set).
-- **The model is not "Qwen 111B"** (the owner confirmed this instance is the intended host, so the brief's label is superseded). The instance serves `qwen3.8-flash-next-unsloth-ud-iq4_xs`, context 32768. Strata's docs never give a parameter count. The "111" in the docs is a download size (UD-Q4_K_XL is about 111 GB). The brief's "Qwen 111B" label should be corrected (see section 9).
+- **The model is not "Qwen 111B"** (the owner confirmed this instance is the intended host, so the brief's label is superseded). The instance serves `qwen3.8-flash-next-unsloth-ud-iq4_xs`, context 32768. Strata's docs never give a parameter count. The "111" in the docs is a download size (UD-Q4_K_XL is about 111 GB). The brief's "Qwen 111B" label has been corrected (2026-10-18).
 - **Gaps for the adapter:** no `/v1/embeddings`, no documented `stream_options`, and no CORS by default. The last one means a backend proxy is required (supports DR-002 Option B).
 
 ## 2. Verification method
@@ -158,7 +158,7 @@ Meaning:
 ## 9. Impact on Labbonet documents
 
 1. **Provider type:** register Strata as `openai-compatible` with a Strata detection hint (`/health` returns `service: "strata"`). This is DR-005 Option A.
-2. **Model label:** the proposal calls the model "Qwen 111B". The server reports `qwen3.8-flash-next-unsloth-ud-iq4_xs`. The adapter should display the server-reported ID. The project owner should confirm whether the intended host is a different Strata instance (for example a LAN machine with a larger model) than the local one probed here.
+2. **Model label:** the proposal calls the model "Qwen 111B". The server reports `qwen3.8-flash-next-unsloth-ud-iq4_xs`. The adapter should display the server-reported ID. The owner confirmed (2026-10-18) that the local instance probed here is the intended host, and the brief now uses the server-reported model.
 3. **Capability profile for Strata:** chat yes; streaming yes; reasoning field `reasoning_content`; tools yes; vision only if enabled at setup; **embeddings no**; context from `/v1/models` `meta.n_ctx`; concurrency 1.
 4. **RAG (DR-013):** Strata cannot be the embedding provider. Use another endpoint (LM Studio, Ollama, or a dedicated embedder).
 5. **Summarization workflows (DR-009):** with concurrency 1, a summarization job sent to the same Strata instance queues behind chat. This supports the brief's plan of sending summaries to a separate endpoint.
