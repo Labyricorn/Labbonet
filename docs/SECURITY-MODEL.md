@@ -1,0 +1,126 @@
+# Labbonet Security Model
+
+**Version:** 0.1 (2026-10-18)
+**Status:** Draft threat model for Phase 1 (DR-012 "threat model completed" is met only after owner review). Scope: one user, one Windows machine, backend on loopback, providers on the local machine or a trusted LAN.
+
+---
+
+## 1. Assets
+
+| Asset | Where it lives |
+|---|---|
+| Conversation content (prompts, replies, reasoning) | SQLite, browser memory, in transit to providers |
+| Provider credentials (API keys, bearer tokens) | DPAPI-protected blobs in SQLite; backend memory while in use |
+| Endpoint configuration and privacy classification | SQLite |
+| Labbonet session token | Backend memory, browser cookie |
+| Provider resources (loaded models, GPU memory, request slots) | The provider hosts, shared with other clients |
+| Files outside the data directory | User's disk (must never be touched) |
+
+## 2. Actors
+
+| Actor | Trust | Main concern |
+|---|---|---|
+| The local user | Trusted | Mistakes: sending private data to the wrong endpoint, losing history |
+| Any web page open in the user's browser | **Untrusted** | Calling the loopback backend (CSRF, DNS rebinding) to read conversations, spend provider resources or register an attacker endpoint |
+| Other local processes and other OS users | Untrusted | Loopback is reachable by every local process |
+| Model output, imported content (later: cards, lorebooks, web results) | Untrusted data | HTML/script injection, prompt injection redirecting requests |
+| Hosts on the LAN | Partly trusted | Plain-HTTP traffic to the LM Studio host can be read or altered on the network |
+| Provider servers | Trusted for inference only | Must not receive another endpoint's credentials or unapproved data |
+
+## 3. Trust boundaries
+
+1. Browser page to Labbonet backend (loopback HTTP).
+2. Backend to each provider endpoint (loopback or LAN HTTP).
+3. Backend to disk (data directory only).
+4. Rendered content to the DOM (model output is data, never markup or code).
+
+## 4. Controls: browser to backend
+
+| Control | Rule | Stops |
+|---|---|---|
+| Loopback bind | Listen on `127.0.0.1:4815` only; Phase 1 rejects any other `--host` | LAN exposure (DR-010 A) |
+| Host allowlist | Every request must have `Host` equal to `127.0.0.1:<port>` or `localhost:<port>`; otherwise 421 | DNS rebinding |
+| Origin check | Every `/api` request: if `Origin` is present it must equal the backend's own origin; `Sec-Fetch-Site`, when present, must be `same-origin` | Cross-site requests |
+| Custom header | Every `/api` request must carry `X-Labbonet: 1`. Cross-origin pages cannot add it without a CORS preflight, and the backend never answers preflights with CORS headers | CSRF via simple requests |
+| No CORS | The backend never emits `Access-Control-Allow-*` headers | Cross-origin reads |
+| Session token | At start the backend generates a 256-bit random token and prints a launch URL with a one-time code. Visiting it sets an `HttpOnly; SameSite=Strict; Path=/` cookie and redirects to `/`. The code is single-use and expires after 2 minutes. All `/api` requests need the cookie | Other local processes and pages without the token |
+| Security headers | `Content-Security-Policy` (below), `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin` | Injection, leaks, framing |
+
+Phase 1 CSP:
+
+```text
+default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:;
+connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'
+```
+
+Phase 2 (WebLLM) will need `'wasm-unsafe-eval'` in `script-src`, `worker-src 'self'`, and `connect-src` for the approved model-artifact host. That change must be recorded here when it is made.
+
+## 5. Controls: backend to providers (DR-012)
+
+- **Explicit registration only.** The backend contacts a host only if it is a registered, enabled endpoint. Registering or editing an endpoint is a privileged API action (session required).
+- **Fixed paths.** Requests are `base_url` plus one of the paths listed in `PROVIDER-SPEC.md`. User input, model output and imported content never form any part of a URL. Model IDs go in JSON bodies only.
+- **Schemes:** `http` and `https` only. No credentials in URLs (`user:pass@` is rejected).
+- **No redirects.** The egress client refuses every redirect.
+- **Dial guard.** The address is resolved at connect time and must match the endpoint's privacy class: `local` means loopback only, `lan` means RFC 1918, link-local or ULA only, and `external` means a public address and must be acknowledged at registration. If DNS later resolves into a different class, the request is refused. Cloud metadata addresses (`169.254.169.254`, `fd00:ec2::254`) are always refused.
+- **Limits.** Connect timeout, first-byte timeout (long, for cold loads), idle-chunk timeout, and maximum response sizes for non-streaming calls (for example 8 MiB for model lists).
+- **Credential scoping.** A credential is stored per endpoint and attached only to requests to that endpoint's ID. It is never copied to another endpoint, never sent to the browser (the API reports only whether it is set), and never written to logs, diagnostics, exports or backups.
+- **Privacy visibility.** Each endpoint shows its class (local machine, trusted LAN, external). The conversation view shows which endpoint will receive the next message. There is no automatic fallback (DR-014 deferred), so data never moves to a different endpoint without a user selection.
+- **Control-plane calls are forbidden.** Labbonet never calls model load, unload, VRAM, settings or MCP endpoints (`Strata_Protocol.md` section 4).
+- **Implicit loading needs user confirmation.** LM Studio loads a model on first request by default (JIT) and may auto-evict another client's model (`PROVIDER-SPEC.md` section 6). Sending to a model whose reported state is `not-loaded` requires an explicit confirmation in the UI. That confirmation counts as the explicit user command required by proposal section 6.3.
+
+### 5.1 Plain-HTTP LAN endpoint
+
+The LM Studio host `10.138.11.11:1234` is plain HTTP. Conversation content, and any token if authentication is enabled, crosses the LAN in clear text. It is classified `lan` (trusted LAN), and the UI warns when a credential is set on a plain-HTTP endpoint. Use it only on a trusted network, or through a tunnel the user sets up.
+
+### 5.2 Observed third-party exposure (outside Labbonet's control)
+
+- LM Studio on `10.138.11.11:1234` returned `Access-Control-Allow-Origin: *` and needed no authentication (observed 2026-10-18). Any web page in any browser on the LAN can therefore call it, and its JIT loading lets such a page load models. Labbonet does not need CORS on LM Studio, since all traffic goes through the backend. **Recommendation to the owner:** turn off "Enable CORS" and turn on "Require Authentication" in LM Studio's server settings.
+- Strata on `127.0.0.1:8080` has no API key; it blocks foreign `Origin` headers but accepts any local process.
+
+## 6. Controls: content and rendering
+
+- Model output, reasoning text and (later) imported content are rendered as Markdown with raw HTML disabled, then sanitized. Links get `rel="noopener noreferrer"` and open in a new tab only on user click.
+- No `innerHTML` with unsanitized strings, no `eval`, no inline scripts or styles (CSP enforces this).
+- Remote images in model output are not fetched (CSP `img-src` blocks them).
+
+## 7. Controls: disk
+
+- All writes go inside the data directory. Paths are built from fixed names, never from user or model input.
+- No uninstall routine, no recursive delete outside the data directory, and no deletion of anything Labbonet did not create.
+- Logs contain request metadata only: no message content and no `Authorization` header values.
+
+## 8. Supply chain
+
+- Go dependencies pinned in `go.sum`. Frontend dependencies vendored with their SHA-256 recorded in `frontend/vendor/VENDOR.md`.
+- No runtime script loading from CDNs or remote URLs.
+- Dependency licenses recorded in `ARCHITECTURE.md` section 8.
+
+## 9. Out of scope for Phase 1
+
+- Serving Labbonet to other devices (DR-010 B: authenticated HTTPS LAN, later).
+- Multiple OS users sharing one data directory.
+- Protection against malware already running as the same OS user (DPAPI current-user scope does not protect against it).
+
+## 10. Negative security tests (Phase 1)
+
+Each one is an automated test in `tests/` unless marked manual.
+
+| # | Test | Expected |
+|---|---|---|
+| S1 | Request with `Host: evil.example:4815` | 421, no handler runs |
+| S2 | POST from `Origin: https://evil.example` with session cookie | 403 |
+| S3 | `/api` request without `X-Labbonet` header | 403 |
+| S4 | CORS preflight to `/api/*` | No `Access-Control-Allow-*` headers |
+| S5 | `/api` request without the session cookie | 401 |
+| S6 | Reuse of a spent or expired launch code | Rejected |
+| S7 | Start with `--host 0.0.0.0` | Refuses to start |
+| S8 | Endpoint whose server redirects to another host | Redirect refused, error shown |
+| S9 | `local` endpoint whose name resolves to a non-loopback address | Refused by dial guard |
+| S10 | Endpoint URL `http://169.254.169.254/` | Refused at registration |
+| S11 | Credential set on endpoint A, request to endpoint B | B request has no `Authorization` header (checked with a capture server) |
+| S12 | `GET /api/endpoints` after setting a credential | Response has `credential_set: true`, no secret |
+| S13 | Logs, diagnostics, backup file after a run with a credential | Secret string not present (byte search) |
+| S14 | Model reply containing `<script>`, `<img src=x onerror=...>`, `javascript:` link | Rendered inert; no script runs (browser test) |
+| S15 | Chat to an LM Studio model in state `not-loaded` without confirmation | Request not sent |
+| S16 | Search the binary and source for firewall, `netsh`, PowerShell and process-kill calls | None found (manual or scripted check) |
+| S17 | Run as a standard user without elevation | All Phase 1 features work (manual) |

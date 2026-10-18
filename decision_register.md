@@ -2,10 +2,10 @@
 
 **Project:** Secure Multi-Provider AI Chat Interface  
 **Reference project:** [ElodineOfficial/GobboNet](https://github.com/ElodineOfficial/GobboNet)  
-**Document:** `docs/DECISIONS.md`  
-**Version:** 0.1  
+**Document:** `decision_register.md`  
+**Version:** 0.2  
 **Created:** October 17, 2026  
-**Status:** Active, initial decisions pending
+**Status:** Active. 15 of 16 decisions accepted, DR-014 deferred; Gate 1 cleared (2026-10-18)
 
 ---
 
@@ -15,7 +15,7 @@ This decision register documents the architectural, functional, security, licens
 
 The application is being designed using GobboNet as its primary functional reference, while replacing GobboNet's inference-management approach with a secure, extensible architecture supporting multiple independently managed AI providers.
 
-Our intended providers include Strata, currently hosting a Qwen 111B model, LM Studio, Ollama, llama.cpp, WebLLM, and other compatible services.
+Our intended providers include Strata (local host, currently serving Qwen3.8-Flash-Next), LM Studio, Ollama, llama.cpp, WebLLM, and other compatible services.
 
 The decision register serves several purposes:
 
@@ -195,6 +195,8 @@ The Go backend should remain intentionally small. It should not download inferen
 - Local startup and shutdown behavior demonstrated.
 - Application operates without elevated permissions.
 
+Progress 2026-10-18: boundaries, provider API boundary, WebLLM location and startup/shutdown behavior are documented in `docs/ARCHITECTURE.md`; demonstration is Phase 1 tests A-B1 to A-B4 (`docs/PHASE1-ACCEPTANCE.md`).
+
 ### Consequences
 
 The application will require a small companion service for its complete feature set.
@@ -239,10 +241,10 @@ The original repository should remain a reference for feature behavior and inter
 ### Acceptance criteria
 
 - [x] Code reuse policy approved (Option B, 2026-10-18).
-- [ ] GobboNet reference commit recorded.
+- [x] GobboNet reference commit recorded (`314bdc9`, `docs/GOBBONET-REFERENCE.md`, 2026-10-18).
 - [x] Licensing implications documented (AGPLv3 applies to reused code; see DR-004).
-- [ ] Any copied source tracked explicitly (a reuse log is needed before the first copy).
-- [ ] Feature-parity inventory maintained separately from implementation details.
+- [x] Any copied source tracked explicitly (`docs/REUSE-LOG.md` created 2026-10-18; no source reused yet).
+- [x] Feature-parity inventory maintained separately from implementation details (`Initial_Project_Proposal.md` section 19).
 
 ### Accepted decision
 
@@ -295,7 +297,7 @@ Keep the licensing decision open until the source provenance and distribution ob
 
 Any reuse of AGPL-covered source must be reviewed before choosing an incompatible license.
 
-**Update 2026-10-18:** DR-003 was accepted as Option B (selective source reuse). Any combined work that includes GobboNet source must be AGPLv3-or-later, so a permissive license is only possible if no GobboNet source ends up in the shipped code. This decision stays OPEN until the actual amount of reuse is known.
+**Update 2026-10-18:** DR-003 was accepted as Option B (selective source reuse). Any combined work that includes GobboNet source must be AGPLv3-or-later, so a permissive license is only possible if no GobboNet source ends up in the shipped code. This decision stays OPEN until the actual amount of reuse is known. *(Superseded the same day: the owner accepted AGPLv3-or-later, below.)*
 
 ### Accepted decision
 
@@ -314,7 +316,7 @@ Consequences:
 
 - [ ] Source ownership and reuse policy established.
 - [x] License selected (AGPLv3-or-later; `LICENSE` file added 2026-10-18).
-- [ ] Dependency licenses reviewed.
+- [ ] Dependency licenses reviewed (inventory started in `docs/ARCHITECTURE.md` section 8; confirm each license when added).
 - Attribution and notice requirements documented.
 - Distribution format identified.
 
@@ -343,7 +345,7 @@ Full detail in `Strata_Protocol.md`.
 - It exposes an **OpenAI-compatible API** (`/v1/models`, `/v1/chat/completions` with SSE streaming, `usage` and `timings`), plus Anthropic Messages and Responses APIs. Auth is an optional bearer token. Option A is sufficient for chat.
 - It has **no `/v1/embeddings`** (404) and runs **one request at a time** by default.
 - **CORS is off**, and foreign-origin POSTs get 403, so browsers cannot call it directly. A backend proxy is required.
-- The served model was `qwen3.8-flash-next-unsloth-ud-iq4_xs` (context 32768), **not a "Qwen 111B"**. The "111" in Strata's docs is a download size in GB. The owner must confirm whether the intended host is a different instance.
+- The served model was `qwen3.8-flash-next-unsloth-ud-iq4_xs` (context 32768), **not a "Qwen 111B"**. The "111" in Strata's docs is a download size in GB.
 - The owner confirmed (2026-10-18) that the local instance at `http://127.0.0.1:8080` is the intended Strata host. The "Qwen 111B" label in the brief is superseded by the server-reported model, currently `qwen3.8-flash-next-unsloth-ud-iq4_xs`.
 - Still untested: cancellation and cold-load timeout behavior, and authenticated mode (the instance has no API key).
 
@@ -432,6 +434,8 @@ WebLLM weights, browser-specific compilation artifacts, and other runtime caches
 - Browser cache versus durable record boundaries documented.
 - Backup and restoration tested.
 - Database migrations demonstrated.
+
+Progress 2026-10-18: data ownership, schema versioning approach and cache-versus-durable boundaries are documented in `docs/ARCHITECTURE.md` section 5; demonstrations are Phase 1 tests A-B5 to A-B8.
 
 ### Consequences
 
@@ -750,6 +754,8 @@ The browser should never receive provider secrets merely to render the interface
 - Secrets excluded from normal exports and logs.
 - Negative security tests implemented.
 
+Progress 2026-10-18: credential mechanism selected as an implementation default (Windows DPAPI, current user); endpoint validation rules documented and threat model drafted in `docs/SECURITY-MODEL.md` (awaiting owner review); negative tests specified there (S1 to S17), not yet implemented.
+
 ### Consequences
 
 This decision affects nearly every provider request and must be resolved before the initial connection manager is considered complete.
@@ -918,6 +924,8 @@ Characters, hybrid RAG, and more advanced orchestration would build upon the est
 - Non-goals explicitly listed.
 - End-to-end scenario demonstrated on two independent endpoints.
 
+Progress 2026-10-18: acceptance tests and non-goals drafted in `docs/PHASE1-ACCEPTANCE.md` (awaiting owner approval). The two endpoints are Strata (`127.0.0.1:8080`) and LM Studio (`10.138.11.11:1234`).
+
 ### Consequences
 
 A narrow initial release accelerates architecture validation but postpones some of the functionality that makes GobboNet distinctive.
@@ -982,7 +990,7 @@ The following items are not listed as open decisions because they were already e
 |---|---|
 | GobboNet reference | Use the repository as the primary feature and design model |
 | Inference architecture | Multiple independently configured providers |
-| Strata | Support existing Qwen 111B inference environment |
+| Strata | Support the existing Strata host (`127.0.0.1:8080`, model as reported by the server) |
 | LM Studio | First-class provider integration |
 | WebLLM | First-class browser inference provider |
 | Other engines | Extensible adapters for Ollama, llama.cpp, and compatible APIs |
@@ -1092,6 +1100,7 @@ This section records changes to decision status over the life of the project.
 | 2026-10-18 | DR-001 | Owner named the application **Labbonet** | OPEN to ACCEPTED. Docs must state no affiliation with GobboNet. |
 | 2026-10-18 | DR-004 | Owner chose GNU AGPLv3-or-later | OPEN to ACCEPTED. Compatible with DR-003 Option B; reused GobboNet source needs notices preserved and a reuse log. |
 | 2026-10-18 | DR-002, DR-006, DR-007, DR-008, DR-009, DR-010, DR-011, DR-012, DR-013, DR-015, DR-016 | Owner accepted all remaining proposals at their recommended options | PROPOSED to ACCEPTED. DR-001 and DR-004 remain OPEN; DR-014 remains DEFERRED. Each record's acceptance criteria are still to be met during implementation. |
+| 2026-10-18 | DR-002, 003, 004, 006, 012, 015 | Phase 1 prerequisite docs added in `docs/` (architecture, security model, provider spec, acceptance tests, GobboNet reference, reuse log); stale text in the register, proposal and Strata protocol corrected; LM Studio host `10.138.11.11:1234` verified by read-only probes | No status changes. DR-003 criteria ticked; progress notes added to the others. Implementation defaults (no standalone PoC, `modernc.org/sqlite`, DPAPI, `127.0.0.1:4815`) approved by the owner as defaults, not as DRs. |
 
 Fifteen decisions are accepted. Only DR-014 (routing and failover) is deferred.
 
@@ -1119,6 +1128,8 @@ The remaining decisions may be developed as their associated implementation phas
 **Gate 1 exit condition:** The application has a documented architecture, a verified primary provider protocol, an agreed storage and security design, and a testable first milestone.
 
 At that point, implementation can proceed without reopening fundamental architectural choices.
+
+**Gate 1 status: cleared 2026-10-18.** All six decisions are accepted. The supporting design is in `docs/ARCHITECTURE.md`, `docs/SECURITY-MODEL.md`, `docs/PROVIDER-SPEC.md` and `docs/PHASE1-ACCEPTANCE.md`.
 
 ---
 
@@ -1152,8 +1163,8 @@ The project currently has **16 formally identified decisions**:
 | ACCEPTED | 15 |
 | **Total** | **16** |
 
-The immediate priority is to resolve the foundation decisions governing our application architecture, relationship to GobboNet source code, Strata compatibility, persistence, credentials, and initial feature scope.
+The foundation decisions are accepted. The immediate priority is meeting their acceptance criteria during Phase 1 (`docs/PHASE1-ACCEPTANCE.md`).
 
 The remaining decisions establish the planned progression toward WebLLM, hybrid retrieval, configurable memory, and concurrent multi-model workflows.
 
-**This register is now the proposed decision-management baseline for the project.**
+**This register is the decision-management baseline for the project.**

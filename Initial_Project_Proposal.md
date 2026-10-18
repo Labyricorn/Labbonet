@@ -1,7 +1,7 @@
 # Project Brief: Secure, Multi-Provider Local AI Chat Interface
 
 **Name:** Labbonet (DR-001, accepted 2026-10-18); **License:** GNU AGPLv3-or-later (DR-004)  
-**Project status:** Planning and architecture  
+**Project status:** Planning complete (Gate 1 cleared 2026-10-18); Phase 1 prerequisites in `docs/`  
 **Document version:** 0.1  
 **Date:** October 17, 2026  
 **Reference implementation:** [GobboNet by ElodineOfficial](https://github.com/ElodineOfficial/GobboNet)
@@ -18,7 +18,7 @@ However, rather than reproducing GobboNet's approach to installing and managing 
 
 It will connect to existing inference services, including:
 
-- **Strata**, our existing host for a Qwen 111B model.
+- **Strata**, our existing local inference host (serves Qwen3.8-Flash-Next; see `Strata_Protocol.md`).
 - **LM Studio**, providing access to locally hosted models.
 - **Ollama**, through its native or compatible API.
 - **llama.cpp**, through its HTTP inference server.
@@ -29,7 +29,7 @@ The application will treat these as interchangeable inference providers while re
 
 An important objective is to move beyond GobboNet's primarily single-model workflow. Our system will support **multiple AI models performing different roles**, potentially running concurrently across independent endpoints.
 
-For example, Qwen 111B could handle a primary conversation while a smaller WebLLM model performs classification, a dedicated embedding model supports semantic retrieval, and another model handles background memory consolidation.
+For example, the Strata model could handle a primary conversation while a smaller WebLLM model performs classification, a dedicated embedding model supports semantic retrieval, and another model handles background memory consolidation.
 
 Security is a central design requirement. We are undertaking this rebuild partly because our review of GobboNet identified unnecessary system-level permissions, potentially destructive behavior, permissive networking, and unsandboxed JavaScript extension capabilities.
 
@@ -120,7 +120,7 @@ Our application will not require its own fixed model catalogue.
 
 Instead, the primary model inventory should be discovered from registered inference providers.
 
-For example, LM Studio could advertise whichever models it currently exposes, while Strata could advertise its Qwen 111B model.
+For example, LM Studio could advertise whichever models it currently exposes, while Strata could advertise its loaded model.
 
 WebLLM would maintain a separate catalogue of browser-compatible models.
 
@@ -138,7 +138,7 @@ We therefore have two implementation choices.
 
 **Superseded 2026-10-18 (DR-003 accepted as Option B, selective reuse):** the text below records the original preference. Independent implementation, using GobboNet as a design and behavioral reference, while considering selective code reuse only where the benefit justifies the licensing and maintenance implications.
 
-No final licensing decision has been made for our own application.
+**Resolved 2026-10-18 (DR-004):** Labbonet is licensed GNU AGPLv3-or-later.
 
 ---
 
@@ -218,7 +218,7 @@ The application will consist of a unified frontend, a provider-management layer,
 ┌──────▼────────────┐        ┌──────────▼─────────────┐
 │ Browser Provider  │        │ Remote API Providers  │
 │                   │        │                        │
-│ WebLLM            │        │ Strata / Qwen 111B     │
+│ WebLLM            │        │ Strata                 │
 │ WebGPU / Workers  │        │ LM Studio              │
 │ Browser Cache     │        │ Ollama                 │
 │                   │        │ llama.cpp              │
@@ -267,21 +267,19 @@ Endpoint profiles should survive application restarts.
 
 Strata is one of our intended primary inference hosts.
 
-Our current arrangement includes a **Qwen 111B model** available through that environment.
+Strata currently serves **Qwen3.8-Flash-Next** (`qwen3.8-flash-next-unsloth-ud-iq4_xs`, 32k context). The earlier "Qwen 111B" label came from a download size in Strata's docs and is superseded (DR-005).
 
 The application should be capable of:
 
 - Connecting to Strata at its configured address.
 - Authenticating if the server requires credentials.
 - Discovering its available models when the API permits.
-- Streaming responses from Qwen 111B.
+- Streaming responses from the Strata model.
 - Sending configurable generation parameters.
 - Managing request cancellation and timeouts.
 - Treating Strata as one of several inference providers rather than a special hardcoded backend.
 
-The exact Strata API protocol, authentication scheme, and endpoint address remain to be confirmed during implementation.
-
-No assumption should be made that Strata uses a particular port or API format without verification.
+**Resolved 2026-10-18 (DR-005):** Strata's protocol, authentication and address are verified in `Strata_Protocol.md` (OpenAI-compatible, `http://127.0.0.1:8080`, optional bearer token). The adapter still takes the address from endpoint configuration rather than hardcoding it.
 
 ## 6.3 LM Studio integration
 
@@ -294,6 +292,8 @@ Model loading and unloading should remain under LM Studio's control.
 The new application should not automatically start LM Studio, terminate its processes, change its configuration, or load a different model without an explicit user command through a supported API.
 
 This also allows our frontend to coexist with other applications that already use LM Studio.
+
+**Verified 2026-10-18:** the owner's LM Studio host is `http://10.138.11.11:1234` (trusted LAN, plain HTTP). Observed behavior is in `docs/PROVIDER-SPEC.md`.
 
 ## 6.4 Ollama integration
 
@@ -388,7 +388,7 @@ If our application runs in a browser on the primary desktop, the desktop GPU per
 
 If opened on a phone or tablet, WebLLM inference would run on that phone or tablet, subject to its browser and hardware support.
 
-By contrast, choosing Qwen 111B on Strata would route the request to Strata regardless of which device displays the frontend.
+By contrast, choosing the Strata model would route the request to Strata regardless of which device displays the frontend.
 
 This distinction should be visible to users, particularly when selecting models.
 
@@ -499,7 +499,7 @@ The application should support logical model roles.
 
 | Role | Responsibility | Illustrative assignment |
 |---|---|---|
-| Primary chat | Main user-facing response | Strata / Qwen 111B |
+| Primary chat | Main user-facing response | Strata model |
 | Fast assistant | Lightweight requests | WebLLM |
 | Summarizer | Compress old conversation history | Small LM Studio model |
 | Embedding provider | Generate semantic vectors | Dedicated local embedding model |
@@ -539,7 +539,7 @@ Optional lightweight classifier
        |
        +-- General chat ---> LM Studio
        |
-       +-- Complex task ---> Qwen 111B
+       +-- Complex task ---> Strata model
        |
        +-- Comparison -----> Multiple models
 ```
@@ -754,7 +754,7 @@ Unlike GobboNet's local swapping mechanism, our application should be able to us
 For example:
 
 ```text
-Conversation: Strata / Qwen 111B
+Conversation: Strata model
                 |
                 v
       Context nearing capacity
@@ -766,10 +766,10 @@ Conversation: Strata / Qwen 111B
        Updated conversation lore
                 |
                 v
-   Continue using Strata / Qwen 111B
+   Continue using Strata model
 ```
 
-There should be no need to unload Qwen 111B merely to perform summarization.
+There should be no need to unload the Strata model merely to perform summarization.
 
 ## 13.3 Memory safety and recoverability
 
@@ -935,7 +935,7 @@ The frontend would remain HTML, CSS, and JavaScript.
 
 WebLLM would operate directly inside the browser instead of passing its inference through the Go service.
 
-**Current preferred direction: Option B for the complete application, with an HTML-based proof of concept as the initial implementation.**
+**Accepted 2026-10-18 (DR-002): Option B.** A standalone HTML proof of concept is optional. The recommended Phase 1 start is the minimal Go backend, because Strata has CORS off and a standalone page cannot reach it (see `docs/ARCHITECTURE.md`).
 
 The backend should remain small and should not take on responsibility for managing inference engines.
 
@@ -961,7 +961,9 @@ The application will need durable storage for:
 
 For a browser-only prototype, IndexedDB is a reasonable starting point.
 
-For a Go-backed application, SQLite is a strong candidate for durable structured storage, though the final storage design remains open.
+For a Go-backed application, SQLite is a strong candidate for durable structured storage.
+
+**Accepted 2026-10-18 (DR-006):** SQLite managed by the Go backend is the authoritative store; WebLLM weights and runtime caches stay in browser storage.
 
 The application should provide human-readable or otherwise well-documented export formats.
 
@@ -1001,7 +1003,7 @@ For example:
 
 ```text
 STRATA
-  Qwen 111B
+  Qwen3.8-Flash-Next (server-reported ID)
 
 LM STUDIO
   [Models currently advertised by LM Studio]
@@ -1104,7 +1106,7 @@ Deliverables:
 - Basic diagnostics.
 - Initial Strata and LM Studio connectivity.
 
-Success criterion: We can create a conversation, choose Qwen 111B on Strata, receive streamed responses, then select a model from LM Studio and continue working without replacing the application.
+Success criterion: We can create a conversation, choose the Strata model, receive streamed responses, then select a model from LM Studio and continue working without replacing the application.
 
 ## Phase 2: WebLLM
 
@@ -1173,7 +1175,7 @@ Deliverables:
 - Explicit fallback policies.
 - Workflow diagnostics.
 
-Success criterion: Qwen 111B can handle a conversation while a separate model handles summarization or another permitted workflow without requiring the primary model to be unloaded.
+Success criterion: The Strata model can handle a conversation while a separate model handles summarization or another permitted workflow without requiring the primary model to be unloaded.
 
 ## Phase 6: Advanced functionality
 
@@ -1313,7 +1315,7 @@ The following represents the direction agreed in our discussion.
 | Avoid the problematic system-level behaviors | Agreed |
 | Keep inference engines externally managed | Agreed |
 | Support multiple inference endpoints | Agreed |
-| Support Strata hosting Qwen 111B | Agreed |
+| Support Strata (local host, Qwen3.8-Flash-Next) | Agreed |
 | Support LM Studio | Agreed |
 | Include WebLLM as a provider | Agreed |
 | Support existing Ollama and llama.cpp endpoints | Proposed integration |
@@ -1321,8 +1323,8 @@ The following represents the direction agreed in our discussion.
 | Preserve hybrid RAG | Agreed direction |
 | Support more sophisticated multi-model workflows | Agreed direction |
 | Use HTML, CSS, and JavaScript for the frontend | Preferred |
-| Use a small Go backend for the full application | Preferred, not final |
-| Start with a functional browser-based proof of concept | Proposed |
+| Use a small Go backend for the full application | Accepted 2026-10-18 (DR-002 Option B) |
+| Start with a functional browser-based proof of concept | Optional (DR-002); recommended start is the minimal Go backend |
 | Selective GobboNet source reuse in a new architecture (DR-003 Option B) | Accepted 2026-10-18; supersedes the independent-implementation preference. See `decision_register.md`. |
 | Avoid arbitrary JavaScript extensions | Security requirement |
 | Require explicit authorization for external inference | Security requirement |
@@ -1332,6 +1334,20 @@ The following represents the direction agreed in our discussion.
 # 24. Open Design Decisions
 
 A few subjects should be resolved as the project develops.
+
+**Status 2026-10-18:** all of these are now decided. The original questions are kept below for history; `decision_register.md` is authoritative.
+
+| Subject | Resolution |
+|---|---|
+| Application identity | Labbonet (DR-001) |
+| Initial deployment model | Browser frontend + minimal Go backend (DR-002) |
+| Strata protocol | OpenAI-compatible adapter (DR-005, `Strata_Protocol.md`) |
+| Storage | SQLite in Go, browser storage for WebLLM caches (DR-006) |
+| Memory ownership | Hierarchical scopes, conversation and lorebooks first (DR-007) |
+| Automatic memory updates | AI proposes, user approves (DR-008) |
+| Workflow complexity | Role assignment, then pipelines (DR-009) |
+| Network access | Localhost only first; authenticated HTTPS LAN later (DR-010) |
+| Licensing and distribution | AGPLv3-or-later, selective GobboNet reuse (DR-003, DR-004) |
 
 ## Application identity
 
@@ -1386,6 +1402,8 @@ The first complete development milestone should be narrower than the ultimate fe
 I recommend beginning with:
 
 **A secure, locally hosted, multi-endpoint chat interface with WebLLM support, persistent conversations, and a clean separation between the UI and inference providers.**
+
+**Note 2026-10-18 (DR-015):** the accepted first milestone excludes WebLLM, which follows immediately as Phase 2. Item 4 in the list below belongs to that second milestone. Phase 1 acceptance tests are in `docs/PHASE1-ACCEPTANCE.md`.
 
 That gives us the foundation on which the more specialized GobboNet features can be added.
 
