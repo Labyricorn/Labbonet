@@ -1,6 +1,6 @@
 # Implementation handover — current state
 
-Updated 2026-10-18 (America/Los_Angeles). Supersedes the 2026-10-17 partial-backend handover. The original owner-authorized eight-milestone parity scope remains; milestone 1 is in progress, milestones 2–8 are untouched. Current development version is **V0-2-0**. Remaining Phase 1 provider auth/cold-start checks (A-ST5/A-ST6/A-LM6; P3-P5) and final Phase 1 sign-off are owner-deferred until **V2-0-0**; they do not block current parity work. GobboNet style and owner visual acceptance remain open in current scope.
+Updated 2026-10-18 (America/Los_Angeles). Supersedes the 2026-10-17 partial-backend handover. The original owner-authorized eight-milestone parity scope remains; milestone 1 is committed (1a7e106) with browser upload and dirty-editor checks still unverified, milestones 2–8 are untouched. Current development version is **V0-2-0**. Remaining Phase 1 provider auth/cold-start checks (A-ST5/A-ST6/A-LM6; P3-P5) and final Phase 1 sign-off are owner-deferred until **V2-0-0**; they do not block current parity work. GobboNet style and owner visual acceptance remain open in current scope.
 
 ## Current working tree
 
