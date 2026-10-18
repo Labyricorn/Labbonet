@@ -17,6 +17,7 @@ import (
 
 	"github.com/Labyricorn/Labbonet/frontend"
 	"github.com/Labyricorn/Labbonet/internal/api"
+	"github.com/Labyricorn/Labbonet/internal/egress"
 	"github.com/Labyricorn/Labbonet/internal/secrets"
 	"github.com/Labyricorn/Labbonet/internal/server"
 	"github.com/Labyricorn/Labbonet/internal/store"
@@ -87,13 +88,19 @@ func run(args []string) error {
 	srv.Handle("GET /api/health", http.HandlerFunc(api.Health))
 	srv.Handle("POST /api/backup", api.BackupHandler(st, *dataDir))
 
-	endpoints := &api.Endpoints{Store: st, Protector: secrets.NewProtector()}
+	protector := secrets.NewProtector()
+	endpoints := &api.Endpoints{Store: st, Protector: protector}
 	srv.Handle("GET /api/endpoints", http.HandlerFunc(endpoints.List))
 	srv.Handle("POST /api/endpoints", http.HandlerFunc(endpoints.Create))
 	srv.Handle("PATCH /api/endpoints/{id}", http.HandlerFunc(endpoints.Patch))
 	srv.Handle("DELETE /api/endpoints/{id}", http.HandlerFunc(endpoints.Delete))
 	srv.Handle("PUT /api/endpoints/{id}/credential", http.HandlerFunc(endpoints.SetCredential))
 	srv.Handle("DELETE /api/endpoints/{id}/credential", http.HandlerFunc(endpoints.ClearCredential))
+
+	models := &api.Models{Store: st, Protector: protector, Egress: egress.NewClient()}
+	srv.Handle("POST /api/endpoints/{id}/test", http.HandlerFunc(models.Test))
+	srv.Handle("POST /api/endpoints/{id}/models/refresh", http.HandlerFunc(models.Refresh))
+	srv.Handle("GET /api/endpoints/{id}/models", http.HandlerFunc(models.List))
 
 	ln, err := srv.Listen()
 	if err != nil {

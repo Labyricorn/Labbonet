@@ -84,6 +84,17 @@ func (s *Store) UpdateEndpoint(ctx context.Context, id int64, name string, enabl
 	return s.GetEndpoint(ctx, id)
 }
 
+// SetDetectedService records the provider type hint from a connection
+// test (PROVIDER-SPEC.md section 3): "strata", "lm-studio" or
+// "openai-compatible".
+func (s *Store) SetDetectedService(ctx context.Context, id int64, detectedService string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE endpoints SET detected_service = ? WHERE id = ?`, detectedService, id)
+	if err != nil {
+		return fmt.Errorf("set detected service: %w", err)
+	}
+	return nil
+}
+
 func boolToInt(b bool) int {
 	if b {
 		return 1

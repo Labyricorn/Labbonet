@@ -71,6 +71,26 @@ func TestEndpoints_Update(t *testing.T) {
 	}
 }
 
+func TestEndpoints_SetDetectedService(t *testing.T) {
+	ctx := t.Context()
+	st, _ := newTestStore(t)
+
+	ep, err := st.CreateEndpoint(ctx, "Strata", "openai", "http://127.0.0.1:8080", "local", 1)
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if err := st.SetDetectedService(ctx, ep.ID, "strata"); err != nil {
+		t.Fatalf("set detected service: %v", err)
+	}
+	got, err := st.GetEndpoint(ctx, ep.ID)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if got.DetectedService != "strata" {
+		t.Fatalf("DetectedService = %q, want strata", got.DetectedService)
+	}
+}
+
 // A-E6: two endpoints advertising the same model ID are kept as separate
 // (endpoint_id, model_id) identities, not merged.
 func TestEndpoints_SameModelIDOnDifferentEndpointsStaySeparate(t *testing.T) {
