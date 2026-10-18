@@ -88,6 +88,11 @@ func run(args []string) error {
 	}
 	srv.Handle("GET /api/health", http.HandlerFunc(api.Health))
 	srv.Handle("POST /api/backup", api.BackupHandler(st, *dataDir))
+	data := &api.Data{Store: st, DataDir: *dataDir}
+	srv.Handle("POST /api/data/import", http.HandlerFunc(data.Import))
+	srv.Handle("GET /api/data/export", http.HandlerFunc(data.Export))
+	srv.Handle("POST /api/data/reset", http.HandlerFunc(data.Reset))
+	srv.Handle("GET /api/cast/{id}/export", http.HandlerFunc(data.ExportCard))
 
 	protector := secrets.NewProtector()
 	endpoints := &api.Endpoints{Store: st, Protector: protector}

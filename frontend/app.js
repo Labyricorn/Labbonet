@@ -1,5 +1,6 @@
 import { mountCastLibrary } from "./js/cast.js";
 import { api } from "./js/api.js";
+import { mountDataDialog } from "./js/data.js";
 import { mountChatView } from "./js/conversations.js";
 import { mountEndpointsView } from "./js/endpoints.js";
 import { mountDiagnosticsView } from "./js/diagnostics.js";
@@ -35,12 +36,7 @@ function switchView(name) {
 const aboutDialog = document.getElementById("about-dialog");
 document.getElementById("about-button").addEventListener("click", () => aboutDialog.showModal());
 document.getElementById("close-about").addEventListener("click", () => aboutDialog.close());
-document.getElementById("backup-button").addEventListener("click", async () => {
-  try {
-    const result = await api.backup();
-    alert(`Backup created: ${result.path || JSON.stringify(result)}`);
-  } catch (err) { alert(`Backup failed: ${err.message}`); }
-});
+mountDataDialog(document.getElementById("backup-button"));
 
 for (const btn of document.querySelectorAll("[data-view]")) {
   btn.addEventListener("click", () => switchView(btn.dataset.view));

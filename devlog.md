@@ -176,3 +176,13 @@ Proposed sequencing moves application parity before WebLLM and broader multi-mod
 **Still unverified (not claimed):** browser file-upload preview/remove path (Chrome extension file-URL access off; not bypassed), dirty-editor retain/dismiss outcome, live generation with saved cast, owner visual acceptance. Domain tests cover raster validation. These carry forward into milestone 8.
 
 **DOX pass:** AGENTS files unchanged; contracts did not change in this commit.
+
+## 2026-10-18 — Parity milestone 2: card interchange and DATA
+
+**Built:** `internal/interchange` (Tavern V1/V2/V3 JSON, PNG `ccv3`/`chara`, CHARX/sharing ZIP, native card, versioned `labbonet-snapshot`), transactional `store.ImportSnapshot` (preview = real writes rolled back; `add`/`skip` merge; opt-in defaults), `ExportSnapshot` (full/cards/conversation), backup-first scoped `ResetData`, `/api/data/*` and `/api/cast/{id}/export`, DATA dialog and per-card export menu. `Card.Extra` keeps unmapped metadata inert; Labbonet-only fields round-trip via `extensions.labbonet`.
+
+**Decisions:** executable-extension or unsafe-path ZIPs are rejected whole (plan: "reject executable content"); unknown assets are ignored with a report note. Oversized portraits are downscaled instead of dropped (Tavern PNGs are often >1 MiB). Snapshots exclude conversation params and provenance so no provider setting can be smuggled in. Imported threads carry no endpoint/model.
+
+**Verification:** gofmt, vet, `go test ./...`, normal and CGO-disabled builds, `node --check` pass. Browser walkthrough on a temp DB as in the handover. **Not verified:** native file-chooser upload, export menu click, thread import via UI. Rejected approach: a stateless preview token (replaced by re-sending the file and rolling back a real import, which also yields exact counts). Process note: a bare `python -` in a shell heredoc hangs the Bash tool here; use Edit/Write instead.
+
+**DOX pass:** project AGENTS (ownership of `internal/interchange`, parity status), frontend AGENTS (`data.js`, DATA), architecture, security model, reuse log, provenance and handover updated. NOTICE.md and root AGENTS unchanged: no new third-party code or child boundary.

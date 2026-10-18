@@ -28,3 +28,9 @@ The owner's additional request to document **every** reused GobboNet element is 
 ## Workspace / governing rules
 
 Read `G:\.vibe\AGENTS.md`, project `AGENTS.md`, root `devlog.md`, `frontend/AGENTS.md`, parity plan and reuse inventory before edits. No branches or PRs unless requested. No agents were delegated. Preserve the entire existing working tree. Exact upstream pin remains `314bdc9cae204ae38fdc1002ac6a9fb1437c109f` (GobboNet 1.7.6). Upstream read-only comparison files are in `%TEMP%\labbonet-gobbonet-pin`, not a second source of truth.
+
+## Milestone 2 (card interchange and DATA) — implemented 2026-10-18
+
+`internal/interchange`, `internal/store/snapshot.go`, `internal/api/data.go`, `frontend/js/data.js`; design in `ARCHITECTURE.md` section 10, controls in `SECURITY-MODEL.md` section 12. Go tests cover round trips of all formats, malformed JSON/PNG/ZIP, traversal/executable/bomb/duplicate archives, snapshot validation, failure-injected rollback, unchanged DB after rejection, no credential leakage and reset scopes. Browser (temp DB, port 4818, built-in browser): preview wrote nothing, commit imported a Tavern V2 card with script-like extension kept inert, typed-confirmation reset removed cards and wrote a backup; no console errors.
+
+Not verified: the OS file-chooser path (a `File` was assigned to the input programmatically), the per-card export menu click, thread-level import/export through the UI, and owner visual acceptance. Not implemented from the plan row: GobboNet snapshot import (GobboNet's own export format is not parsed), CHARX asset modules/lorebooks beyond the main icon, and profile/preset sync (milestone 7). Milestones 3–8 are untouched.

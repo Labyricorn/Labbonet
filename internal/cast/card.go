@@ -9,6 +9,7 @@ package cast
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -43,6 +44,9 @@ type Card struct {
 	Background       string            `json:"background"`
 	TextColor        string            `json:"text_color"`
 	DialogColor      string            `json:"dialog_color"`
+	// Extra holds unmapped interchange metadata (creator notes, tags, unknown
+	// extensions) as an inert JSON object. It is never interpreted or executed.
+	Extra string `json:"extra,omitempty"`
 }
 
 var color = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
@@ -100,6 +104,15 @@ func (c Card) Validate() error {
 	}
 	if c.TopP != nil && (math.IsNaN(*c.TopP) || math.IsInf(*c.TopP, 0) || *c.TopP <= 0 || *c.TopP > 1) {
 		return errors.New("top_p must be greater than 0 and at most 1")
+	}
+	if len(c.Extra) > 65536 {
+		return errors.New("extra metadata exceeds 64 KiB")
+	}
+	if c.Extra != "" {
+		var obj map[string]json.RawMessage
+		if json.Unmarshal([]byte(c.Extra), &obj) != nil || obj == nil {
+			return errors.New("extra metadata must be a JSON object")
+		}
 	}
 	for _, v := range []string{c.TextColor, c.DialogColor} {
 		if v != "" && !color.MatchString(v) {

@@ -239,6 +239,20 @@
       "upstream_sha256": "621ff1bd0922f3025a81a12142671688728a271873bf78d369be7c31a87a517c",
       "treatment": "behavior reference; Labbonet implementation",
       "elements": "Frequency zero disables description but retains identity (behavior reference, independently implemented)"
+    },
+    {
+      "local": "frontend/js/data.js",
+      "source": "chat.html",
+      "upstream_sha256": "061a03d27a017c6090f8dc2da229ff88bdd0748d2ac3cb94659c3cb79897b8eb",
+      "treatment": "presentation structure reference; Labbonet runtime implementation",
+      "elements": "DATA control and modal/button presentation (design reference; no upstream script copied)"
+    },
+    {
+      "local": "internal/interchange/",
+      "source": "js/16-card-io.js",
+      "upstream_sha256": "8ffc231ab9b18214276fa0b30ce6188e96898a0d83407c2351d4002f06d85290",
+      "treatment": "functional reference; Labbonet implementation",
+      "elements": "Tavern V1/V2/V3 JSON/PNG and CHARX import/export scope (public community formats; no upstream source read into or copied into the code)"
     }
   ]
 }

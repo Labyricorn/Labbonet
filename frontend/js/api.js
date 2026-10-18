@@ -126,3 +126,45 @@ export async function streamGenerate(conversationId, body, onEvent, signal) {
     }
   }
 }
+
+// Binary-safe helpers for DATA (import/export). Requests carry the same
+// X-Labbonet header; downloads are saved from a blob so no navigation occurs.
+async function raw(method, path, body, contentType) {
+  const headers = { [LABBONET_HEADER]: "1" };
+  if (contentType) headers["Content-Type"] = contentType;
+  const res = await fetch(path, { method, headers, body });
+  if (res.status === 401) {
+    showReauthBanner();
+    throw new ApiError(401, "Session expired. Reopen the launch URL printed at startup.");
+  }
+  if (!res.ok) {
+    const text = (await res.text().catch(() => "")).trim();
+    throw new ApiError(res.status, text || `request failed with status ${res.status}`);
+  }
+  return res;
+}
+
+export const dataApi = {
+  async download(path) {
+    const res = await raw("GET", path);
+    const match = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") || "");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = match ? match[1] : "labbonet-export";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    return link.download;
+  },
+  async importFile(file, mode, policy, defaults) {
+    const query = new URLSearchParams({ mode, policy, defaults: defaults ? "1" : "0" });
+    const res = await raw("POST", `/api/data/import?${query}`, file, "application/octet-stream");
+    return res.json();
+  },
+  reset: (scope) => request("POST", "/api/data/reset", { scope, confirm: `RESET ${scope.toUpperCase()}` }),
+  exportCardPath: (id, format) => `/api/cast/${id}/export?format=${format}`,
+  exportDataPath: (scope, id) => `/api/data/export?scope=${scope}${id ? `&id=${id}` : ""}`,
+};

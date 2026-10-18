@@ -97,3 +97,9 @@ button:disabled { opacity: .45; cursor: default; }
  .cast-modal .cast-section-header { flex-wrap: wrap; gap: 6px; }
  .cast-controls { padding: 8px 12px; }
 }
+
+/* DATA dialog (Labbonet original). */
+.data-report { margin-top: 10px; max-height: 240px; overflow: auto; }
+.data-item { padding: 6px 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+#data-dialog fieldset { margin-bottom: 14px; }
+#data-dialog fieldset > * { margin-top: 8px; margin-right: 8px; }

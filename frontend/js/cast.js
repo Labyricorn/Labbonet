@@ -5,7 +5,7 @@
 // Labbonet additions/modifications: Copyright (C) 2026 Labbonet contributors. AGPL-3.0-or-later.
 // Upstream credit covers presentation structure/design; runtime/API/state/security code is Labbonet work.
 // Element-by-element source and authorship boundary: docs/REUSE-LOG.md and root NOTICE.md.
-import { api } from "./api.js";
+import { api, dataApi } from "./api.js";
 
 function node(tag, cls, text) {
   const el = document.createElement(tag);
@@ -112,7 +112,15 @@ export function mountCastLibrary(trigger) {
         info.setAttribute("aria-label", `Use ${card.name} as default ${kind}`);
         info.append(node("div", "card-name", card.name), node("div", "card-desc", card.description || "No description"));
         const actions = node("div", "card-actions");
-        actions.append(button("Edit", () => { if (!busy) edit(card); }), button("Copy", () => perform(async () => {
+        const exportMenu = node("select"); exportMenu.setAttribute("aria-label", `Export ${card.name}`);
+        for (const [value, text] of [["", "Export…"], ["png", "PNG (V3 + V2)"], ["zip", "CHARX / ZIP"], ["v3", "V3 JSON"], ["v2", "V2 JSON"], ["native", "Labbonet JSON"]]) {
+          const option = node("option", "", text); option.value = value; exportMenu.append(option);
+        }
+        exportMenu.addEventListener("change", () => {
+          const format = exportMenu.value; exportMenu.value = "";
+          if (format) perform(async () => { await dataApi.download(dataApi.exportCardPath(card.id, format)); });
+        });
+        actions.append(button("Edit", () => { if (!busy) edit(card); }), exportMenu, button("Copy", () => perform(async () => {
           await api.saveCard({ ...card, id: 0, revision: 0, name: `${card.name.slice(0, 150)} copy`, position: list.length }); await refresh();
         })), button("Del", () => {
           if (confirm(`Delete ${card.name}? Historical speakers will be preserved.`)) perform(async () => { await api.deleteCard(card); await refresh(); });
@@ -123,7 +131,7 @@ export function mountCastLibrary(trigger) {
         if (!busy) edit({kind, name: "", position: list.length, macros: {}, greetings: [], carousel: [], persona_frequency: 5});
       }, "btn btn-fill btn-block"));
     }
-    body.append(button("RELOAD LIBRARY", () => perform(refresh)));
+    body.append(button("IMPORT CARDS", () => document.dispatchEvent(new Event("open-data"))), button("RELOAD LIBRARY", () => perform(refresh)));
   }
   function edit(card) {
     draft = structuredClone(card); dirty = false; body.replaceChildren(); notice.hidden = true;

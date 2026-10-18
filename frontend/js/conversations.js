@@ -77,6 +77,11 @@ export function mountChatView(panel) {
       await selectConversation(conv.id);
     } catch (err) { alert(err.message); }
   });
+  // Import or reset elsewhere may add or remove threads.
+  document.addEventListener("data-changed", async () => {
+    await refreshList();
+    if (selectedId !== null && !conversations.some(c => c.id === selectedId)) { selectedId = null; mountChatPanel(panel); renderList(); }
+  });
   search.addEventListener("input", renderList);
   clear.addEventListener("click", () => { search.value = ""; renderList(); search.focus(); });
   refreshList();

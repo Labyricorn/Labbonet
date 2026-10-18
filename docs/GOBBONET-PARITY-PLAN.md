@@ -1,6 +1,6 @@
 # GobboNet application parity plan
 
-**Status:** owner authorized implementation with “implement this plan” (2026-10-17); milestone 1 backend/UI implemented in the working tree, verification closeout still in progress. Attribution inventory audited 2026-10-18. See `IMPLEMENTATION-HANDOVER.md` for working-tree status.
+**Status:** owner authorized implementation with “implement this plan” (2026-10-17); milestone 1 committed (1a7e106); milestone 2 (card interchange and DATA) implemented, browser upload via real file chooser unverified. Attribution inventory audited 2026-10-18. See `IMPLEMENTATION-HANDOVER.md` for working-tree status.
 **Requested:** 2026-10-17, "Add full functionality from Gabbonet to Labbonet."
 **Reference:** GobboNet 1.7.6, commit `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`.
 
