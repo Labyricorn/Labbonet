@@ -1,6 +1,6 @@
 # Implementation handover — current state
 
-Updated 2026-10-18 (America/Los_Angeles). Supersedes the 2026-10-17 partial-backend handover. The original owner-authorized eight-milestone parity scope remains; milestone 1 is in progress, milestones 2–8 are untouched. Phase 1, deferred provider windows and owner visual acceptance remain open.
+Updated 2026-10-18 (America/Los_Angeles). Supersedes the 2026-10-17 partial-backend handover. The original owner-authorized eight-milestone parity scope remains; milestone 1 is in progress, milestones 2–8 are untouched. Current development version is **V0-2-0**. Remaining Phase 1 provider auth/cold-start checks (A-ST5/A-ST6/A-LM6; P3-P5) and final Phase 1 sign-off are owner-deferred until **V2-0-0**; they do not block current parity work. GobboNet style and owner visual acceptance remain open in current scope.
 
 ## Current working tree
 
@@ -21,7 +21,7 @@ The owner's additional request to document **every** reused GobboNet element is 
 
 1. Finish browser file upload/preview/remove walkthrough. The Chrome extension refused chooser upload because “Allow access to file URLs” is off. This permission was not changed; do not bypass that refusal. Domain tests cover valid/truncated/unsafe rasters, but do not claim the UI upload path was verified.
 2. Finish reliable dirty-editor close/Escape/navigation walkthrough. Escape emitted the correct discard confirmation, but browser handling stalled and retain/dismiss outcomes were not established. Existing native confirmation should be checked with a reliable UI route.
-3. Complete live browser generation with saved cast if useful, using only an already-loaded model; automated fake-provider request/snapshot verification already passes. Do not operate deferred auth/cold-start windows or load an unloaded LM Studio model.
+3. Complete live browser generation with saved cast if useful, using only an already-loaded model; automated fake-provider request/snapshot verification already passes. Phase 1 auth/cold-start windows and final sign-off are deferred until V2-0-0; do not treat them as current milestone blockers or load an unloaded LM Studio model.
 4. Review remaining UI refinements, exact pinned full-window/panel visual comparison and notices; owner visual acceptance remains separate. Check frontend errors on intentional conflict and after reload. Review context estimator limitations and snapshot storage growth (historical portraits still duplicate per message).
 5. Update the acceptance/proposal inventory and this handover when milestone 1 is actually complete; then commit/push tested code on main per plan. Continue milestones 2–8 in order. Do not infer full application parity from CHARS.
 

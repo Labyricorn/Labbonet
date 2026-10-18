@@ -172,6 +172,8 @@ Built in the step that first needs it, then shared:
 
 ## Step 7: Live run and sign-off
 
+**Release scheduling (owner, 2026-10-18):** current development is **V0-2-0**. Remaining A-ST5/A-ST6/A-LM6 auth/cold-start checks (P3-P5) and final Phase 1 sign-off are deferred until **V2-0-0**. Completed evidence remains valid; deferred items are not passes or waivers. Current parity implementation, visual acceptance and normal verification/push gates continue.
+
 **Scope:** run the live and manual tests against the real hosts and record the results.
 
 **Owner prerequisites (`PHASE1-ACCEPTANCE.md` section 3):** P1 Strata running; P2 an LM Studio chat model loaded on `10.138.11.11:1234`; P3 and P4 short auth windows; P5 a Strata cold start.

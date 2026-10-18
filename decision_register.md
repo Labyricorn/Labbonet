@@ -1101,10 +1101,11 @@ This section records changes to decision status over the life of the project.
 | 2026-10-18 | DR-004 | Owner chose GNU AGPLv3-or-later | OPEN to ACCEPTED. Compatible with DR-003 Option B; reused GobboNet source needs notices preserved and a reuse log. |
 | 2026-10-18 | DR-002, DR-006, DR-007, DR-008, DR-009, DR-010, DR-011, DR-012, DR-013, DR-015, DR-016 | Owner accepted all remaining proposals at their recommended options | PROPOSED to ACCEPTED. DR-001 and DR-004 remain OPEN; DR-014 remains DEFERRED. Each record's acceptance criteria are still to be met during implementation. |
 | 2026-10-18 | DR-002, 003, 004, 006, 012, 015 | Phase 1 prerequisite docs added in `docs/` (architecture, security model, provider spec, acceptance tests, GobboNet reference, reuse log); stale text in the register, proposal and Strata protocol corrected; LM Studio host `10.138.11.11:1234` verified by read-only probes | No status changes. DR-003 criteria ticked; progress notes added to the others. Implementation defaults (no standalone PoC, `modernc.org/sqlite`, DPAPI, `127.0.0.1:4815`) approved by the owner as defaults, not as DRs. |
+| 2026-10-18 | DR-005, DR-012, DR-015 acceptance scheduling | Owner identified current development as V0-2-0 and deferred remaining Phase 1 provider auth/cold-start checks (A-ST5/A-ST6/A-LM6; P3-P5) and final Phase 1 sign-off until V2-0-0 | No decision-status changes or test waivers. These checks/sign-off do not block current GobboNet feature/style parity; visual acceptance remains in scope. |
 
 Fifteen decisions are accepted. Only DR-014 (routing and failover) is deferred.
 
-Implementation evidence, 2026-10-17 America/Los_Angeles: step 6 committed as `2024e27`; step 7 cross-provider streaming, concurrency, cancellation and shutdown evidence added under `docs/evidence/`. No decision statuses changed. Owner deferred provider auth/cold-start windows and requested closer visual resemblance to GobboNet. Final Phase 1 sign-off remains open.
+Implementation evidence, 2026-10-17 America/Los_Angeles: step 6 committed as `2024e27`; step 7 cross-provider streaming, concurrency, cancellation and shutdown evidence added under `docs/evidence/`. No decision statuses changed. Owner deferred provider auth/cold-start windows and requested closer visual resemblance to GobboNet. Final Phase 1 sign-off is deferred until V2-0-0 by the owner's 2026-10-18 scheduling instruction.
 
 When an option is approved, an entry should be added here with the date, approved choice, and any relevant conditions.
 

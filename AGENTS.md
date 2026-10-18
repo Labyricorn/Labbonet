@@ -4,7 +4,7 @@ Inherits the root `G:\.vibe\AGENTS.md` (DOX framework and Devlog Loop).
 
 ## Purpose
 
-Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application modeled on GobboNet (credited selective presentation reuse and functional/design reference). Phase 1 steps 1-6 are implemented; step 7 live checks are in progress, provider auth/cold-start windows are deferred, and frontend visual acceptance remains open.
+Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application modeled on GobboNet (credited selective presentation reuse and functional/design reference). Current development version: **V0-2-0**. Phase 1 steps 1-6 are implemented; remaining provider auth/cold-start checks and final Phase 1 sign-off are deferred until **V2-0-0**. GobboNet feature/style parity and frontend visual acceptance remain current work.
 
 ## Ownership
 
@@ -40,6 +40,8 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - **Visual requirement (owner, 2026-10-17):** match the pinned GobboNet interface pixel for pixel except where Labbonet's model dynamics require differences. The basic functional shell is not visually accepted. Compare the rendered result at full-window and Codex side-panel widths; log any adapted presentation files in `docs/REUSE-LOG.md` and retain notices.
 
 ## Work Guidance
+
+- **Release scope (owner, 2026-10-18):** current development is **V0-2-0**. Defer A-ST5/A-ST6/A-LM6 (provider authentication and Strata cold-start checks; prerequisites P3-P5) and final Phase 1 sign-off until **V2-0-0**. Track them as deferred, not passed or waived; they do not block V0-2-0 GobboNet parity work. This does not defer functional/security regression checks or GobboNet style/visual acceptance.
 
 - 15 of 16 decisions are accepted (2026-10-18); only DR-014 (routing) is deferred. Acceptance criteria in each record still apply during implementation. Gate 1 is cleared, so Phase 1 can start.
 - Providers: Strata at `http://127.0.0.1:8080` (served model Qwen3.8-Flash-Next) and LM Studio at `http://10.138.11.11:1234` (trusted LAN, plain HTTP). Open provider tests are listed in `docs/PHASE1-ACCEPTANCE.md` section 4.5.

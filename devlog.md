@@ -159,3 +159,12 @@ Proposed sequencing moves application parity before WebLLM and broader multi-mod
 **Open verification:** Chrome refused local file upload because extension file-URL access is off; did not change permissions or bypass it. Escape emitted the expected dirty-editor confirmation, but the browser connection stalled while handling it; dismiss/retain outcomes remain unverified. Mandatory browser state checks exposed offscreen collapsed-sidebar controls after resizing; opening the sidebar before clicking restored normal interaction. Temporary viewport override was reset. No live provider request/settings operation and no owner-data migration occurred. `docs/IMPLEMENTATION-HANDOVER.md` now records the current WIP, remaining closeout and untouched milestones 2–8.
 
 **DOX pass:** project/frontend contracts now own comprehensive attribution and new cast scope. Architecture, security, provider, acceptance, parity progress and pinned-reference docs updated. Parent `G:\.vibe\AGENTS.md` is intentionally unchanged: shared workflow and child ownership boundaries are unchanged. Milestone 1 and owner visual acceptance are not declared complete; attribution documentation can be committed independently of unfinished code closeout.
+
+
+## 2026-10-18 — Owner release version and Phase 1 deferral
+
+**Owner decisions:** current development is **V0-2-0**. Remaining Phase 1 provider authentication/Strata cold-start checks (A-ST5/A-ST6/A-LM6, prerequisites P3-P5) and final Phase 1 sign-off are deferred until **V2-0-0**. These remain unverified/deferred, not passed or waived. GobboNet feature/style parity, visual acceptance and normal security/regression/push checks remain current work.
+
+**Changes:** recorded scope in project AGENTS, README, architecture, acceptance/sign-off, build/parity plans, handover, Strata checklist and decision log. Decision statuses remain unchanged. Updated the health/header build-version source from the old placeholder to the owner's exact `V0-2-0` label; no release tag created. Existing uncommitted cast work is preserved.
+
+**Verification / DOX:** documentation cross-check and diff whitespace check, Go formatting/vet/full tests, normal and CGO-disabled builds passed before push. Parent `G:\.vibe\AGENTS.md` and `frontend/AGENTS.md` intentionally unchanged: shared ownership and frontend contracts are unchanged; frontend already obtains its version from the health endpoint. No provider operations or new acceptance claims.

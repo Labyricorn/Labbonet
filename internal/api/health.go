@@ -6,9 +6,8 @@ import (
 	"net/http"
 )
 
-// Version is the Labbonet build version. Phase 1 has no release process
-// yet, so this is a fixed placeholder.
-const Version = "0.1.0-dev"
+// Version is the current owner-designated development version, not a release tag.
+const Version = "V0-2-0"
 
 type healthResponse struct {
 	Status  string `json:"status"`

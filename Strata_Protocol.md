@@ -174,6 +174,6 @@ Meaning:
 | Model discovery tested | Done (`/v1/models`) |
 | Streaming tested | Done (SSE, usage, timings) |
 | Cancellation tested | Done in the live Phase 1 run: partial reply saved as `cancelled`; `/status` reported `busy: false` after 116 ms (`docs/evidence/step7-live.json`). |
-| Timeout behavior tested | Not done. Needs a cold-load test. |
+| Timeout behavior tested | Owner-deferred until V2-0-0 (2026-10-18); cold-start check remains unverified. |
 | Strata model accessible through the app | Done: live browser chat and cross-provider continuation (`docs/evidence/step6-chat.png`, `docs/evidence/step7-live.json`). Run used the server-reported `qwen3.8-flash-next-iq3_s`. |
-| Authenticated mode tested | Not done. Needs a Strata instance with `api_key` set. |
+| Authenticated mode tested | Owner-deferred until V2-0-0 (2026-10-18); authenticated-mode check remains unverified. |

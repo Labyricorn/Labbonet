@@ -7,6 +7,8 @@
 
 ## 1. Implementation defaults
 
+Current application development version: **V0-2-0** (owner, 2026-10-18); `/api/health` reports that label. Document version numbers above are document revisions. Remaining Phase 1 provider auth/cold-start checks and final Phase 1 sign-off are deferred until **V2-0-0**; current GobboNet feature/style parity work continues.
+
 The owner approved these defaults on 2026-10-18. They are implementation choices, not decision-register entries; changing one needs a note here and in the devlog, not a DR amendment.
 
 | Choice | Default | Reason |
