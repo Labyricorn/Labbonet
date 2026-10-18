@@ -1,5 +1,7 @@
 /* Labbonet integration for the pinned GobboNet presentation styles.
-   Upstream attribution and modifications: css/ and docs/REUSE-LOG.md. */
+   Copyright (C) 2026 Labbonet contributors. AGPL-3.0-or-later.
+   Original integration overrides; underlying visual design/CSS is credited to
+   Elodine / GoblinCorps in css/ notices, docs/REUSE-LOG.md and root NOTICE.md. */
 :root { color-scheme: dark; --danger: var(--red-neon); --muted: var(--cyan-dim); }
 [hidden], .view[hidden] { display: none !important; }
 button, input, textarea, select { font-family: var(--font); }
@@ -68,4 +70,30 @@ button:disabled { opacity: .45; cursor: default; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Native dialog and provider-aware cast integration for pinned modal/card CSS. */
+.cast-modal { margin: auto; color: var(--cyan-mid); }
+.cast-modal::backdrop { background: rgba(0,0,0,.85); backdrop-filter: blur(5px); }
+.cast-modal .form-error:empty { display: none; }
+.cast-modal .form-hint { margin-bottom: 12px; }
+.cast-modal .btn-block { margin-bottom: 12px; }
+.cast-modal input[type=file] { max-width: 100%; margin: 8px 0; font-size: 12px; }
+.card-select { border: 0; background: transparent; text-align: left; font: inherit; cursor: pointer; padding: 0; }
+.cast-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.cast-controls { border: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: end; padding: 8px 20px; margin: 0; min-width: 0; }
+.cast-control-label { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 90px; max-width: 240px; font-size: 10px; color: var(--cyan-dim); text-transform: uppercase; letter-spacing: 1px; }
+.cast-controls select { width: 100%; min-width: 0; font-size: 11px; padding: 6px; }
+.cast-slot > .form-error { margin: 0 20px 8px; }
+.cast-thread-wrap { display: flex; flex: 1; min-height: 0; position: relative; isolation: isolate; }
+.cast-thread-wrap .messages { flex: 1; position: relative; }
+.cast-background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .18; z-index: -1; pointer-events: none; }
+.msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 700px) {
+ .cast-modal { width: calc(100% - 20px); padding: 18px; }
+ .cast-modal .card-item { flex-wrap: wrap; gap: 8px; padding: 10px; }
+ .cast-modal .card-actions { opacity: 1; flex-basis: 100%; justify-content: end; }
+ .cast-modal .card-move { opacity: 1; }
+ .cast-modal .cast-section-header { flex-wrap: wrap; gap: 6px; }
+ .cast-controls { padding: 8px 12px; }
 }

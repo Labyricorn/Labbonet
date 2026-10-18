@@ -9,7 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Labyricorn/Labbonet/internal/cast"
 	"github.com/Labyricorn/Labbonet/internal/egress"
+	"github.com/Labyricorn/Labbonet/internal/prompt"
 	"github.com/Labyricorn/Labbonet/internal/providers"
 	"github.com/Labyricorn/Labbonet/internal/providers/openai"
 	"github.com/Labyricorn/Labbonet/internal/secrets"
@@ -19,6 +21,7 @@ import (
 // ErrNoModelSelected is returned when the conversation has no
 // endpoint/model chosen yet.
 var ErrNoModelSelected = errors.New("conversation has no endpoint or model selected")
+var ErrPrompt = errors.New("invalid prompt")
 
 // ErrModelNotLoaded is returned when the target model's cached state
 // is not-loaded and the request did not set ConfirmLoad
@@ -100,41 +103,60 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 		}
 	}
 
-	if _, err := rn.Store.CreateMessage(ctx, req.ConversationID, nil, "user", req.UserContent, "", "complete"); err != nil {
-		return fmt.Errorf("persist user message: %w", err)
+	selection, character, persona, err := rn.Store.ReadCast(ctx, req.ConversationID)
+	if err != nil {
+		return err
 	}
-
-	history, err := rn.buildHistory(ctx, req.ConversationID, conv.SystemPrompt)
+	history, err := rn.buildHistory(ctx, req.ConversationID, "")
 	if err != nil {
 		return fmt.Errorf("build history: %w", err)
 	}
-
-	assistantMsg, err := rn.Store.CreateMessage(ctx, req.ConversationID, nil, "assistant", "", "", "streaming")
-	if err != nil {
-		return fmt.Errorf("create assistant message: %w", err)
+	turn := 0
+	for _, m := range history {
+		if m.Role == "user" {
+			turn++
+		}
 	}
-
-	paramsJSON, _ := json.Marshal(req)
-	gen, err := rn.Store.CreateGeneration(ctx, assistantMsg.ID, &endpointID, modelID, string(paramsJSON))
+	contextLimit := 0
+	models, err := rn.Store.ListModels(ctx, endpointID)
 	if err != nil {
-		return fmt.Errorf("create generation: %w", err)
+		return err
 	}
+	for _, m := range models {
+		if m.ModelID == modelID {
+			contextLimit = m.ContextLength
+		}
+	}
+	snapshot, err := prompt.Assemble(prompt.Input{Character: character, Persona: persona, System: conv.SystemPrompt, History: history, User: req.UserContent, Turn: turn, ContextLimit: contextLimit, MaxTokens: req.MaxTokens, Temperature: req.Temperature, TopP: req.TopP, Now: time.Now()})
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrPrompt, err)
+	}
+	paramsJSON, err := json.Marshal(struct {
+		Request Request
+		Prompt  prompt.Snapshot
+	}{req, snapshot})
+	if err != nil {
+		return err
+	}
+	userSpeaker, _ := json.Marshal(cast.Speaker(persona))
+	assistantSpeaker, _ := json.Marshal(cast.Speaker(character))
+	msgID, genID, err := rn.Store.StartTurn(ctx, req.ConversationID, endpointID, modelID, req.UserContent, string(userSpeaker), string(assistantSpeaker), string(paramsJSON), len(history), selection.Revision)
+	if err != nil {
+		return fmt.Errorf("persist turn: %w", err)
+	}
+	assistantMsg := &store.Message{ID: msgID}
+	gen := &store.Generation{ID: genID}
+	runCtx, cancel := context.WithCancel(ctx)
+	rn.Registry.Register(gen.ID, cancel)
+	defer func() { cancel(); rn.Registry.Unregister(gen.ID) }()
 	if onStarted != nil {
 		onStarted(gen.ID)
 	}
-
-	target, err := rn.targetFor(ctx, ep)
+	target, err := rn.targetFor(runCtx, ep)
 	if err != nil {
 		rn.recordFailure(assistantMsg.ID, gen.ID, err)
 		return err
 	}
-
-	runCtx, cancel := context.WithCancel(ctx)
-	rn.Registry.Register(gen.ID, cancel)
-	defer func() {
-		cancel()
-		rn.Registry.Unregister(gen.ID)
-	}()
 
 	release, err := rn.Slots.Acquire(runCtx, endpointID, ep.ConcurrencyLimit)
 	if err != nil {
@@ -145,8 +167,8 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 
 	adapter := openai.New(rn.Egress, target)
 	chatReq := providers.ChatRequest{
-		Model: modelID, Messages: history, MaxTokens: req.MaxTokens,
-		Temperature: req.Temperature, TopP: req.TopP, Stop: req.Stop,
+		Model: modelID, Messages: snapshot.Messages, MaxTokens: snapshot.MaxTokens,
+		Temperature: snapshot.Temperature, TopP: snapshot.TopP, Stop: req.Stop,
 		ReasoningEffort: req.ReasoningEffort,
 	}
 

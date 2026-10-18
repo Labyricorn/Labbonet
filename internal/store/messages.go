@@ -17,6 +17,7 @@ type Message struct {
 	Content        string
 	Reasoning      string
 	Status         string
+	SpeakerJSON    string
 	CreatedAt      time.Time
 }
 
@@ -40,7 +41,7 @@ func (s *Store) CreateMessage(ctx context.Context, conversationID int64, parentI
 // GetMessage fetches one message by ID.
 func (s *Store) GetMessage(ctx context.Context, id int64) (*Message, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, conversation_id, parent_id, role, content, reasoning, status, created_at
+		`SELECT id, conversation_id, parent_id, role, content, reasoning, status, created_at, speaker_json
 		 FROM messages WHERE id = ?`, id)
 	return scanMessage(row)
 }
@@ -48,7 +49,7 @@ func (s *Store) GetMessage(ctx context.Context, id int64) (*Message, error) {
 // ListMessages returns every message in a conversation, oldest first.
 func (s *Store) ListMessages(ctx context.Context, conversationID int64) ([]*Message, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, conversation_id, parent_id, role, content, reasoning, status, created_at
+		`SELECT id, conversation_id, parent_id, role, content, reasoning, status, created_at, speaker_json
 		 FROM messages WHERE conversation_id = ? ORDER BY id`, conversationID)
 	if err != nil {
 		return nil, fmt.Errorf("list messages: %w", err)
@@ -86,7 +87,7 @@ func scanMessage(row rowScanner) (*Message, error) {
 		parentID  sql.NullInt64
 		createdAt string
 	)
-	if err := row.Scan(&m.ID, &m.ConversationID, &parentID, &m.Role, &m.Content, &m.Reasoning, &m.Status, &createdAt); err != nil {
+	if err := row.Scan(&m.ID, &m.ConversationID, &parentID, &m.Role, &m.Content, &m.Reasoning, &m.Status, &createdAt, &m.SpeakerJSON); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
 		}

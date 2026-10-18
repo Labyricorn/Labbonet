@@ -51,6 +51,14 @@ async function request(method, path, body) {
 }
 
 export const api = {
+  listCards: () => request("GET", "/api/cast"),
+  saveCard: (card) => request(card.id ? "PUT" : "POST", card.id ? `/api/cast/${card.id}` : "/api/cast", card),
+  deleteCard: (card) => request("DELETE", `/api/cast/${card.id}`, {revision: card.revision}),
+  reorderCards: (kind, cards) => request("PUT", "/api/cast/order", {kind, cards: cards.map(({id, revision}) => ({id, revision}))}),
+  getCast: (id = 0) => request("GET", id ? `/api/conversations/${id}/cast` : "/api/cast/defaults"),
+  saveCast: (id, selection) => request("PUT", id ? `/api/conversations/${id}/cast` : "/api/cast/defaults", selection),
+  greet: (id, revision) => request("POST", `/api/conversations/${id}/greeting`, {revision}),
+
   health: () => request("GET", "/api/health"),
 
   listEndpoints: () => request("GET", "/api/endpoints"),

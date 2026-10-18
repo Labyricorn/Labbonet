@@ -110,6 +110,17 @@ func run(args []string) error {
 	srv.Handle("GET /api/conversations/{id}", http.HandlerFunc(conversations.Get))
 	srv.Handle("PATCH /api/conversations/{id}", http.HandlerFunc(conversations.Patch))
 	srv.Handle("DELETE /api/conversations/{id}", http.HandlerFunc(conversations.Delete))
+	cast := &api.Cast{Store: st}
+	srv.Handle("GET /api/cast", http.HandlerFunc(cast.List))
+	srv.Handle("POST /api/cast", http.HandlerFunc(cast.Save))
+	srv.Handle("PUT /api/cast/order", http.HandlerFunc(cast.Reorder))
+	srv.Handle("PUT /api/cast/{id}", http.HandlerFunc(cast.Save))
+	srv.Handle("DELETE /api/cast/{id}", http.HandlerFunc(cast.Delete))
+	srv.Handle("GET /api/cast/defaults", http.HandlerFunc(cast.Selection))
+	srv.Handle("PUT /api/cast/defaults", http.HandlerFunc(cast.Selection))
+	srv.Handle("GET /api/conversations/{id}/cast", http.HandlerFunc(cast.Selection))
+	srv.Handle("PUT /api/conversations/{id}/cast", http.HandlerFunc(cast.Selection))
+	srv.Handle("POST /api/conversations/{id}/greeting", http.HandlerFunc(cast.Greet))
 
 	registry := generate.NewRegistry()
 	runner := &generate.Runner{Store: st, Protector: protector, Egress: egressClient, Slots: generate.NewSlots(), Registry: registry}

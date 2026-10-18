@@ -3,11 +3,18 @@
 // Modified by the Labbonet project, 2026-10-17: safe rendering and Phase 1 generation API.
 // Chat thread: streaming output, stop button, collapsible reasoning
 // (ARCHITECTURE.md section 3, section 4.2).
+// Labbonet additions/modifications: Copyright (C) 2026 Labbonet contributors. AGPL-3.0-or-later.
+// Upstream credit covers presentation structure/design; runtime/API/state/security code is Labbonet work.
+// Element-by-element source and authorship boundary: docs/REUSE-LOG.md and root NOTICE.md.
+import { mountCastControls, decorateSpeaker, markDialog } from "./cast.js";
 import { api, streamGenerate } from "./api.js";
 import { renderMarkdown } from "./render.js";
 import { mountModelSelector } from "./models.js";
 
+let castLifecycle;
+
 export function mountChatPanel(panel) {
+  castLifecycle?.abort();
   panel.innerHTML = "";
   const empty = document.createElement("div");
   empty.className = "welcome";
@@ -27,6 +34,9 @@ export function mountChatPanel(panel) {
 // chat UI for one conversation: header (title, model selector,
 // delete), the message thread, and the composer.
 export async function loadConversationIntoPanel(panel, conversationId, callbacks) {
+  castLifecycle?.abort();
+  const lifecycle = new AbortController(); castLifecycle = lifecycle;
+  let activeCharacter, activePersona;
   panel.innerHTML = "";
 
   const titleInput = document.getElementById("thread-title");
@@ -57,7 +67,11 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   stopBtn.hidden = true;
   composer.append(textarea, sendBtn, stopBtn);
 
-  panel.append(thread, composer);
+  const castSlot = document.createElement("div"); castSlot.className = "cast-slot";
+  const threadWrap = document.createElement("div"); threadWrap.className = "cast-thread-wrap";
+  const background = document.createElement("img"); background.className = "cast-background"; background.alt = ""; background.hidden = true;
+  threadWrap.append(background, thread);
+  panel.append(castSlot, threadWrap, composer);
 
   const conv = await api.getConversation(conversationId);
   titleInput.value = conv.title;
@@ -95,6 +109,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     const content = document.createElement("div");
     content.className = "message-content";
     content.appendChild(renderMarkdown(msg.content));
+    markDialog(content);
     el.appendChild(content);
 
     if (msg.status && msg.status !== "complete") {
@@ -103,6 +118,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
       badge.textContent = msg.status;
       el.appendChild(badge);
     }
+    decorateSpeaker(el, msg.speaker, msg.role);
     return el;
   }
 
@@ -113,6 +129,14 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   }
 
   renderThread(conv.messages);
+  const castControls = await mountCastControls(castSlot, conversationId, async () => {
+    const fresh = await api.getConversation(conversationId); renderThread(fresh.messages);
+  }, (character, persona) => {
+    activeCharacter = character; activePersona = persona;
+    background.hidden = !character?.background;
+    if (character?.background) background.src = character.background; else background.removeAttribute("src");
+  }, lifecycle.signal, conv.messages.length === 0);
+
 
   await mountModelSelector(modelSlot, conv.endpoint_id, conv.model_id, async (endpointId, modelId) => {
     sendBtn.disabled = true;
@@ -144,14 +168,15 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
 
   async function send(content, confirmLoad) {
     sendBtn.disabled = true;
+    castControls.setBusy(true);
     const modelSelect = modelSlot.querySelector("select");
     if (modelSelect) modelSelect.disabled = true;
     stopBtn.hidden = false;
     abortController = new AbortController();
 
-    const userEl = renderMessageNode({ role: "user", content, status: "complete" });
+    const userEl = renderMessageNode({ role: "user", content, status: "complete", speaker: activePersona });
     thread.appendChild(userEl);
-    const assistantMsg = { role: "assistant", content: "", reasoning: "", status: "streaming" };
+    const assistantMsg = { role: "assistant", content: "", reasoning: "", status: "streaming", speaker: activeCharacter };
     let assistantEl = renderMessageNode(assistantMsg);
     thread.appendChild(assistantEl);
     thread.scrollTop = thread.scrollHeight;
@@ -162,6 +187,16 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
         { content, confirm_load: confirmLoad },
         (ev) => {
           if (ev.generation_id) currentGenerationId = ev.generation_id;
+          if (ev.kind === "start") {
+            api.getConversation(conversationId).then(fresh => {
+              const messages = fresh.messages;
+              if (messages.length >= 2) {
+                decorateSpeaker(userEl, messages.at(-2).speaker, "user");
+                assistantMsg.speaker = messages.at(-1).speaker;
+                decorateSpeaker(assistantEl, assistantMsg.speaker, "assistant");
+              }
+            }).catch(() => {});
+          }
           if (ev.kind === "delta") {
             assistantMsg.content += ev.content || "";
             assistantMsg.reasoning += ev.reasoning || "";
@@ -191,7 +226,8 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
         alert(`Generation failed: ${err.message}`);
       }
     } finally {
-      sendBtn.disabled = false;
+      sendBtn.disabled = !currentModelId;
+      castControls.setBusy(false);
       if (modelSelect) modelSelect.disabled = false;
       stopBtn.hidden = true;
       currentGenerationId = null;

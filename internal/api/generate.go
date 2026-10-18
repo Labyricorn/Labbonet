@@ -7,6 +7,7 @@ import (
 
 	"github.com/Labyricorn/Labbonet/internal/generate"
 	"github.com/Labyricorn/Labbonet/internal/providers"
+	"github.com/Labyricorn/Labbonet/internal/store"
 )
 
 // Generate holds the dependencies for the generation-stream and cancel
@@ -123,6 +124,10 @@ func (g *Generate) Generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch {
+	case errors.Is(runErr, store.ErrConflict):
+		http.Error(w, "Conversation changed or is generating; reload before sending", http.StatusConflict)
+	case errors.Is(runErr, generate.ErrPrompt):
+		http.Error(w, runErr.Error(), http.StatusBadRequest)
 	case errors.Is(runErr, generate.ErrModelNotLoaded):
 		http.Error(w, runErr.Error(), http.StatusConflict)
 	case errors.Is(runErr, generate.ErrNoModelSelected):

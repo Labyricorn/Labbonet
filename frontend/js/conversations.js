@@ -1,6 +1,9 @@
 // Copyright (C) 2026 Elodine / GoblinCorps. AGPL-3.0-or-later.
 // Sidebar adapted from GobboNet chat.html @ 314bdc9cae204ae38fdc1002ac6a9fb1437c109f.
 // Modified by the Labbonet project, 2026-10-17: conversation API and safe DOM handlers.
+// Labbonet additions/modifications: Copyright (C) 2026 Labbonet contributors. AGPL-3.0-or-later.
+// Upstream credit covers presentation structure/design; runtime/API/state/security code is Labbonet work.
+// Element-by-element source and authorship boundary: docs/REUSE-LOG.md and root NOTICE.md.
 import { api } from "./api.js";
 import { mountChatPanel, loadConversationIntoPanel } from "./chat.js";
 

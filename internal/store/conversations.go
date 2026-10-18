@@ -23,7 +23,12 @@ type Conversation struct {
 // may be nil (no model chosen yet).
 func (s *Store) CreateConversation(ctx context.Context, title string, endpointID *int64, modelID *string, systemPrompt, paramsJSON string) (*Conversation, error) {
 	now := formatTime(time.Now().UTC())
-	res, err := s.db.ExecContext(ctx,
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx,
 		`INSERT INTO conversations (title, endpoint_id, model_id, system_prompt, params_json, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		title, endpointID, modelID, systemPrompt, paramsJSON, now, now,
@@ -34,6 +39,12 @@ func (s *Store) CreateConversation(ctx context.Context, title string, endpointID
 	id, err := res.LastInsertId()
 	if err != nil {
 		return nil, fmt.Errorf("create conversation: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO conversation_cast(conversation_id,character_id,persona_id) SELECT ?,character_id,persona_id FROM cast_settings WHERE id=1`, id); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
 	return s.GetConversation(ctx, id)
 }

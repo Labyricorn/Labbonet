@@ -1,7 +1,10 @@
 <!doctype html>
 <!-- Copyright (C) 2026 Elodine / GoblinCorps. AGPL-3.0-or-later.
      Adapted from GobboNet chat.html @ 314bdc9cae204ae38fdc1002ac6a9fb1437c109f.
-     Modified by the Labbonet project, 2026-10-17: safe Phase 1 views and provider controls. -->
+     Modified by the Labbonet project, 2026-10-17/18: safe views, provider controls and cast.
+     Labbonet additions: Copyright (C) 2026 Labbonet contributors. AGPL-3.0-or-later.
+     Upstream credit covers shell presentation; backend/module integration is Labbonet work.
+     Exact elements and authorship: docs/REUSE-LOG.md and root NOTICE.md. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -11,6 +14,8 @@
 <link rel="stylesheet" href="/css/02-layout.css">
 <link rel="stylesheet" href="/css/03-threads.css">
 <link rel="stylesheet" href="/css/04-chat.css">
+<link rel="stylesheet" href="/css/05-modals.css">
+<link rel="stylesheet" href="/css/06-cards.css">
 <link rel="stylesheet" href="/css/components.css">
 <link rel="stylesheet" href="/css/search.css">
 <link rel="stylesheet" href="/css/10-responsive.css">
@@ -33,7 +38,7 @@
     </div>
     <ul class="thread-list" id="thread-list" aria-label="Conversations"></ul>
     <div class="sidebar-footer">
-      <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" disabled title="Characters are not available in this version">// CHARS</button><button type="button" class="btn btn-amber btn-block" data-view="endpoints">// CONFIG</button></div>
+      <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" id="cast-button">// CHARS</button><button type="button" class="btn btn-amber btn-block" data-view="endpoints">// CONFIG</button></div>
       <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" disabled title="Extensions are unavailable">// MODS</button><button type="button" class="btn btn-block" id="backup-button">// DATA</button></div>
       <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" disabled title="Scheduling is not available in this version">// SCHED</button><button type="button" class="btn btn-block" id="about-button">// ABOUT</button></div>
     </div>

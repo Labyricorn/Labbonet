@@ -9,7 +9,7 @@ import (
 
 // latestKnownVersion is the current schema version (PHASE1-ACCEPTANCE.md
 // A-B5 to A-B7). Update when a new migration is added.
-const latestKnownVersion = 1
+const latestKnownVersion = 2
 
 // A-B5: a fresh start creates the schema, and a restart on the same file
 // keeps the data and lands on the same user_version.
@@ -49,9 +49,8 @@ func TestOpen_FreshStartCreatesSchemaAndSurvivesRestart(t *testing.T) {
 	}
 }
 
-// A-B6: migrating up from an earlier schema version (here, an empty
-// database at version 0, since Phase 1 has only one migration so far)
-// applies in order and leaves data intact.
+// A-B6: migrating an empty version-zero database applies all embedded
+// migrations in order. The cast upgrade test covers populated version one.
 func TestMigrate_FromEmptyDatabase(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "labbonet.db")
@@ -76,7 +75,7 @@ func TestMigrate_FromEmptyDatabase(t *testing.T) {
 	}
 
 	// Re-opening an already-migrated database is a no-op that leaves data
-	// intact (the N-1 -> N step, applied twice here since N is currently 1).
+	// intact without applying the same migration twice.
 	if _, err := st.CreateEndpoint(t.Context(), "LM Studio", "openai", "http://10.138.11.11:1234", "lan", 1); err != nil {
 		t.Fatalf("create endpoint: %v", err)
 	}

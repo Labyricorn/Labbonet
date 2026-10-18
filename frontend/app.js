@@ -1,3 +1,4 @@
+import { mountCastLibrary } from "./js/cast.js";
 import { api } from "./js/api.js";
 import { mountChatView } from "./js/conversations.js";
 import { mountEndpointsView } from "./js/endpoints.js";
@@ -57,6 +58,7 @@ document.querySelector(".sidebar-close-btn").addEventListener("click", () => tog
 overlay.addEventListener("click", () => toggleSidebar(true));
 if (matchMedia("(max-width: 700px)").matches) toggleSidebar(true);
 
+mountCastLibrary(document.getElementById("cast-button"));
 checkHealth();
 mountChatView(document.getElementById("view-chat"));
 mountEndpointsView(document.getElementById("view-endpoints"));

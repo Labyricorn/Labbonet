@@ -168,3 +168,11 @@ Proposed sequencing moves application parity before WebLLM and broader multi-mod
 **Changes:** recorded scope in project AGENTS, README, architecture, acceptance/sign-off, build/parity plans, handover, Strata checklist and decision log. Decision statuses remain unchanged. Updated the health/header build-version source from the old placeholder to the owner's exact `V0-2-0` label; no release tag created. Existing uncommitted cast work is preserved.
 
 **Verification / DOX:** documentation cross-check and diff whitespace check, Go formatting/vet/full tests, normal and CGO-disabled builds passed before push. Parent `G:\.vibe\AGENTS.md` and `frontend/AGENTS.md` intentionally unchanged: shared ownership and frontend contracts are unchanged; frontend already obtains its version from the health endpoint. No provider operations or new acceptance claims.
+
+## 2026-10-18 — Milestone 1 (CHARS) committed with open UI checks
+
+**State:** re-ran all gates on the preserved working tree: `gofmt -l .` clean, `go vet`, `go test ./...`, normal and CGO-disabled builds, `node --check` on all frontend modules pass. Committed and pushed to `main`.
+
+**Still unverified (not claimed):** browser file-upload preview/remove path (Chrome extension file-URL access off; not bypassed), dirty-editor retain/dismiss outcome, live generation with saved cast, owner visual acceptance. Domain tests cover raster validation. These carry forward into milestone 8.
+
+**DOX pass:** AGENTS files unchanged; contracts did not change in this commit.

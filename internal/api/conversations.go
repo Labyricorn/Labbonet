@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Labyricorn/Labbonet/internal/cast"
 	"github.com/Labyricorn/Labbonet/internal/store"
 )
 
@@ -32,16 +33,19 @@ func toConversationResponse(c *store.Conversation) conversationResponse {
 }
 
 type messageResponse struct {
-	ID        int64     `json:"id"`
-	Role      string    `json:"role"`
-	Content   string    `json:"content"`
-	Reasoning string    `json:"reasoning"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        int64         `json:"id"`
+	Role      string        `json:"role"`
+	Content   string        `json:"content"`
+	Reasoning string        `json:"reasoning"`
+	Status    string        `json:"status"`
+	CreatedAt time.Time     `json:"created_at"`
+	Speaker   cast.Identity `json:"speaker"`
 }
 
 func toMessageResponse(m *store.Message) messageResponse {
-	return messageResponse{ID: m.ID, Role: m.Role, Content: m.Content, Reasoning: m.Reasoning, Status: m.Status, CreatedAt: m.CreatedAt}
+	var speaker cast.Identity
+	_ = json.Unmarshal([]byte(m.SpeakerJSON), &speaker)
+	return messageResponse{ID: m.ID, Role: m.Role, Content: m.Content, Reasoning: m.Reasoning, Status: m.Status, CreatedAt: m.CreatedAt, Speaker: speaker}
 }
 
 // List handles GET /api/conversations.

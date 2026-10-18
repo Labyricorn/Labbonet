@@ -42,7 +42,7 @@ func Open(path string) (*Store, error) {
 		}
 	}
 
-	if err := migrate(db); err != nil {
+	if err := migrate(db, path); err != nil {
 		db.Close()
 		return nil, err
 	}

@@ -1,8 +1,10 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -48,7 +50,7 @@ func sortedMigrations() ([]migrationFile, error) {
 // PRAGMA user_version. Each migration is applied inside its own
 // transaction. A database newer than the latest embedded migration is
 // refused without being modified.
-func migrate(db *sql.DB) error {
+func migrate(db *sql.DB, path string) error {
 	var current int
 	if err := db.QueryRow("PRAGMA user_version").Scan(&current); err != nil {
 		return fmt.Errorf("read schema version: %w", err)
@@ -66,6 +68,13 @@ func migrate(db *sql.DB) error {
 
 	if current > latest {
 		return fmt.Errorf("database schema version %d is newer than this binary supports (latest known migration is %d); refusing to open it to avoid data loss", current, latest)
+	}
+	// Back up an existing database before the first pending migration. The
+	// normal credential-free backup path is reused; the live credentials remain.
+	if current > 0 && current < latest {
+		if _, err := (&Store{db: db}).Backup(context.Background(), filepath.Dir(path)); err != nil {
+			return fmt.Errorf("pre-upgrade backup: %w", err)
+		}
 	}
 
 	for _, f := range files {
