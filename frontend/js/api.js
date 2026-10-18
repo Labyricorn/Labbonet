@@ -92,6 +92,15 @@ export const api = {
   activeGeneration: (id) => request("GET", `/api/conversations/${id}/generation`),
   diagnostics: () => request("GET", "/api/diagnostics"),
   backup: () => request("POST", "/api/backup"),
+
+  memorySettings: () => request("GET", "/api/memory/settings"),
+  saveMemorySettings: (settings) => request("PUT", "/api/memory/settings", settings),
+  previewStorybook: (storybook) => request("POST", "/api/memory/storybook/preview", { storybook }),
+  embeddingStats: () => request("GET", "/api/memory/embeddings"),
+  clearEmbeddings: () => request("DELETE", "/api/memory/embeddings"),
+  conversationMemory: (id) => request("GET", `/api/conversations/${id}/memory`),
+  saveSummary: (id, text, expected_seq) => request("PUT", `/api/conversations/${id}/summary`, { text, expected_seq }),
+  summariseNow: (id) => request("POST", `/api/conversations/${id}/summary/compress`),
 };
 
 // readEvents decodes an SSE response over fetch. EventSource can't be used: generate needs

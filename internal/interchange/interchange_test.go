@@ -17,6 +17,7 @@ func sampleCard() cast.Card {
 		Kind: "character", Name: "Mira", Description: "A <b>wanderer</b>", Personality: "curious", Style: "terse",
 		SystemPrompt: "Stay in character.", Greetings: []string{"Hello", "Hi again"}, Carousel: []string{"a", "b"},
 		CarouselMode: "random", Macros: map[string]string{"place": "inn"}, Lore: "The inn burned down.",
+		Storybook:    "# innkeeper\ntags: innkeeper [1.0], tavern\nHe pours the ale.\n",
 		ContextLimit: 4096, ReplyLimit: 300, Temperature: &temp, TextColor: "#aabbcc", DialogColor: "#112233",
 		Extra: `{"creator_notes":"hi","tags":["a"],"extensions":{"regex_scripts":[{"find":"x"}]}}`,
 	}

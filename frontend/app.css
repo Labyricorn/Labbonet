@@ -146,3 +146,24 @@ button:disabled { opacity: .45; cursor: default; }
 .code-btn { position: static; opacity: 1; }
 .msg-source { white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 700px) { .chat-tools { padding: 6px 12px; } .gen-status { margin-left: 0; flex-basis: 100%; } }
+
+/* MEMORY dialog and header chip (Labbonet original; reuses the pinned modal, button and table classes). */
+.memory-modal { width: min(820px, calc(100% - 24px)); max-height: calc(100vh - 32px); overflow: auto; }
+.memory-tabs { display: flex; gap: 6px; margin: 10px 0; }
+.memory-tab.active { color: var(--black); background: var(--cyan-bright); }
+.memory-section { display: flex; flex-wrap: wrap; align-items: center; margin: 0 0 14px; padding: 10px 12px; min-width: 0; border: 1px solid var(--border); }
+.memory-section > * { margin-top: 8px; margin-right: 8px; }
+.memory-section > .form-hint, .memory-section > .memory-line, .memory-section > .memory-text, .memory-section > .data-item, .memory-section > .memory-detail, .memory-section > select, .memory-section > .memory-table { flex: 1 1 100%; }
+.memory-section .cast-control-label { display: flex; flex: 1 1 100%; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; width: 100%; max-width: none; text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--cyan-mid); }
+.memory-section .cast-control-label:has(input[type=number], input[type=text], select) { justify-content: space-between; }
+.memory-section .cast-control-label input[type=number] { width: 90px; }
+.memory-section .cast-control-label input[type=text] { width: 200px; }
+.memory-section .cast-control-label select { width: auto; max-width: 100%; }
+.memory-text { display: block; width: 100%; min-height: 140px; resize: vertical; background: var(--black); color: var(--cyan-bright); border: 1px solid var(--cyan-dim); border-radius: var(--radius); padding: 8px; font-size: 12px; }
+.memory-line { font-size: 12px; color: var(--cyan-mid); overflow-wrap: anywhere; }
+.memory-failed { border-left: 3px solid var(--red-neon); padding-left: 8px; }
+.memory-note { margin: 4px 0; }
+.memory-table { font-size: 11px; display: block; overflow-x: auto; }
+.memory-chip { color: var(--magenta); border-color: var(--magenta-dim); white-space: nowrap; max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
+.storybook-report { margin-bottom: 10px; max-height: 220px; overflow: auto; }
+@media (max-width: 700px) { .memory-chip { order: 4; max-width: 100%; } }

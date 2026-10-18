@@ -31,6 +31,7 @@ export function mountChatPanel(panel) {
   title.value = "No thread selected";
   title.disabled = true;
   document.getElementById("model-slot").replaceChildren();
+  document.dispatchEvent(new CustomEvent("conversation-changed", { detail: { id: null } }));
 }
 
 function actionButton(label, cls, title, handler) {
@@ -151,6 +152,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
 
   const conv = await api.getConversation(conversationId);
   titleInput.value = conv.title;
+  document.dispatchEvent(new CustomEvent("conversation-changed", { detail: { id: conversationId } }));
   let currentModelId = conv.model_id;
   // The tree revision this tab last saw; every branch edit and send echoes it so a stale
   // tab gets a conflict instead of overwriting another tab's work.
@@ -482,6 +484,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     setBusy(false);
     currentGenerationId = null;
     live = null;
+    document.dispatchEvent(new Event("memory-changed"));
     try { await reload(); } catch {
       // The conversation may have just been deleted from elsewhere;
       // leave the last rendered state as is.

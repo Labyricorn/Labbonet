@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/Labyricorn/Labbonet/internal/cast"
+	"github.com/Labyricorn/Labbonet/internal/memory"
 	"github.com/Labyricorn/Labbonet/internal/providers"
 )
 
@@ -31,6 +32,16 @@ type Input struct {
 	Temperature  *float64
 	TopP         *float64
 	Now          time.Time
+	// Summary is the running summary of messages the caller already removed from
+	// History (ArchivedMessages of them). It joins the system message and is dropped,
+	// with a note, if it cannot fit beside the system text and the current turn.
+	Summary          string
+	SummarySeq       int64
+	ArchivedMessages int
+	// Retrieve, when set, is called once with the headroom (in memory.Cost units)
+	// retrieval may use and returns storybook text to inject before the current turn.
+	// The caller guarantees the returned cost never exceeds the headroom it was given.
+	Retrieve func(headroom int) []memory.Injection
 }
 type Snapshot struct {
 	Version         int                 `json:"version"`
@@ -45,6 +56,13 @@ type Snapshot struct {
 	OmittedMessages int                 `json:"omitted_messages"`
 	CarouselIndex   int                 `json:"carousel_index"`
 	AssembledAt     time.Time           `json:"assembled_at"`
+	// Memory provenance: which summary revision (0 = none), how many messages it
+	// replaced, which storybook entries were injected and what was left out.
+	SummarySeq       int64    `json:"summary_seq,omitempty"`
+	ArchivedMessages int      `json:"archived_messages,omitempty"`
+	SummaryOmitted   bool     `json:"summary_omitted,omitempty"`
+	Retrieved        []string `json:"retrieved,omitempty"`
+	RetrievedCost    int      `json:"retrieved_cost,omitempty"`
 }
 
 var macro = regexp.MustCompile(`\{\{([a-zA-Z][a-zA-Z0-9_]*)\}\}`)
@@ -168,6 +186,48 @@ func Assemble(in Input) (Snapshot, error) {
 	if used > out.ContextLimit {
 		return out, fmt.Errorf("system and current turn exceed context budget (%d > %d); shorten them or raise context limit", used, out.ContextLimit)
 	}
+	out.ArchivedMessages = in.ArchivedMessages
+	if summary := strings.TrimSpace(in.Summary); summary != "" {
+		block := "[Summary of earlier conversation]\n" + summary
+		if cost := len(block) + 16; used+cost > out.ContextLimit {
+			out.SummaryOmitted = true
+		} else {
+			used += cost
+			out.SummarySeq = in.SummarySeq
+			system = strings.TrimSpace(system + "\n\n" + block)
+		}
+	}
+	// Retrieval gets at most a quarter of the context and never what the fixed parts
+	// above already use; unused headroom goes back to the conversation history.
+	loreText := ""
+	if in.Retrieve != nil {
+		headroom := out.ContextLimit - used
+		if limit := out.ContextLimit / 4; headroom > limit {
+			headroom = limit
+		}
+		if headroom > 0 {
+			injected := in.Retrieve(headroom)
+			for len(injected) > 0 {
+				parts := make([]string, len(injected))
+				for i, inj := range injected {
+					parts[i] = inj.Text
+				}
+				text := "[Relevant lore]\n" + strings.Join(parts, "\n\n")
+				if len(text)+16 <= headroom {
+					loreText = text
+					break
+				}
+				injected = injected[:len(injected)-1]
+			}
+			for _, inj := range injected {
+				out.Retrieved = append(out.Retrieved, inj.EntityID)
+			}
+			if loreText != "" {
+				out.RetrievedCost = len(loreText) + 16
+				used += out.RetrievedCost
+			}
+		}
+	}
 	start := len(in.History)
 	for start > 0 {
 		// Keep whole user/assistant turns, avoiding orphan assistants at the boundary.
@@ -191,6 +251,9 @@ func Assemble(in Input) (Snapshot, error) {
 		out.Messages = append(out.Messages, providers.Message{Role: "system", Content: system})
 	}
 	out.Messages = append(out.Messages, in.History[start:]...)
+	if loreText != "" {
+		out.Messages = append(out.Messages, providers.Message{Role: "system", Content: loreText})
+	}
 	if personaText != "" {
 		out.Messages = append(out.Messages, providers.Message{Role: "system", Content: personaText})
 	}

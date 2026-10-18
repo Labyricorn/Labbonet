@@ -168,6 +168,15 @@ export function mountCastLibrary(trigger) {
     field("description", "Description", "textarea");
     if (card.kind === "character") {
       for (const [key,label] of [["system_prompt","System prompt"],["style","Writing style"],["personality","Personality"],["lore","Authored lore"]]) field(key,label,"textarea");
+      const book = field("storybook", "Storybook (retrieval lore)", "textarea", "Optional. Start an entry with “# name”, then “tags: angel, divine [0.8]”, “relation: other”, “use: guidance”, “offscreen_default: true” and its description. Entries are added to the prompt only when their tags (or, if enabled, semantic similarity) match the recent conversation. A line of --- ends an entry; prose after it is searchable by meaning only.");
+      book.rows = 10; book.maxLength = 262144;
+      const bookReport = node("div", "storybook-report"); bookReport.setAttribute("aria-live", "polite");
+      form.append(button("CHECK STORYBOOK", () => perform(async () => {
+        const out = await api.previewStorybook(book.value); bookReport.replaceChildren();
+        bookReport.append(node("p", "form-hint", `${out.counts.entities} entities, ${out.counts.subtrees} subtrees, ${out.counts.tags} tags, ${out.prose_chunks} standalone prose chunks (${out.embeddable_docs} embeddable texts)`));
+        for (const e of out.entities.slice(0, 60)) bookReport.append(node("div", "data-item", `${e.id} — ${e.tags} tag(s)${e.relations ? `, ${e.relations} relation(s)` : ""}${e.offscreen ? ", offscreen" : ""}${e.chars ? `, ${e.chars} chars` : ", no description"}`));
+        for (const w of out.warnings) bookReport.append(node("p", "form-error memory-note", w));
+      })), bookReport);
       field("greetings", "Greeting variants", "textarea", "Separate variants with a line containing ---.").value = (draft.greetings || []).join("\n---\n");
       field("carousel", "Carousel prompts", "textarea", "Separate entries with a line containing ---. Use {{carousel}} in templates.").value = (draft.carousel || []).join("\n---\n");
       const mode = field("carousel_mode", "Carousel mode");

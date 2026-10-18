@@ -9,6 +9,7 @@ import "fmt"
 var AllowedPaths = map[string]bool{
 	"/v1/models":           true,
 	"/v1/chat/completions": true,
+	"/v1/embeddings":       true,
 	"/health":              true,
 	"/status":              true,
 	"/api/v0/models":       true,

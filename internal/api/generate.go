@@ -153,7 +153,7 @@ func (g *Generate) Generate(w http.ResponseWriter, r *http.Request) {
 		RegenerateParentID: req.RegenerateParentID, ExpectedRevision: req.Revision,
 		MaxReplyChars: req.MaxReplyChars, ReasoningLimitChars: req.ReasoningLimitChars, Attachments: req.Attachments,
 	}
-	job, err := g.jobs().Start(genReq)
+	job, err := g.jobs().StartContext(r.Context(), genReq)
 	if err != nil {
 		switch {
 		case errors.Is(err, store.ErrConflict):

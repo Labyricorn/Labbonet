@@ -42,6 +42,7 @@
       <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" id="cast-button">// CHARS</button><button type="button" class="btn btn-amber btn-block" data-view="endpoints">// CONFIG</button></div>
       <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" disabled title="Extensions are unavailable">// MODS</button><button type="button" class="btn btn-block" id="backup-button">// DATA</button></div>
       <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" disabled title="Scheduling is not available in this version">// SCHED</button><button type="button" class="btn btn-block" id="about-button">// ABOUT</button></div>
+      <div class="sidebar-footer-btns"><button type="button" class="btn btn-block" id="memory-button">// MEMORY</button></div>
     </div>
   </aside>
   <div id="sidebar-overlay"></div>
@@ -51,6 +52,7 @@
       <button type="button" class="home-btn" data-view="chat" aria-label="Home">&#8962;</button>
       <div class="header-model-wrap" id="header-model-wrap"><span class="header-model-label">MODEL</span><div id="model-slot"></div></div>
       <span class="thread-title"><input id="thread-title" aria-label="Conversation title" value="No thread selected" disabled></span>
+      <button type="button" class="btn btn-sm memory-chip" id="memory-chip" hidden></button>
       <span class="status-label" id="status">Checking...</span><span class="status-dot" id="status-dot"></span>
       <span class="privacy-badge" title="Loopback-only backend; provider destination is selected explicitly">&#128274;</span>
     </header>

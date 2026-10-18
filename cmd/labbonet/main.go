@@ -148,6 +148,15 @@ func run(args []string) error {
 		fmt.Printf("Marked %d reply(ies) left streaming by the previous run as interrupted.\n", n)
 	}
 	gen := &api.Generate{Runner: runner, Jobs: jobs}
+	mem := &api.Memory{Store: st, Runner: runner}
+	srv.Handle("GET /api/memory/settings", http.HandlerFunc(mem.GetSettings))
+	srv.Handle("PUT /api/memory/settings", http.HandlerFunc(mem.PutSettings))
+	srv.Handle("POST /api/memory/storybook/preview", http.HandlerFunc(mem.PreviewStorybook))
+	srv.Handle("GET /api/memory/embeddings", http.HandlerFunc(mem.EmbeddingStats))
+	srv.Handle("DELETE /api/memory/embeddings", http.HandlerFunc(mem.ClearEmbeddings))
+	srv.Handle("GET /api/conversations/{id}/memory", http.HandlerFunc(mem.Conversation))
+	srv.Handle("PUT /api/conversations/{id}/summary", http.HandlerFunc(mem.EditSummary))
+	srv.Handle("POST /api/conversations/{id}/summary/compress", http.HandlerFunc(mem.SummariseNow))
 	srv.Handle("POST /api/conversations/{id}/generate", http.HandlerFunc(gen.Generate))
 	srv.Handle("POST /api/generations/{id}/cancel", http.HandlerFunc(gen.Cancel))
 	srv.Handle("GET /api/generations/{id}/events", http.HandlerFunc(gen.Events))

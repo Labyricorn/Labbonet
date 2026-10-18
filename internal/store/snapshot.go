@@ -474,6 +474,13 @@ func (s *Store) ResetData(ctx context.Context, scope string) error {
 		if _, err = tx.ExecContext(ctx, `DELETE FROM folders`); err != nil {
 			return err
 		}
+		// Summaries and retrieval records go with their conversations (cascade); the
+		// vector cache holds derived data only and is cleared with a full reset.
+		if scope == "all" {
+			if _, err = tx.ExecContext(ctx, `DELETE FROM embedding_cache`); err != nil {
+				return err
+			}
+		}
 	}
 	if scope == "cast" || scope == "all" {
 		if _, err = tx.ExecContext(ctx, `UPDATE conversation_cast SET revision=revision+1`); err != nil {

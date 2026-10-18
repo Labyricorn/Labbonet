@@ -42,6 +42,7 @@ type labbonetExt struct {
 	TextColor        string            `json:"text_color"`
 	DialogColor      string            `json:"dialog_color"`
 	Background       string            `json:"background"`
+	Storybook        string            `json:"storybook"`
 }
 
 func rawString(m map[string]json.RawMessage, key string) string {
@@ -263,6 +264,7 @@ func applyLabbonetExt(c *cast.Card, raw json.RawMessage, p *parsedCard) {
 	c.ContextLimit, c.ReplyLimit = e.ContextLimit, e.ReplyLimit
 	c.Temperature, c.TopP = e.Temperature, e.TopP
 	c.TextColor, c.DialogColor, c.Background = e.TextColor, e.DialogColor, e.Background
+	c.Storybook = e.Storybook
 }
 
 // ---- export ----
@@ -279,7 +281,7 @@ func cardData(c cast.Card, v3 bool) map[string]any {
 	ext[labbonetExtKey] = labbonetExt{
 		Kind: c.Kind, Style: &c.Style, Carousel: c.Carousel, CarouselMode: c.CarouselMode, Macros: c.Macros,
 		PersonaFrequency: &c.PersonaFrequency, ContextLimit: c.ContextLimit, ReplyLimit: c.ReplyLimit,
-		Temperature: c.Temperature, TopP: c.TopP, TextColor: c.TextColor, DialogColor: c.DialogColor, Background: c.Background,
+		Temperature: c.Temperature, TopP: c.TopP, TextColor: c.TextColor, DialogColor: c.DialogColor, Background: c.Background, Storybook: c.Storybook,
 	}
 	first, alt := "", []string{}
 	if len(c.Greetings) > 0 {

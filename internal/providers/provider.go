@@ -139,3 +139,24 @@ type Provider interface {
 	ListModels(ctx context.Context) ([]Model, error)
 	StreamChat(ctx context.Context, req ChatRequest, emit func(Event) error) (Result, error)
 }
+
+// EmbedRequest asks for one vector per input text. Inputs are sent in one request and
+// must be bounded by the caller.
+type EmbedRequest struct {
+	Model  string
+	Inputs []string
+}
+
+// EmbedResult has exactly one vector per input, in input order.
+type EmbedResult struct {
+	Vectors       [][]float32
+	ModelReported string
+	PromptTokens  int
+}
+
+// Embedder is implemented by providers that serve /v1/embeddings (OpenAI-compatible).
+// Callers must never embed with a model whose cached state is not-loaded: on LM Studio
+// that would JIT-load the model (AGENTS.md probe rules).
+type Embedder interface {
+	Embed(ctx context.Context, req EmbedRequest) (EmbedResult, error)
+}

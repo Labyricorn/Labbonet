@@ -17,7 +17,7 @@ type Provider interface {
 }
 
 // Optional capabilities, discovered by type assertion.
-type Embedder interface { Embed(ctx context.Context, req EmbedRequest) (EmbedResult, error) } // Phase 4
+type Embedder interface { Embed(ctx context.Context, req EmbedRequest) (EmbedResult, error) } // milestone 5
 type StatusReporter interface { Status(ctx context.Context) (Status, error) }                 // diagnostics
 ```
 
@@ -77,8 +77,9 @@ These are the only paths the egress client may request (`SECURITY-MODEL.md` sect
 | `/health` | GET | Strata detection and load state |
 | `/status` | GET | Strata activity (diagnostics) |
 | `/api/v0/models` | GET | LM Studio inventory with load state |
+| `/v1/embeddings` | POST | Semantic lore retrieval (milestone 5); see section 5.4 |
 
-`/v1/embeddings` is added in Phase 4. Paths with model IDs in the URL (for example `/api/v0/models/{model}`) are not used.
+Paths with model IDs in the URL (for example `/api/v0/models/{model}`) are not used.
 
 ## 2. Capability profile
 
@@ -149,6 +150,15 @@ After the owner loaded `google/gemma-4-26b-a4b-qat`, `/api/v0/models` confirmed 
 - When provider timings are absent, the adapter measures TTFT from request start to the first nonempty content/reasoning delta and estimates tokens/sec from completion usage over the observed interval after that delta. Short or buffered streams can make that estimate noisy. Provider timings take precedence when present.
 - Cancellation persisted `cancelled`; a subsequent four-token request completed in 0.331 s. No load, unload, settings or TTL operation was used.
 
+
+### 5.4 Embeddings (milestone 5) [documented shape; live response not yet observed]
+
+`internal/providers/openai.Adapter.Embed` sends `POST /v1/embeddings` with `{"model", "input": [<=64 strings, each <=16 KiB], "encoding_format": "float"}` and expects `{"model", "data": [{"index", "embedding": [floats]}], "usage": {"prompt_tokens"}}`, the OpenAI-compatible shape that LM Studio documents for `/v1/embeddings`. The adapter requires one vector per input, indexes 0..n-1, equal dimensions up to 8192 and finite values; anything else is a `protocol_error`. HTTP errors map through the normal taxonomy. There is no `ttl`, load or unload field.
+
+- **Verified:** request and response handling against a scripted fake server (`embed_test.go`, `internal/generate/memory_test.go`), including prefixes, ordering by index, caching and fallbacks.
+- **Not verified:** a live LM Studio `/v1/embeddings` response. LM Studio JIT-loads any not-loaded model on first request (section 6), so Labbonet sends embedding requests only to an embedding model whose cached state is not `not-loaded`, and never probes one. A live check needs the owner to load an embedding model (candidates in section 5.1) and is tracked with the deferred V2-0-0 provider checks. Strata reports no embeddings capability, so semantic retrieval there stays unavailable.
+- **Model-specific prefixes:** some embedding models want text prefixes (nomic: `search_document: ` and `search_query: `). They are user settings (default empty), applied before hashing, so changing them re-embeds.
+
 ## 6. LM Studio JIT loading and auto-evict [docs]
 
 - JIT loading is on by default: the first request to a model that is not loaded loads it.
@@ -168,7 +178,7 @@ Consequence for Labbonet: sending a chat to a `not-loaded` model is a model-mana
 |---|---|
 | LM Studio streaming format, `usage`, reasoning field, cancellation | Observed for the loaded Gemma model; section 5.3 and `evidence/step7-live.json` |
 | LM Studio authenticated mode | Phase 1 acceptance (needs the owner to enable it) |
-| LM Studio embeddings response shape | Phase 4 |
+| LM Studio embeddings response shape | Live check deferred (section 5.4); needs a loaded embedding model |
 | Strata cancellation | Observed: `/status` idle 116 ms after stop; `evidence/step7-live.json` |
 | Strata cold-load timeout | Pending owner window (deferred by owner); `Strata_Protocol.md` section 10 |
 | Strata authenticated mode | Phase 1 acceptance (needs the owner to set `api_key`) |

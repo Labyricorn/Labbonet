@@ -11,13 +11,13 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `Initial_Project_Proposal.md`: project brief and baseline definition.
 - `decision_register.md`: DR-001 to DR-016 with statuses, rationale and decision log.
 - `Strata_Protocol.md`: verified Strata API behavior (evidence for DR-005 and the provider adapter).
-- `docs/ARCHITECTURE.md`: components, backend API, storage schema outline, repo layout, implementation defaults, dependency inventory.
+- `docs/ARCHITECTURE.md`: components, backend API, storage schema outline (schema 4: lore, summaries, retrieval; section 13), repo layout, implementation defaults, dependency inventory.
 - `docs/SECURITY-MODEL.md`: threat model, controls, negative security tests (S1 to S17).
 - `docs/PROVIDER-SPEC.md`: adapter contract, normalized events, errors, timeouts, allowed request paths, Strata and LM Studio profiles.
 - `docs/PHASE1-ACCEPTANCE.md`: Phase 1 scope, non-goals, owner prerequisites, acceptance tests, sign-off.
 - `docs/PHASE1-PLAN.md`: Phase 1 build order (seven steps), per-step files, tests and done criteria, working rules.
 - `docs/GOBBONET-REFERENCE.md`: pinned GobboNet commit, source map, excluded paths.
-- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-4 are implemented (see handover for open verification).
+- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-4 are implemented (see handover for open verification); milestone 5 (lore, summaries, retrieval) is implemented, 6-8 remain.
 - `docs/IMPLEMENTATION-HANDOVER.md`: unfinished parity working-tree changes, checks performed, remaining work and review risks for model handover; update or retire when superseded.
 - `docs/REUSE-LOG.md`: element-by-element GobboNet source/design attribution and Labbonet authorship boundaries (DR-003).
 - `docs/GOBBONET-PROVENANCE.json`: pinned-source hashes and exact reused CSS spans; keep synchronized with the reuse inventory.
@@ -26,7 +26,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `README.md`: public project summary; `.gitignore`: Go template from the initial GitHub commit.
 - `devlog.md`: implementation history (Devlog Loop); read before starting each step, add an entry when a step is done.
 - `docs/evidence/`: screenshots and verification records supporting acceptance tests.
-- `go.mod`, `cmd/`, `internal/` (including `internal/interchange`, card/snapshot parsing, and `internal/generate` detached jobs/limits), `migrations/`: Phase 1 and parity backend source, built per `docs/PHASE1-PLAN.md`. `frontend/AGENTS.md` owns the browser source/presentation contracts; this file retains project architecture, provider/security and acceptance ownership.
+- `go.mod`, `cmd/`, `internal/` (including `internal/interchange`, card/snapshot parsing, `internal/generate` detached jobs/limits/memory coordination, `internal/memory` storybook parser, retrieval engine and memory settings), `migrations/`: Phase 1 and parity backend source, built per `docs/PHASE1-PLAN.md`. `frontend/AGENTS.md` owns the browser source/presentation contracts; this file retains project architecture, provider/security and acceptance ownership.
 
 ## Local Contracts
 

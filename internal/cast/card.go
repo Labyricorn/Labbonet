@@ -18,6 +18,8 @@ import (
 	"math"
 	"regexp"
 	"strings"
+
+	"github.com/Labyricorn/Labbonet/internal/memory"
 )
 
 type Card struct {
@@ -36,14 +38,17 @@ type Card struct {
 	Macros           map[string]string `json:"macros"`
 	PersonaFrequency int               `json:"persona_frequency"`
 	Lore             string            `json:"lore"`
-	ContextLimit     int               `json:"context_limit"`
-	ReplyLimit       int               `json:"reply_limit"`
-	Temperature      *float64          `json:"temperature"`
-	TopP             *float64          `json:"top_p"`
-	Portrait         string            `json:"portrait"`
-	Background       string            `json:"background"`
-	TextColor        string            `json:"text_color"`
-	DialogColor      string            `json:"dialog_color"`
+	// Storybook is authored retrieval material (entities, weighted tags, prose); see
+	// internal/memory. It is inert text that is only matched and, when relevant, injected.
+	Storybook    string   `json:"storybook"`
+	ContextLimit int      `json:"context_limit"`
+	ReplyLimit   int      `json:"reply_limit"`
+	Temperature  *float64 `json:"temperature"`
+	TopP         *float64 `json:"top_p"`
+	Portrait     string   `json:"portrait"`
+	Background   string   `json:"background"`
+	TextColor    string   `json:"text_color"`
+	DialogColor  string   `json:"dialog_color"`
 	// Extra holds unmapped interchange metadata (creator notes, tags, unknown
 	// extensions) as an inert JSON object. It is never interpreted or executed.
 	Extra string `json:"extra,omitempty"`
@@ -66,6 +71,14 @@ func (c Card) Validate() error {
 	for _, v := range []string{c.Description, c.Personality, c.Style, c.SystemPrompt, c.Lore} {
 		if len(v) > 65536 {
 			return errors.New("text field exceeds 64 KiB")
+		}
+	}
+	if c.Storybook != "" {
+		if c.Kind != "character" {
+			return errors.New("only characters can have a storybook")
+		}
+		if _, err := memory.ParseStorybook(c.Storybook); err != nil {
+			return err
 		}
 	}
 	if len(c.Greetings) > 64 || len(c.Carousel) > 64 || len(c.Macros) > 64 {

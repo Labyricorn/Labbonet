@@ -76,6 +76,8 @@ type Runner struct {
 	Egress    *egress.Client
 	Slots     *Slots
 	Registry  *Registry
+
+	mem memoryState
 }
 
 // Run persists the user message, creates the assistant message and its
@@ -154,12 +156,9 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 		leaf := path[len(path)-1].ID
 		expectedLeaf = &leaf
 	}
-	history := make([]providers.Message, 0, len(path))
-	for _, m := range path {
-		history = append(history, providers.Message{Role: m.Role, Content: m.Content})
-	}
+	// The persona cadence counts every user turn on the branch, archived or not.
 	turn := 0
-	for _, m := range history {
+	for _, m := range path {
 		if m.Role == "user" {
 			turn++
 		}
@@ -174,10 +173,19 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 			contextLimit = m.ContextLength
 		}
 	}
-	snapshot, err := prompt.Assemble(prompt.Input{Character: character, Persona: persona, System: conv.SystemPrompt, History: history, User: userContent, Turn: turn, ContextLimit: contextLimit, MaxTokens: req.MaxTokens, Temperature: req.Temperature, TopP: req.TopP, Now: time.Now()})
+	now := time.Now()
+	mem, err := rn.prepareMemory(ctx, memoryInput{Conv: conv, Endpoint: ep, ModelID: modelID, Character: character, Persona: persona, Path: path,
+		User: userContent, Turn: turn, ContextLimit: contextLimit, MaxTokens: req.MaxTokens, Now: now})
+	if err != nil {
+		return err
+	}
+	snapshot, err := prompt.Assemble(prompt.Input{Character: character, Persona: persona, System: conv.SystemPrompt, History: mem.History, User: userContent, Turn: turn,
+		ContextLimit: contextLimit, MaxTokens: req.MaxTokens, Temperature: req.Temperature, TopP: req.TopP, Now: now,
+		Summary: mem.Summary, SummarySeq: mem.SummarySeq, ArchivedMessages: mem.Archived, Retrieve: mem.Retrieve})
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrPrompt, err)
 	}
+	mem.finish(&snapshot)
 	// Attached file text is already part of the stored user message; provenance keeps names only.
 	provenance := req
 	provenance.Attachments = nil
@@ -203,6 +211,12 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 	}
 	assistantMsg := &store.Message{ID: msgID}
 	gen := &store.Generation{ID: genID}
+	if mem.Keep {
+		record := mem.Record
+		_ = persistWrite(func(c context.Context) error {
+			return rn.Store.AddRetrievalRecord(c, req.ConversationID, &genID, record)
+		})
+	}
 	runCtx, cancel := context.WithCancel(ctx)
 	rn.Registry.Register(gen.ID, cancel)
 	defer func() { cancel(); rn.Registry.Unregister(gen.ID) }()

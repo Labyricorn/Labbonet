@@ -148,12 +148,39 @@ type started struct {
 // request's own context is deliberately not used: the job lives until the provider
 // finishes, it is stopped, or the process shuts down.
 func (js *Jobs) Start(req Request) (*Job, error) {
+	return js.StartContext(context.Background(), req)
+}
+
+// StartContext is Start, except that prepare governs only the phase before the turn is
+// stored (summarising older messages, embedding): if it ends first, preparation is
+// abandoned and nothing is stored. Once the turn exists the job no longer depends on it.
+func (js *Jobs) StartContext(prepare context.Context, req Request) (*Job, error) {
 	res := make(chan started, 1)
+	runCtx, cancelRun := context.WithCancel(context.Background())
+	var gate sync.Mutex
+	begun := false
+	stopWatch := make(chan struct{})
+	go func() {
+		select {
+		case <-prepare.Done():
+			gate.Lock()
+			if !begun {
+				cancelRun()
+			}
+			gate.Unlock()
+		case <-stopWatch:
+		}
+	}()
 	js.wg.Add(1)
 	go func() {
 		defer js.wg.Done()
+		defer cancelRun()
+		defer close(stopWatch)
 		var job *Job
-		err := js.Runner.Run(context.Background(), req, func(id int64) {
+		err := js.Runner.Run(runCtx, req, func(id int64) {
+			gate.Lock()
+			begun = true
+			gate.Unlock()
 			job = newJob(id, req.ConversationID)
 			js.mu.Lock()
 			js.byGen[id], js.byConv[req.ConversationID] = job, job
