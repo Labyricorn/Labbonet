@@ -27,6 +27,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - Protocol and capability claims must be verified (docs or live probe) and labeled as such. Do not assume ports, auth or API formats.
 - Probes of the user's inference servers are read-only except tiny test generations. Never call model load, unload, VRAM or settings endpoints. On LM Studio, never send a generation or embedding request to a model whose state is `not-loaded`: JIT loading would load it and Auto-Evict may unload another client's model.
 - Labbonet is AGPLv3-or-later (DR-004), matching GobboNet. GobboNet source may be reused selectively (DR-003 B) if upstream copyright and license notices are kept, changes are marked and each reused file is logged (source path, upstream commit). Dependencies must be AGPLv3-compatible. Docs must state no affiliation with GobboNet. Never reuse code that implements an excluded behavior (installer or PowerShell logic, firewall changes, `0.0.0.0` listening, recursive-delete uninstall, unrestricted JS hooks, local engine management).
+- **Git workflow (owner preference, 2026-10-18):** commit directly to `main` and push. No feature branches or PRs unless the owner asks for one. Before each push of code, run the verification in `docs/PHASE1-PLAN.md` section 1; never push a failing `main`.
 - Keep security commitments from the proposal (loopback default, endpoint allowlist, no executable downloads, no firewall or antivirus changes, no arbitrary JS extensions).
 
 ## Work Guidance
@@ -35,7 +36,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - Providers: Strata at `http://127.0.0.1:8080` (served model Qwen3.8-Flash-Next) and LM Studio at `http://10.138.11.11:1234` (trusted LAN, plain HTTP). Open provider tests are listed in `docs/PHASE1-ACCEPTANCE.md` section 4.5.
 - Implementation defaults approved 2026-10-18 (`docs/ARCHITECTURE.md` section 1): no standalone PoC, plain ES modules with vendored deps, `modernc.org/sqlite`, DPAPI credentials, backend on `127.0.0.1:4815`. Changing one needs a note there and a devlog entry.
 - Awaiting owner review: `docs/SECURITY-MODEL.md` (threat model), `docs/PHASE1-ACCEPTANCE.md` (tests and non-goals) and `docs/PHASE1-PLAN.md` (build order).
-- Implement Phase 1 in the order and under the working rules of `docs/PHASE1-PLAN.md` (one step per branch and PR, tests with the code).
+- Implement Phase 1 in the order and under the working rules of `docs/PHASE1-PLAN.md` (tests with the code).
 - Reuse GobboNet code only from the pinned commit in `docs/GOBBONET-REFERENCE.md`, logging each file in `docs/REUSE-LOG.md` first.
 
 ## Verification

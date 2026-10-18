@@ -2,21 +2,21 @@
 
 **Version:** 0.1 (2026-10-18)
 **Status:** Draft for owner approval.
-**Goal:** reach Phase 1 sign-off in `PHASE1-ACCEPTANCE.md` in seven steps, each one reviewable on its own.
+**Goal:** reach Phase 1 sign-off in `PHASE1-ACCEPTANCE.md` in seven steps, each one committed and verified on its own.
 **Design sources:** `ARCHITECTURE.md` (what to build), `SECURITY-MODEL.md` (controls and S-tests), `PROVIDER-SPEC.md` (adapter contract), `PHASE1-ACCEPTANCE.md` (A-tests).
 
 ---
 
 ## 1. Working rules (all steps)
 
-- **One step, one branch, one PR.** Branch names `phase1/<n>-<slug>`, for example `phase1/1-skeleton`. Steps can be split into smaller PRs, but are not merged out of order unless the dependency table (section 3) allows it.
+- **Commit straight to `main`, no branches or PRs** (owner preference, 2026-10-18). A step may span several commits; each commit message starts with the step, for example `Phase 1 step 1: add Host allowlist`. Steps are not started out of order unless the dependency table (section 3) allows it.
 - **Tests come with the code.** Each step lands with its listed tests passing. A step is not done because the code exists; it is done when its done criteria hold.
-- **Verification on every PR:** `gofmt -l .` prints nothing; `go vet ./...` is clean; `go test ./...` passes; `go build ./cmd/labbonet` succeeds.
-- **Dependencies:** add a module only if `ARCHITECTURE.md` section 8 lists it, and confirm its license at the pinned version in the same PR. Anything new needs an inventory row first.
-- **GobboNet reuse:** only from the pinned commit, with a `REUSE-LOG.md` row in the same PR (`GOBBONET-REFERENCE.md`).
+- **Verification before every push:** `gofmt -l .` prints nothing; `go vet ./...` is clean; `go test ./...` passes; `go build ./cmd/labbonet` succeeds. `main` must stay green: never push a commit that fails these.
+- **Dependencies:** add a module only if `ARCHITECTURE.md` section 8 lists it, and confirm its license at the pinned version in the same commit. Anything new needs an inventory row first.
+- **GobboNet reuse:** only from the pinned commit, with a `REUSE-LOG.md` row in the same commit (`GOBBONET-REFERENCE.md`).
 - **Security controls are not deferred.** A step that adds an `/api` route or an outbound call ships it behind the controls from steps 1 and 3; no temporary bypass flags.
-- **Test hosts:** automated tests use in-process fake servers (`httptest`), never the real Strata or LM Studio. Live tests are run by hand and recorded in the PR.
-- **DOX:** each PR updates the owning doc when a contract changes and adds a devlog entry.
+- **Test hosts:** automated tests use in-process fake servers (`httptest`), never the real Strata or LM Studio. Live tests are run by hand and recorded in the step's devlog entry.
+- **DOX:** each step updates the owning doc when a contract changes and adds a devlog entry when the step is done.
 
 ## 2. Test infrastructure
 
@@ -163,7 +163,7 @@ Built in the step that first needs it, then shared:
 - `frontend/vendor/` and `frontend/vendor/VENDOR.md`: pinned Markdown renderer and sanitizer with SHA-256 and license
 - `frontend/tests/render.html`
 
-**Tests:** S14 (render test page plus a manual check in the browser), A-E4, A-C10, A-D1 (manual walkthroughs, written up in the PR with screenshots); CSP violation check: the browser console shows no CSP errors during the walkthrough.
+**Tests:** S14 (render test page plus a manual check in the browser), A-E4, A-C10, A-D1 (manual walkthroughs, written up in the step's devlog entry, screenshots saved in `docs/evidence/`); CSP violation check: the browser console shows no CSP errors during the walkthrough.
 
 **Done when:**
 - Every Phase 1 user action works from the UI without curl.
