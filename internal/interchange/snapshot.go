@@ -12,8 +12,11 @@ import (
 
 const (
 	SnapshotFormat  = "labbonet-snapshot"
-	SnapshotVersion = 1
-	MaxUpload       = 64 << 20
+	SnapshotVersion = 2
+	// minSnapshotVersion is the oldest readable version. Version 1 lists a single
+	// linear branch per conversation; version 2 adds the message tree and organization.
+	minSnapshotVersion = 1
+	MaxUpload          = 64 << 20
 
 	maxSnapCards    = 2000
 	maxSnapConvs    = 5000
@@ -53,6 +56,11 @@ type SnapConversation struct {
 	Persona      string        `json:"persona,omitempty"`
 	Greeting     int           `json:"greeting,omitempty"`
 	Messages     []SnapMessage `json:"messages"`
+	// Active names the tip of the visible branch (version 2).
+	Active string   `json:"active,omitempty"`
+	Pinned bool     `json:"pinned,omitempty"`
+	Folder string   `json:"folder,omitempty"`
+	Tags   []string `json:"tags,omitempty"`
 }
 
 type SnapMessage struct {
@@ -62,6 +70,14 @@ type SnapMessage struct {
 	Status    string         `json:"status"`
 	CreatedAt string         `json:"created_at,omitempty"`
 	Speaker   *cast.Identity `json:"speaker,omitempty"`
+	// Tree fields (version 2). Key is unique within the conversation; Parent names an
+	// earlier message; Selected names the child that continues this message's branch;
+	// Origin/OriginKey record edit, reroll or fork provenance.
+	Key       string `json:"key,omitempty"`
+	Parent    string `json:"parent,omitempty"`
+	Selected  string `json:"selected,omitempty"`
+	Origin    string `json:"origin,omitempty"`
+	OriginKey string `json:"origin_key,omitempty"`
 }
 
 // Validate checks the whole document before anything is written, so a rejected
@@ -70,8 +86,8 @@ func (s *Snapshot) Validate() error {
 	if s.Format != SnapshotFormat {
 		return errors.New("not a Labbonet snapshot")
 	}
-	if s.Version != SnapshotVersion {
-		return fmt.Errorf("unsupported snapshot version %d (this build reads version %d)", s.Version, SnapshotVersion)
+	if s.Version < minSnapshotVersion || s.Version > SnapshotVersion {
+		return fmt.Errorf("unsupported snapshot version %d (this build reads versions %d to %d)", s.Version, minSnapshotVersion, SnapshotVersion)
 	}
 	if s.Scope != "full" && s.Scope != "conversation" && s.Scope != "cards" {
 		return errors.New("unknown snapshot scope")
@@ -122,6 +138,9 @@ func (s *Snapshot) Validate() error {
 		if c.Greeting < 0 || c.Greeting > 63 || (c.Character == "" && c.Greeting != 0) {
 			return errors.New("invalid greeting selection")
 		}
+		if err := c.validateOrganization(); err != nil {
+			return err
+		}
 		total += len(c.Messages)
 		if total > maxSnapMessages {
 			return errors.New("snapshot has too many messages")
@@ -152,6 +171,9 @@ func (s *Snapshot) Validate() error {
 				}
 				m.Speaker = &sp
 			}
+		}
+		if err := c.normalizeTree(); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -254,4 +276,105 @@ func decodeSnapshot(raw []byte) (*Snapshot, bool, error) {
 		return nil, true, errors.New("invalid snapshot: trailing data")
 	}
 	return &s, true, nil
+}
+
+const (
+	maxSnapTags   = 16
+	maxSnapTagLen = 32
+	maxFolderLen  = 60
+)
+
+func (c *SnapConversation) validateOrganization() error {
+	if len(c.Folder) > maxFolderLen*4 || len(c.Tags) > maxSnapTags {
+		return fmt.Errorf("conversation %q has an invalid folder or too many tags", truncate(c.Key, 20))
+	}
+	for _, t := range c.Tags {
+		if strings.TrimSpace(t) == "" || len([]rune(t)) > maxSnapTagLen {
+			return fmt.Errorf("conversation %q has an invalid tag", truncate(c.Key, 20))
+		}
+	}
+	return nil
+}
+
+// normalizeTree checks the message tree and, for linear (version 1) conversations,
+// builds it: each message below the previous one, the last message active. After this
+// returns, every message has a unique key and Parent/Selected/Active refer only to
+// earlier or existing keys, so the importer needs a single code path.
+func (c *SnapConversation) normalizeTree() error {
+	keyed := 0
+	for _, m := range c.Messages {
+		if m.Key != "" {
+			keyed++
+		}
+	}
+	if keyed != 0 && keyed != len(c.Messages) {
+		return fmt.Errorf("conversation %q mixes keyed and unkeyed messages", truncate(c.Key, 20))
+	}
+	if keyed == 0 {
+		for i := range c.Messages {
+			m := &c.Messages[i]
+			m.Key = fmt.Sprintf("%d", i+1)
+			if i > 0 {
+				m.Parent = c.Messages[i-1].Key
+				c.Messages[i-1].Selected = m.Key
+			}
+		}
+		if n := len(c.Messages); n > 0 {
+			c.Active = c.Messages[n-1].Key
+		}
+		return nil
+	}
+	index := map[string]int{}
+	selectedBy := map[string]string{}
+	for i := range c.Messages {
+		m := &c.Messages[i]
+		if len(m.Key) > 64 {
+			return fmt.Errorf("conversation %q message %d has an invalid key", truncate(c.Key, 20), i+1)
+		}
+		if _, dup := index[m.Key]; dup {
+			return fmt.Errorf("conversation %q has duplicate message key %q", truncate(c.Key, 20), truncate(m.Key, 20))
+		}
+		if m.Parent != "" {
+			if p, ok := index[m.Parent]; !ok || p >= i {
+				return fmt.Errorf("conversation %q message %d has a parent that does not precede it", truncate(c.Key, 20), i+1)
+			}
+		}
+		switch m.Origin {
+		case "", "original", "edit", "reroll", "fork":
+		default:
+			return fmt.Errorf("conversation %q message %d has an unknown origin", truncate(c.Key, 20), i+1)
+		}
+		if m.Origin == "" {
+			m.Origin = "original"
+		}
+		if m.OriginKey != "" {
+			if o, ok := index[m.OriginKey]; !ok || o >= i {
+				m.OriginKey = "" // provenance link to a message outside the export is dropped
+			}
+		}
+		index[m.Key] = i
+	}
+	for i := range c.Messages {
+		m := &c.Messages[i]
+		if m.Selected == "" {
+			continue
+		}
+		child, ok := index[m.Selected]
+		if !ok || c.Messages[child].Parent != m.Key {
+			return fmt.Errorf("conversation %q message %d selects a message that is not its child", truncate(c.Key, 20), i+1)
+		}
+		if _, dup := selectedBy[m.Key]; dup {
+			return errors.New("duplicate selection")
+		}
+		selectedBy[m.Key] = m.Selected
+	}
+	if c.Active == "" && len(c.Messages) > 0 {
+		c.Active = c.Messages[len(c.Messages)-1].Key
+	}
+	if c.Active != "" {
+		if _, ok := index[c.Active]; !ok {
+			return fmt.Errorf("conversation %q names an unknown active message", truncate(c.Key, 20))
+		}
+	}
+	return nil
 }

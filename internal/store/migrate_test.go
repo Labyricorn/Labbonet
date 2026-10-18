@@ -9,7 +9,7 @@ import (
 
 // latestKnownVersion is the current schema version (PHASE1-ACCEPTANCE.md
 // A-B5 to A-B7). Update when a new migration is added.
-const latestKnownVersion = 2
+const latestKnownVersion = 3
 
 // A-B5: a fresh start creates the schema, and a restart on the same file
 // keeps the data and lands on the same user_version.

@@ -60,7 +60,7 @@ func (s *Store) ExportSnapshot(ctx context.Context, scope string, conversationID
 		return "c" + strconv.FormatInt(*id, 10)
 	}
 	if scope != "cards" {
-		q := `SELECT id,title,system_prompt,created_at FROM conversations`
+		q := `SELECT id,title,system_prompt,created_at,active_leaf_id,pinned,(SELECT name FROM folders WHERE folders.id=conversations.folder_id) FROM conversations`
 		args := []any{}
 		if scope == "conversation" {
 			q += ` WHERE id=?`
@@ -78,9 +78,17 @@ func (s *Store) ExportSnapshot(ctx context.Context, scope string, conversationID
 		for crows.Next() {
 			var h head
 			var created string
-			if err := crows.Scan(&h.id, &h.convo.Title, &h.convo.SystemPrompt, &created); err != nil {
+			var leaf sql.NullInt64
+			var pinned int
+			var folder sql.NullString
+			if err := crows.Scan(&h.id, &h.convo.Title, &h.convo.SystemPrompt, &created, &leaf, &pinned, &folder); err != nil {
 				crows.Close()
 				return nil, err
+			}
+			h.convo.Pinned = pinned != 0
+			h.convo.Folder = folder.String
+			if leaf.Valid {
+				h.convo.Active = "m" + strconv.FormatInt(leaf.Int64, 10)
 			}
 			h.convo.Key = "t" + strconv.FormatInt(h.id, 10)
 			h.convo.CreatedAt = created
@@ -104,7 +112,23 @@ func (s *Store) ExportSnapshot(ctx context.Context, scope string, conversationID
 			if h.convo.Character != "" {
 				h.convo.Greeting = greeting
 			}
-			mrows, err := tx.QueryContext(ctx, `SELECT role,content,reasoning,status,created_at,speaker_json FROM messages WHERE conversation_id=? ORDER BY id`, h.id)
+			trows, err := tx.QueryContext(ctx, `SELECT tag FROM conversation_tags WHERE conversation_id=? ORDER BY tag COLLATE NOCASE`, h.id)
+			if err != nil {
+				return nil, err
+			}
+			for trows.Next() {
+				var tag string
+				if err := trows.Scan(&tag); err != nil {
+					trows.Close()
+					return nil, err
+				}
+				h.convo.Tags = append(h.convo.Tags, tag)
+			}
+			trows.Close()
+			if err := trows.Err(); err != nil {
+				return nil, err
+			}
+			mrows, err := tx.QueryContext(ctx, `SELECT id,parent_id,selected_child_id,origin,origin_id,role,content,reasoning,status,created_at,speaker_json FROM messages WHERE conversation_id=? ORDER BY id`, h.id)
 			if err != nil {
 				return nil, err
 			}
@@ -112,9 +136,21 @@ func (s *Store) ExportSnapshot(ctx context.Context, scope string, conversationID
 			for mrows.Next() {
 				var m interchange.SnapMessage
 				var speaker string
-				if err := mrows.Scan(&m.Role, &m.Content, &m.Reasoning, &m.Status, &m.CreatedAt, &speaker); err != nil {
+				var msgDBID int64
+				var parent, selected, originID sql.NullInt64
+				if err := mrows.Scan(&msgDBID, &parent, &selected, &m.Origin, &originID, &m.Role, &m.Content, &m.Reasoning, &m.Status, &m.CreatedAt, &speaker); err != nil {
 					mrows.Close()
 					return nil, err
+				}
+				m.Key = "m" + strconv.FormatInt(msgDBID, 10)
+				if parent.Valid {
+					m.Parent = "m" + strconv.FormatInt(parent.Int64, 10)
+				}
+				if selected.Valid {
+					m.Selected = "m" + strconv.FormatInt(selected.Int64, 10)
+				}
+				if originID.Valid {
+					m.OriginKey = "m" + strconv.FormatInt(originID.Int64, 10)
 				}
 				if m.Status == "streaming" {
 					m.Status = "interrupted"
@@ -164,6 +200,7 @@ type ImportResult struct {
 	CardsAdded         int  `json:"cards_added"`
 	CardsSkipped       int  `json:"cards_skipped"`
 	CardsRenamed       int  `json:"cards_renamed"`
+	FoldersAdded       int  `json:"folders_added"`
 	ConversationsAdded int  `json:"conversations_added"`
 	MessagesAdded      int  `json:"messages_added"`
 	DefaultsApplied    bool `json:"defaults_applied"`
@@ -276,6 +313,24 @@ func (s *Store) ImportSnapshot(ctx context.Context, snap *interchange.Snapshot, 
 	if err = fail("cards"); err != nil {
 		return res, err
 	}
+	folders := map[string]int64{}
+	frows, err := tx.QueryContext(ctx, `SELECT id,name FROM folders`)
+	if err != nil {
+		return res, err
+	}
+	for frows.Next() {
+		var id int64
+		var name string
+		if err = frows.Scan(&id, &name); err != nil {
+			frows.Close()
+			return res, err
+		}
+		folders[strings.ToLower(name)] = id
+	}
+	frows.Close()
+	if err = frows.Err(); err != nil {
+		return res, err
+	}
 	greetings := map[string]int{}
 	for _, sc := range snap.Cards {
 		greetings[sc.Key] = len(sc.Card.Greetings)
@@ -286,7 +341,26 @@ func (s *Store) ImportSnapshot(ctx context.Context, snap *interchange.Snapshot, 
 		if t, perr := parseTime(c.CreatedAt); perr == nil {
 			created = formatTime(t)
 		}
-		r, ierr := tx.ExecContext(ctx, `INSERT INTO conversations(title,endpoint_id,model_id,system_prompt,params_json,created_at,updated_at) VALUES(?,NULL,NULL,?,'{}',?,?)`, c.Title, c.SystemPrompt, created, created)
+		var folderID any
+		if name := strings.Join(strings.Fields(c.Folder), " "); name != "" {
+			if id, ok := folders[strings.ToLower(name)]; ok {
+				folderID = id
+			} else {
+				fr, ferr := tx.ExecContext(ctx, `INSERT INTO folders(name,position,created_at) VALUES(?,(SELECT COALESCE(MAX(position)+1,0) FROM folders),?)`, name, now)
+				if ferr != nil {
+					return res, ferr
+				}
+				fid, _ := fr.LastInsertId()
+				folders[strings.ToLower(name)] = fid
+				folderID = fid
+				res.FoldersAdded++
+			}
+		}
+		pinned := 0
+		if c.Pinned {
+			pinned = 1
+		}
+		r, ierr := tx.ExecContext(ctx, `INSERT INTO conversations(title,endpoint_id,model_id,system_prompt,params_json,created_at,updated_at,pinned,folder_id) VALUES(?,NULL,NULL,?,'{}',?,?,?,?)`, c.Title, c.SystemPrompt, created, created, pinned, folderID)
 		if ierr != nil {
 			return res, ierr
 		}
@@ -305,8 +379,20 @@ func (s *Store) ImportSnapshot(ctx context.Context, snap *interchange.Snapshot, 
 		if _, ierr = tx.ExecContext(ctx, `INSERT INTO conversation_cast(conversation_id,character_id,persona_id,greeting) VALUES(?,?,?,?)`, convID, chID, peID, greeting); ierr != nil {
 			return res, ierr
 		}
-		var parent any
+		keyIDs := map[string]int64{}
 		for _, m := range c.Messages {
+			var parent any
+			if m.Parent != "" {
+				parent = keyIDs[m.Parent]
+			}
+			var originID any
+			if m.OriginKey != "" {
+				originID = keyIDs[m.OriginKey]
+			}
+			origin := m.Origin
+			if origin == "" {
+				origin = "original"
+			}
 			speaker := "{}"
 			if m.Speaker != nil {
 				b, _ := json.Marshal(m.Speaker)
@@ -316,13 +402,35 @@ func (s *Store) ImportSnapshot(ctx context.Context, snap *interchange.Snapshot, 
 			if t, perr := parseTime(m.CreatedAt); perr == nil {
 				at = formatTime(t)
 			}
-			r, ierr := tx.ExecContext(ctx, `INSERT INTO messages(conversation_id,parent_id,role,content,reasoning,status,created_at,speaker_json) VALUES(?,?,?,?,?,?,?,?)`, convID, parent, m.Role, m.Content, m.Reasoning, m.Status, at, speaker)
+			r, ierr := tx.ExecContext(ctx, `INSERT INTO messages(conversation_id,parent_id,role,content,reasoning,status,created_at,speaker_json,origin,origin_id) VALUES(?,?,?,?,?,?,?,?,?,?)`, convID, parent, m.Role, m.Content, m.Reasoning, m.Status, at, speaker, origin, originID)
 			if ierr != nil {
 				return res, ierr
 			}
 			id, _ := r.LastInsertId()
-			parent = id
+			keyIDs[m.Key] = id
 			res.MessagesAdded++
+		}
+		for _, m := range c.Messages {
+			if m.Selected == "" {
+				continue
+			}
+			if _, ierr = tx.ExecContext(ctx, `UPDATE messages SET selected_child_id=? WHERE id=?`, keyIDs[m.Selected], keyIDs[m.Key]); ierr != nil {
+				return res, ierr
+			}
+		}
+		if c.Active != "" {
+			if _, ierr = tx.ExecContext(ctx, `UPDATE conversations SET active_leaf_id=? WHERE id=?`, keyIDs[c.Active], convID); ierr != nil {
+				return res, ierr
+			}
+		}
+		tags, terr := NormalizeTags(c.Tags)
+		if terr != nil {
+			return res, fmt.Errorf("%w: %v", ErrInvalidImport, terr)
+		}
+		for _, tag := range tags {
+			if _, ierr = tx.ExecContext(ctx, `INSERT INTO conversation_tags(conversation_id,tag) VALUES(?,?)`, convID, tag); ierr != nil {
+				return res, ierr
+			}
 		}
 		res.ConversationsAdded++
 	}
@@ -361,6 +469,9 @@ func (s *Store) ResetData(ctx context.Context, scope string) error {
 	defer tx.Rollback()
 	if scope == "conversations" || scope == "all" {
 		if _, err = tx.ExecContext(ctx, `DELETE FROM conversations`); err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, `DELETE FROM folders`); err != nil {
 			return err
 		}
 	}

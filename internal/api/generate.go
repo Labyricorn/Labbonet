@@ -27,6 +27,10 @@ type generateRequest struct {
 	// not-loaded (SECURITY-MODEL.md S15); the server enforces this, the
 	// UI cannot skip it by omitting a client-side check.
 	ConfirmLoad bool `json:"confirm_load"`
+	// RegenerateParentID asks for a new reply variant to that user message instead of a
+	// new user turn; Revision, when set, is the conversation revision the client saw.
+	RegenerateParentID *int64 `json:"regenerate_parent_id"`
+	Revision           int64  `json:"revision"`
 }
 
 type sseEventPayload struct {
@@ -90,7 +94,7 @@ func (g *Generate) Generate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-	if req.Content == "" {
+	if req.Content == "" && req.RegenerateParentID == nil {
 		http.Error(w, "content is required", http.StatusBadRequest)
 		return
 	}
@@ -104,6 +108,7 @@ func (g *Generate) Generate(w http.ResponseWriter, r *http.Request) {
 		ConversationID: id, UserContent: req.Content, MaxTokens: req.MaxTokens,
 		Temperature: req.Temperature, TopP: req.TopP, Stop: req.Stop,
 		ReasoningEffort: req.ReasoningEffort, ConfirmLoad: req.ConfirmLoad,
+		RegenerateParentID: req.RegenerateParentID, ExpectedRevision: req.Revision,
 	}
 
 	var genID int64

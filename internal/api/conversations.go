@@ -23,12 +23,26 @@ type conversationResponse struct {
 	SystemPrompt string    `json:"system_prompt"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+	// Revision is the message-tree revision; tree edits must echo it back.
+	Revision     int64    `json:"revision"`
+	ActiveLeafID *int64   `json:"active_leaf_id"`
+	Pinned       bool     `json:"pinned"`
+	FolderID     *int64   `json:"folder_id"`
+	Position     int      `json:"position"`
+	Tags         []string `json:"tags"`
+	ForkedFrom   *int64   `json:"forked_from_conversation_id"`
 }
 
 func toConversationResponse(c *store.Conversation) conversationResponse {
+	tags := c.Tags
+	if tags == nil {
+		tags = []string{}
+	}
 	return conversationResponse{
 		ID: c.ID, Title: c.Title, EndpointID: c.EndpointID, ModelID: c.ModelID,
 		SystemPrompt: c.SystemPrompt, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt,
+		Revision: c.Revision, ActiveLeafID: c.ActiveLeafID, Pinned: c.Pinned, FolderID: c.FolderID,
+		Position: c.Position, Tags: tags, ForkedFrom: c.ForkedFromConversationID,
 	}
 }
 
@@ -40,12 +54,31 @@ type messageResponse struct {
 	Status    string        `json:"status"`
 	CreatedAt time.Time     `json:"created_at"`
 	Speaker   cast.Identity `json:"speaker"`
+	ParentID  *int64        `json:"parent_id"`
+	// Variants lists the ids of every alternative at this position (edits, rerolls),
+	// oldest first, including this message.
+	Variants     []int64 `json:"variants"`
+	VariantIndex int     `json:"variant_index"`
+	Origin       string  `json:"origin"`
+	OriginID     *int64  `json:"origin_id"`
 }
 
 func toMessageResponse(m *store.Message) messageResponse {
 	var speaker cast.Identity
 	_ = json.Unmarshal([]byte(m.SpeakerJSON), &speaker)
-	return messageResponse{ID: m.ID, Role: m.Role, Content: m.Content, Reasoning: m.Reasoning, Status: m.Status, CreatedAt: m.CreatedAt, Speaker: speaker}
+	return messageResponse{ID: m.ID, Role: m.Role, Content: m.Content, Reasoning: m.Reasoning, Status: m.Status, CreatedAt: m.CreatedAt, Speaker: speaker,
+		ParentID: m.ParentID, Variants: []int64{m.ID}, Origin: m.Origin, OriginID: m.OriginID}
+}
+
+func toPathResponse(p store.PathMessage) messageResponse {
+	r := toMessageResponse(p.Message)
+	r.Variants = p.VariantIDs
+	for i, id := range p.VariantIDs {
+		if id == p.ID {
+			r.VariantIndex = i
+		}
+	}
+	return r
 }
 
 // List handles GET /api/conversations.
@@ -106,14 +139,17 @@ func (c *Conversations) Get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "conversation not found", http.StatusNotFound)
 		return
 	}
-	msgs, err := c.Store.ListMessages(r.Context(), id)
+	// A tree edit between these two reads is harmless: the revision returned is the
+	// one read with the path, which is what a later edit must echo back.
+	msgs, revision, err := c.Store.ActivePath(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	conv.Revision = revision
 	out := conversationDetailResponse{conversationResponse: toConversationResponse(conv), Messages: make([]messageResponse, 0, len(msgs))}
 	for _, m := range msgs {
-		out.Messages = append(out.Messages, toMessageResponse(m))
+		out.Messages = append(out.Messages, toPathResponse(m))
 	}
 	writeJSON(w, http.StatusOK, out)
 }

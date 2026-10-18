@@ -7,50 +7,96 @@ import (
 	"time"
 )
 
-// Message is one turn in a conversation. ParentID is kept for later
-// branching (not used in Phase 1).
+// Message is one node of a conversation's message tree. ParentID links a message to
+// the one it answers or varies (nil for a root). Siblings are alternative variants
+// (edits, rerolls); SelectedChildID remembers which child continues the chosen branch.
 type Message struct {
-	ID             int64
-	ConversationID int64
-	ParentID       *int64
-	Role           string
-	Content        string
-	Reasoning      string
-	Status         string
-	SpeakerJSON    string
-	CreatedAt      time.Time
+	ID              int64
+	ConversationID  int64
+	ParentID        *int64
+	Role            string
+	Content         string
+	Reasoning       string
+	Status          string
+	SpeakerJSON     string
+	CreatedAt       time.Time
+	SelectedChildID *int64
+	// Origin records how a message came to exist: original, edit, reroll or fork.
+	// OriginID names the message it was derived from (no foreign key: the source may
+	// later be deleted without invalidating the derived message).
+	Origin   string
+	OriginID *int64
 }
 
-// CreateMessage inserts a new message.
+const messageColumns = `id, conversation_id, parent_id, role, content, reasoning, status, created_at, speaker_json, selected_child_id, origin, origin_id`
+
+// CreateMessage inserts a new message and makes it the tip of the visible branch. A
+// nil parentID appends below the current tip.
 func (s *Store) CreateMessage(ctx context.Context, conversationID int64, parentID *int64, role, content, reasoning, status string) (*Message, error) {
-	res, err := s.db.ExecContext(ctx,
-		`INSERT INTO messages (conversation_id, parent_id, role, content, reasoning, status, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		conversationID, parentID, role, content, reasoning, status, formatTime(time.Now().UTC()),
-	)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	if parentID == nil {
+		var leaf sql.NullInt64
+		if err := tx.QueryRowContext(ctx, `SELECT active_leaf_id FROM conversations WHERE id=?`, conversationID).Scan(&leaf); err != nil {
+			return nil, fmt.Errorf("create message: %w", err)
+		}
+		if leaf.Valid {
+			parentID = &leaf.Int64
+		}
+	}
+	id, err := insertMessage(ctx, tx, conversationID, parentID, role, content, reasoning, status, "{}", "original", nil)
 	if err != nil {
 		return nil, fmt.Errorf("create message: %w", err)
 	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("create message: %w", err)
+	if err := setLeaf(ctx, tx, conversationID, parentID, id); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
 	return s.GetMessage(ctx, id)
 }
 
+type execer interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+func insertMessage(ctx context.Context, tx execer, convID int64, parent *int64, role, content, reasoning, status, speaker, origin string, originID *int64) (int64, error) {
+	res, err := tx.ExecContext(ctx,
+		`INSERT INTO messages (conversation_id, parent_id, role, content, reasoning, status, created_at, speaker_json, origin, origin_id)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		convID, parent, role, content, reasoning, status, formatTime(time.Now().UTC()), speaker, origin, originID)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+// setLeaf marks id as the chosen child of parent and the tip of the visible branch,
+// and bumps the tree revision.
+func setLeaf(ctx context.Context, tx execer, convID int64, parent *int64, id int64) error {
+	if parent != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE messages SET selected_child_id=? WHERE id=? AND conversation_id=?`, id, *parent, convID); err != nil {
+			return err
+		}
+	}
+	_, err := tx.ExecContext(ctx, `UPDATE conversations SET active_leaf_id=?, revision=revision+1, updated_at=? WHERE id=?`, id, formatTime(time.Now().UTC()), convID)
+	return err
+}
+
 // GetMessage fetches one message by ID.
 func (s *Store) GetMessage(ctx context.Context, id int64) (*Message, error) {
-	row := s.db.QueryRowContext(ctx,
-		`SELECT id, conversation_id, parent_id, role, content, reasoning, status, created_at, speaker_json
-		 FROM messages WHERE id = ?`, id)
+	row := s.db.QueryRowContext(ctx, `SELECT `+messageColumns+` FROM messages WHERE id = ?`, id)
 	return scanMessage(row)
 }
 
-// ListMessages returns every message in a conversation, oldest first.
+// ListMessages returns every message of every branch in a conversation, oldest first.
 func (s *Store) ListMessages(ctx context.Context, conversationID int64) ([]*Message, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, conversation_id, parent_id, role, content, reasoning, status, created_at, speaker_json
-		 FROM messages WHERE conversation_id = ? ORDER BY id`, conversationID)
+		`SELECT `+messageColumns+` FROM messages WHERE conversation_id = ? ORDER BY id`, conversationID)
 	if err != nil {
 		return nil, fmt.Errorf("list messages: %w", err)
 	}
@@ -85,9 +131,11 @@ func scanMessage(row rowScanner) (*Message, error) {
 	var (
 		m         Message
 		parentID  sql.NullInt64
+		selected  sql.NullInt64
+		originID  sql.NullInt64
 		createdAt string
 	)
-	if err := row.Scan(&m.ID, &m.ConversationID, &parentID, &m.Role, &m.Content, &m.Reasoning, &m.Status, &createdAt, &m.SpeakerJSON); err != nil {
+	if err := row.Scan(&m.ID, &m.ConversationID, &parentID, &m.Role, &m.Content, &m.Reasoning, &m.Status, &createdAt, &m.SpeakerJSON, &selected, &m.Origin, &originID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
 		}
@@ -95,6 +143,12 @@ func scanMessage(row rowScanner) (*Message, error) {
 	}
 	if parentID.Valid {
 		m.ParentID = &parentID.Int64
+	}
+	if selected.Valid {
+		m.SelectedChildID = &selected.Int64
+	}
+	if originID.Valid {
+		m.OriginID = &originID.Int64
 	}
 	t, err := parseTime(createdAt)
 	if err != nil {

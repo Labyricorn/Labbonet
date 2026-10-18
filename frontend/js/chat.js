@@ -5,6 +5,8 @@
 // (ARCHITECTURE.md section 3, section 4.2).
 // Labbonet additions/modifications: Copyright (C) 2026 Labbonet contributors. AGPL-3.0-or-later.
 // Upstream credit covers presentation structure/design; runtime/API/state/security code is Labbonet work.
+// Message actions (edit, copy, reroll, fork, delete, variant navigator) reuse the pinned msg-action and
+// variant-nav presentation classes; branch/revision behavior is Labbonet-original.
 // Element-by-element source and authorship boundary: docs/REUSE-LOG.md and root NOTICE.md.
 import { mountCastControls, decorateSpeaker, markDialog } from "./cast.js";
 import { api, streamGenerate } from "./api.js";
@@ -28,6 +30,16 @@ export function mountChatPanel(panel) {
   title.value = "No thread selected";
   title.disabled = true;
   document.getElementById("model-slot").replaceChildren();
+}
+
+function actionButton(label, cls, title, handler) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = `msg-action-btn ${cls}`.trim();
+  btn.textContent = label;
+  btn.title = title;
+  btn.addEventListener("click", handler);
+  return btn;
 }
 
 // loadConversationIntoPanel replaces panel's content with the full
@@ -76,7 +88,127 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   const conv = await api.getConversation(conversationId);
   titleInput.value = conv.title;
   let currentModelId = conv.model_id;
+  // The tree revision this tab last saw; every branch edit and send echoes it so a stale
+  // tab gets a conflict instead of overwriting another tab's work.
+  let revision = conv.revision;
+  let messages = conv.messages;
+  let streaming = false;
+  let editing = null;
   sendBtn.disabled = !conv.endpoint_id || !conv.model_id;
+
+  function applyConversation(fresh) {
+    revision = fresh.revision;
+    messages = fresh.messages;
+  }
+
+  async function reload() {
+    const fresh = await api.getConversation(conversationId);
+    applyConversation(fresh);
+    renderThread();
+  }
+
+  // Run one branch edit. A conflict means another tab changed the thread: say so and
+  // show the current state rather than retrying blindly.
+  async function mutate(action) {
+    try {
+      await action();
+    } catch (err) {
+      alert(err.status === 409 ? `${err.message}. The thread was reloaded.` : err.message);
+    }
+    try { await reload(); } catch { /* conversation may have been deleted elsewhere */ }
+  }
+
+  async function copyText(text, button) {
+    try {
+      await navigator.clipboard.writeText(text);
+      const old = button.textContent;
+      button.textContent = "COPIED";
+      setTimeout(() => { button.textContent = old; }, 1200);
+    } catch {
+      alert("Copy is not available in this browser context.");
+    }
+  }
+
+  function variantNav(msg) {
+    const nav = document.createElement("span");
+    nav.className = "variant-nav";
+    const index = msg.variant_index;
+    const total = msg.variants.length;
+    const step = (delta) => () => mutate(() => api.activateMessage(conversationId, msg.variants[index + delta], revision));
+    const prev = document.createElement("button");
+    prev.type = "button"; prev.className = "variant-nav-btn"; prev.textContent = "◀";
+    prev.setAttribute("aria-label", "Previous variant"); prev.disabled = index === 0;
+    prev.addEventListener("click", step(-1));
+    const label = document.createElement("span");
+    label.className = "variant-nav-label"; label.textContent = `${index + 1}/${total}`;
+    label.title = msg.role === "user" ? "Edited versions of this message" : "Alternative replies";
+    const next = document.createElement("button");
+    next.type = "button"; next.className = "variant-nav-btn"; next.textContent = "▶";
+    next.setAttribute("aria-label", "Next variant"); next.disabled = index === total - 1;
+    next.addEventListener("click", step(1));
+    nav.append(prev, label, next);
+    return nav;
+  }
+
+  function messageActions(msg, el) {
+    const bar = document.createElement("div");
+    bar.className = "message-actions";
+    if (msg.variants?.length > 1) bar.append(variantNav(msg));
+    const copy = actionButton("Copy", "btn-copy", "Copy this message", () => copyText(msg.content, copy));
+    bar.append(copy);
+    bar.append(actionButton("Edit", "btn-edit", "Save an edited copy as a new variant", () => startEdit(msg, el)));
+    if (msg.role === "assistant" && msg.parent_id) {
+      bar.append(actionButton("Reroll", "btn-reroll", "Generate another reply to the same message", () => regenerate(msg.parent_id)));
+    }
+    bar.append(actionButton("Fork", "btn-fork", "Start a new thread from here", () => mutate(async () => {
+      const forked = await api.forkMessage(conversationId, msg.id);
+      callbacks.onForked?.(forked.id);
+    })));
+    bar.append(actionButton("Delete", "btn-delete", "Delete this message and the replies below it", () => {
+      if (!confirm("Delete this message and every reply below it? Other variants of this message are kept.")) return;
+      mutate(() => api.deleteMessage(conversationId, msg.id, revision));
+    }));
+    return bar;
+  }
+
+  function startEdit(msg, el) {
+    if (streaming) return;
+    editing = msg.id;
+    const content = el.querySelector(".message-content");
+    const area = document.createElement("textarea");
+    area.className = "edit-textarea";
+    area.value = msg.content;
+    area.setAttribute("aria-label", "Edit message");
+    const actions = document.createElement("div");
+    actions.className = "edit-actions";
+    const done = () => { editing = null; renderThread(); };
+    const save = async (thenRegenerate) => {
+      const text = area.value.trim();
+      if (!text) { alert("A message cannot be empty."); return; }
+      if (text === msg.content) { done(); return; }
+      let created;
+      try {
+        created = await api.editMessage(conversationId, msg.id, text, revision);
+      } catch (err) {
+        alert(err.status === 409 ? `${err.message}. The thread was reloaded.` : err.message);
+        editing = null;
+        try { await reload(); } catch { /* ignore */ }
+        return;
+      }
+      editing = null;
+      await reload().catch(() => {});
+      if (thenRegenerate) await regenerate(created.id);
+    };
+    const saveBtn = actionButton("Save", "btn-edit", "Keep the original and save this as a new variant", () => save(false));
+    actions.append(saveBtn);
+    if (msg.role === "user") actions.append(actionButton("Save & reply", "btn-reroll", "Save as a new variant and generate a reply", () => save(true)));
+    actions.append(actionButton("Cancel", "", "Discard changes", done));
+    area.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") { event.preventDefault(); done(); }
+    });
+    content.replaceChildren(area, actions);
+    area.focus();
+  }
 
   function renderMessageNode(msg) {
     const el = document.createElement("div");
@@ -118,19 +250,30 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
       badge.textContent = msg.status;
       el.appendChild(badge);
     }
+    if (msg.origin === "edit" || msg.origin === "reroll" || msg.origin === "fork") {
+      const badge = document.createElement("span");
+      badge.className = "status-badge origin-badge";
+      badge.textContent = { edit: "edited", reroll: "reroll", fork: "forked" }[msg.origin];
+      el.appendChild(badge);
+    }
     decorateSpeaker(el, msg.speaker, msg.role);
+    if (msg.id && msg.status !== "streaming" && !streaming) el.appendChild(messageActions(msg, el));
     return el;
   }
 
-  function renderThread(messages) {
+  function renderThread(list = messages) {
     thread.innerHTML = "";
-    for (const msg of messages) thread.appendChild(renderMessageNode(msg));
+    thread.classList.toggle("busy", streaming);
+    for (const msg of list) {
+      thread.appendChild(renderMessageNode(msg));
+      if (msg.id === editing) startEdit(msg, thread.lastChild);
+    }
     thread.scrollTop = thread.scrollHeight;
   }
 
-  renderThread(conv.messages);
+  renderThread();
   const castControls = await mountCastControls(castSlot, conversationId, async () => {
-    const fresh = await api.getConversation(conversationId); renderThread(fresh.messages);
+    await reload();
   }, (character, persona) => {
     activeCharacter = character; activePersona = persona;
     background.hidden = !character?.background;
@@ -166,16 +309,29 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   let currentGenerationId = null;
   let abortController = null;
 
-  async function send(content, confirmLoad) {
+  // generate streams one reply. body is either {content} (a new user turn appended to the
+  // visible branch) or {regenerate_parent_id} (a new reply variant to that user message).
+  async function generate(body, confirmLoad) {
     sendBtn.disabled = true;
+    streaming = true;
     castControls.setBusy(true);
     const modelSelect = modelSlot.querySelector("select");
     if (modelSelect) modelSelect.disabled = true;
     stopBtn.hidden = false;
     abortController = new AbortController();
 
-    const userEl = renderMessageNode({ role: "user", content, status: "complete", speaker: activePersona });
-    thread.appendChild(userEl);
+    const regenerating = body.regenerate_parent_id !== undefined;
+    let shown = messages;
+    if (regenerating) {
+      const at = messages.findIndex((m) => m.id === body.regenerate_parent_id);
+      shown = at >= 0 ? messages.slice(0, at + 1) : messages;
+    }
+    renderThread(shown);
+    let userEl = null;
+    if (!regenerating) {
+      userEl = renderMessageNode({ role: "user", content: body.content, status: "complete", speaker: activePersona });
+      thread.appendChild(userEl);
+    }
     const assistantMsg = { role: "assistant", content: "", reasoning: "", status: "streaming", speaker: activeCharacter };
     let assistantEl = renderMessageNode(assistantMsg);
     thread.appendChild(assistantEl);
@@ -184,17 +340,18 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     try {
       await streamGenerate(
         conversationId,
-        { content, confirm_load: confirmLoad },
+        { ...body, revision, confirm_load: confirmLoad },
         (ev) => {
           if (ev.generation_id) currentGenerationId = ev.generation_id;
           if (ev.kind === "start") {
             api.getConversation(conversationId).then(fresh => {
-              const messages = fresh.messages;
-              if (messages.length >= 2) {
-                decorateSpeaker(userEl, messages.at(-2).speaker, "user");
-                assistantMsg.speaker = messages.at(-1).speaker;
+              const last = fresh.messages.at(-1);
+              if (last) {
+                assistantMsg.speaker = last.speaker;
                 decorateSpeaker(assistantEl, assistantMsg.speaker, "assistant");
               }
+              const before = fresh.messages.at(-2);
+              if (userEl && before) decorateSpeaker(userEl, before.speaker, "user");
             }).catch(() => {});
           }
           if (ev.kind === "delta") {
@@ -210,35 +367,40 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
       );
     } catch (err) {
       if (err.status === 409 && /not.loaded/i.test(err.message) && !confirmLoad) {
-        thread.removeChild(userEl);
-        thread.removeChild(assistantEl);
         const proceed = confirm(
           `Model "${currentModelId}" is not loaded. Loading it now may take a while and could evict ` +
             "another client's model from memory. Load it and continue?",
         );
         if (proceed) {
+          streaming = false;
           sendBtn.disabled = false;
           stopBtn.hidden = true;
-          await send(content, true);
+          await generate(body, true);
           return;
         }
       } else if (err.name !== "AbortError") {
-        alert(`Generation failed: ${err.message}`);
+        alert(err.status === 409 ? `${err.message}. The thread was reloaded.` : `Generation failed: ${err.message}`);
       }
     } finally {
+      streaming = false;
       sendBtn.disabled = !currentModelId;
       castControls.setBusy(false);
       if (modelSelect) modelSelect.disabled = false;
       stopBtn.hidden = true;
       currentGenerationId = null;
-      try {
-        const fresh = await api.getConversation(conversationId);
-        renderThread(fresh.messages);
-      } catch {
+      try { await reload(); } catch {
         // The conversation may have just been deleted from elsewhere;
         // leave the last rendered state as is.
       }
     }
+  }
+
+  function regenerate(parentId) {
+    if (streaming || sendBtn.disabled) {
+      if (!streaming) alert("Choose a model first.");
+      return Promise.resolve();
+    }
+    return generate({ regenerate_parent_id: parentId }, false);
   }
 
   composer.addEventListener("submit", (e) => {
@@ -247,7 +409,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     const content = textarea.value.trim();
     if (!content) return;
     textarea.value = "";
-    send(content, false);
+    generate({ content }, false);
   });
 
   textarea.addEventListener("keydown", (e) => {

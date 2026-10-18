@@ -17,7 +17,20 @@ type Conversation struct {
 	ParamsJSON   string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	// Revision increments on every change to the message tree (new turn, edit,
+	// delete, branch switch) so a stale tab cannot overwrite another tab's work.
+	Revision     int64
+	ActiveLeafID *int64
+	Pinned       bool
+	FolderID     *int64
+	Position     int
+	Tags         []string
+	// ForkedFrom* record provenance only; they are not foreign keys.
+	ForkedFromConversationID *int64
+	ForkedFromMessageID      *int64
 }
+
+const conversationColumns = `id, title, endpoint_id, model_id, system_prompt, params_json, created_at, updated_at, revision, active_leaf_id, pinned, folder_id, position, forked_from_conversation_id, forked_from_message_id`
 
 // CreateConversation inserts a new conversation. EndpointID and ModelID
 // may be nil (no model chosen yet).
@@ -51,30 +64,75 @@ func (s *Store) CreateConversation(ctx context.Context, title string, endpointID
 
 // GetConversation fetches one conversation by ID.
 func (s *Store) GetConversation(ctx context.Context, id int64) (*Conversation, error) {
-	row := s.db.QueryRowContext(ctx,
-		`SELECT id, title, endpoint_id, model_id, system_prompt, params_json, created_at, updated_at
-		 FROM conversations WHERE id = ?`, id)
-	return scanConversation(row)
+	row := s.db.QueryRowContext(ctx, `SELECT `+conversationColumns+` FROM conversations WHERE id = ?`, id)
+	c, err := scanConversation(row)
+	if err != nil {
+		return nil, err
+	}
+	tags, err := s.tagsFor(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	c.Tags = tags[id]
+	if c.Tags == nil {
+		c.Tags = []string{}
+	}
+	return c, nil
 }
 
-// ListConversations returns every conversation, most recently updated
-// first.
+// ListConversations returns every conversation: pinned first, then by manual
+// position, then most recently updated first.
 func (s *Store) ListConversations(ctx context.Context) ([]*Conversation, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, title, endpoint_id, model_id, system_prompt, params_json, created_at, updated_at
-		 FROM conversations ORDER BY updated_at DESC`)
+		`SELECT `+conversationColumns+` FROM conversations ORDER BY pinned DESC, position ASC, updated_at DESC, id DESC`)
 	if err != nil {
 		return nil, fmt.Errorf("list conversations: %w", err)
 	}
-	defer rows.Close()
-
 	var out []*Conversation
 	for rows.Next() {
 		c, err := scanConversation(rows)
 		if err != nil {
+			rows.Close()
 			return nil, err
 		}
 		out = append(out, c)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	tags, err := s.tagsFor(ctx, 0)
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range out {
+		c.Tags = tags[c.ID]
+		if c.Tags == nil {
+			c.Tags = []string{}
+		}
+	}
+	return out, nil
+}
+
+// tagsFor loads tags for one conversation, or for all of them when id is 0.
+func (s *Store) tagsFor(ctx context.Context, id int64) (map[int64][]string, error) {
+	q, args := `SELECT conversation_id, tag FROM conversation_tags ORDER BY tag COLLATE NOCASE`, []any{}
+	if id != 0 {
+		q, args = `SELECT conversation_id, tag FROM conversation_tags WHERE conversation_id=? ORDER BY tag COLLATE NOCASE`, []any{id}
+	}
+	rows, err := s.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list tags: %w", err)
+	}
+	defer rows.Close()
+	out := map[int64][]string{}
+	for rows.Next() {
+		var cid int64
+		var tag string
+		if err := rows.Scan(&cid, &tag); err != nil {
+			return nil, err
+		}
+		out[cid] = append(out[cid], tag)
 	}
 	return out, rows.Err()
 }
@@ -119,9 +177,12 @@ func scanConversation(row rowScanner) (*Conversation, error) {
 		c                    Conversation
 		endpointID           sql.NullInt64
 		modelID              sql.NullString
+		leaf, folder         sql.NullInt64
+		forkConv, forkMsg    sql.NullInt64
+		pinned               int
 		createdAt, updatedAt string
 	)
-	if err := row.Scan(&c.ID, &c.Title, &endpointID, &modelID, &c.SystemPrompt, &c.ParamsJSON, &createdAt, &updatedAt); err != nil {
+	if err := row.Scan(&c.ID, &c.Title, &endpointID, &modelID, &c.SystemPrompt, &c.ParamsJSON, &createdAt, &updatedAt, &c.Revision, &leaf, &pinned, &folder, &c.Position, &forkConv, &forkMsg); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
 		}
@@ -133,6 +194,19 @@ func scanConversation(row rowScanner) (*Conversation, error) {
 	if modelID.Valid {
 		c.ModelID = &modelID.String
 	}
+	if leaf.Valid {
+		c.ActiveLeafID = &leaf.Int64
+	}
+	if folder.Valid {
+		c.FolderID = &folder.Int64
+	}
+	if forkConv.Valid {
+		c.ForkedFromConversationID = &forkConv.Int64
+	}
+	if forkMsg.Valid {
+		c.ForkedFromMessageID = &forkMsg.Int64
+	}
+	c.Pinned = pinned != 0
 	t, err := parseTime(createdAt)
 	if err != nil {
 		return nil, err

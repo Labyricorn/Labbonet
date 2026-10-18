@@ -17,7 +17,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `docs/PHASE1-ACCEPTANCE.md`: Phase 1 scope, non-goals, owner prerequisites, acceptance tests, sign-off.
 - `docs/PHASE1-PLAN.md`: Phase 1 build order (seven steps), per-step files, tests and done criteria, working rules.
 - `docs/GOBBONET-REFERENCE.md`: pinned GobboNet commit, source map, excluded paths.
-- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-2 are implemented (see handover for open verification).
+- `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-3 are implemented (see handover for open verification).
 - `docs/IMPLEMENTATION-HANDOVER.md`: unfinished parity working-tree changes, checks performed, remaining work and review risks for model handover; update or retire when superseded.
 - `docs/REUSE-LOG.md`: element-by-element GobboNet source/design attribution and Labbonet authorship boundaries (DR-003).
 - `docs/GOBBONET-PROVENANCE.json`: pinned-source hashes and exact reused CSS spans; keep synchronized with the reuse inventory.

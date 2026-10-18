@@ -251,7 +251,7 @@ func TestSnapshotValidation(t *testing.T) {
 		t.Fatal(err)
 	}
 	mut := map[string]func(*Snapshot){
-		"version":        func(s *Snapshot) { s.Version = 2 },
+		"version":        func(s *Snapshot) { s.Version = 3 },
 		"format":         func(s *Snapshot) { s.Format = "x" },
 		"scope":          func(s *Snapshot) { s.Scope = "all" },
 		"dup card key":   func(s *Snapshot) { s.Cards[1].Key = "c1" },

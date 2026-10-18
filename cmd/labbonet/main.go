@@ -115,6 +115,18 @@ func run(args []string) error {
 	srv.Handle("GET /api/conversations/{id}", http.HandlerFunc(conversations.Get))
 	srv.Handle("PATCH /api/conversations/{id}", http.HandlerFunc(conversations.Patch))
 	srv.Handle("DELETE /api/conversations/{id}", http.HandlerFunc(conversations.Delete))
+	branches := &api.Branches{Store: st}
+	srv.Handle("GET /api/conversations/search", http.HandlerFunc(branches.Search))
+	srv.Handle("PUT /api/conversations/order", http.HandlerFunc(branches.Order))
+	srv.Handle("PUT /api/conversations/{id}/organize", http.HandlerFunc(branches.Organize))
+	srv.Handle("POST /api/conversations/{id}/messages/{mid}/edit", http.HandlerFunc(branches.Edit))
+	srv.Handle("POST /api/conversations/{id}/messages/{mid}/activate", http.HandlerFunc(branches.Activate))
+	srv.Handle("POST /api/conversations/{id}/messages/{mid}/fork", http.HandlerFunc(branches.Fork))
+	srv.Handle("DELETE /api/conversations/{id}/messages/{mid}", http.HandlerFunc(branches.DeleteMessage))
+	srv.Handle("GET /api/folders", http.HandlerFunc(branches.ListFolders))
+	srv.Handle("POST /api/folders", http.HandlerFunc(branches.CreateFolder))
+	srv.Handle("PATCH /api/folders/{id}", http.HandlerFunc(branches.RenameFolder))
+	srv.Handle("DELETE /api/folders/{id}", http.HandlerFunc(branches.DeleteFolder))
 	cast := &api.Cast{Store: st}
 	srv.Handle("GET /api/cast", http.HandlerFunc(cast.List))
 	srv.Handle("POST /api/cast", http.HandlerFunc(cast.Save))

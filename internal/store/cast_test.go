@@ -148,11 +148,13 @@ func TestTurnRejectsChangedHistoryAndConcurrentGeneration(t *testing.T) {
 	ep, _ := st.CreateEndpoint(ctx, "test", "openai", "http://127.0.0.1:1", "local", 1)
 	conv, _ := st.CreateConversation(ctx, "test", nil, nil, "", "{}")
 	sel, _ := st.GetCast(ctx, conv.ID)
-	if _, _, err = st.StartTurn(ctx, conv.ID, ep.ID, "m", "hi", "{}", "{}", "{}", 0, sel.Revision); err != nil {
+	hi, again := "hi", "again"
+	if _, _, err = st.StartTurn(ctx, Turn{ConversationID: conv.ID, EndpointID: ep.ID, Model: "m", User: &hi, UserSpeaker: "{}", AssistantSpeaker: "{}", Params: "{}", CastRevision: sel.Revision}); err != nil {
 		t.Fatal(err)
 	}
-	for _, n := range []int{0, 2} {
-		if _, _, err = st.StartTurn(ctx, conv.ID, ep.ID, "m", "again", "{}", "{}", "{}", n, sel.Revision); !errors.Is(err, ErrConflict) {
+	userID := int64(1)
+	for _, leaf := range []*int64{nil, &userID} {
+		if _, _, err = st.StartTurn(ctx, Turn{ConversationID: conv.ID, EndpointID: ep.ID, Model: "m", User: &again, ExpectedLeaf: leaf, UserSpeaker: "{}", AssistantSpeaker: "{}", Params: "{}", CastRevision: sel.Revision}); !errors.Is(err, ErrConflict) {
 			t.Fatal(err)
 		}
 	}

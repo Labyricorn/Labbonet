@@ -54,6 +54,11 @@ type Request struct {
 	Stop            []string
 	ReasoningEffort string
 	ConfirmLoad     bool
+	// RegenerateParentID, when set, asks for a new assistant variant below that user
+	// message instead of appending a new user message (UserContent is then ignored).
+	RegenerateParentID *int64
+	// ExpectedRevision, when nonzero, must match the conversation's tree revision.
+	ExpectedRevision int64
 }
 
 // Runner drives one generation end to end (ARCHITECTURE.md section
@@ -107,9 +112,33 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 	if err != nil {
 		return err
 	}
-	history, err := rn.buildHistory(ctx, req.ConversationID, "")
-	if err != nil {
-		return fmt.Errorf("build history: %w", err)
+	// Only the chosen branch reaches the provider. A regeneration answers the user
+	// message at the tip of the path it names; the new variant lives beside any
+	// existing replies.
+	var path []store.PathMessage
+	if req.RegenerateParentID != nil {
+		path, _, err = rn.Store.PathTo(ctx, req.ConversationID, *req.RegenerateParentID)
+		if err != nil || len(path) == 0 || path[len(path)-1].Role != "user" {
+			return fmt.Errorf("%w: regeneration must answer a user message of this conversation", store.ErrConflict)
+		}
+	} else {
+		path, _, err = rn.Store.ActivePath(ctx, req.ConversationID)
+		if err != nil {
+			return fmt.Errorf("build history: %w", err)
+		}
+	}
+	userContent := req.UserContent
+	var expectedLeaf *int64
+	if req.RegenerateParentID != nil {
+		userContent = path[len(path)-1].Content
+		path = path[:len(path)-1]
+	} else if len(path) > 0 {
+		leaf := path[len(path)-1].ID
+		expectedLeaf = &leaf
+	}
+	history := make([]providers.Message, 0, len(path))
+	for _, m := range path {
+		history = append(history, providers.Message{Role: m.Role, Content: m.Content})
 	}
 	turn := 0
 	for _, m := range history {
@@ -127,7 +156,7 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 			contextLimit = m.ContextLength
 		}
 	}
-	snapshot, err := prompt.Assemble(prompt.Input{Character: character, Persona: persona, System: conv.SystemPrompt, History: history, User: req.UserContent, Turn: turn, ContextLimit: contextLimit, MaxTokens: req.MaxTokens, Temperature: req.Temperature, TopP: req.TopP, Now: time.Now()})
+	snapshot, err := prompt.Assemble(prompt.Input{Character: character, Persona: persona, System: conv.SystemPrompt, History: history, User: userContent, Turn: turn, ContextLimit: contextLimit, MaxTokens: req.MaxTokens, Temperature: req.Temperature, TopP: req.TopP, Now: time.Now()})
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrPrompt, err)
 	}
@@ -140,7 +169,13 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 	}
 	userSpeaker, _ := json.Marshal(cast.Speaker(persona))
 	assistantSpeaker, _ := json.Marshal(cast.Speaker(character))
-	msgID, genID, err := rn.Store.StartTurn(ctx, req.ConversationID, endpointID, modelID, req.UserContent, string(userSpeaker), string(assistantSpeaker), string(paramsJSON), len(history), selection.Revision)
+	turnSpec := store.Turn{ConversationID: req.ConversationID, EndpointID: endpointID, Model: modelID, ExpectedLeaf: expectedLeaf,
+		ParentID: req.RegenerateParentID, UserSpeaker: string(userSpeaker), AssistantSpeaker: string(assistantSpeaker), Params: string(paramsJSON),
+		CastRevision: selection.Revision, ExpectedRevision: req.ExpectedRevision}
+	if req.RegenerateParentID == nil {
+		turnSpec.User = &userContent
+	}
+	msgID, genID, err := rn.Store.StartTurn(ctx, turnSpec)
 	if err != nil {
 		return fmt.Errorf("persist turn: %w", err)
 	}
@@ -235,21 +270,6 @@ func (rn *Runner) refuseIfNotLoaded(ctx context.Context, endpointID int64, model
 		}
 	}
 	return nil
-}
-
-func (rn *Runner) buildHistory(ctx context.Context, conversationID int64, systemPrompt string) ([]providers.Message, error) {
-	msgs, err := rn.Store.ListMessages(ctx, conversationID)
-	if err != nil {
-		return nil, err
-	}
-	history := make([]providers.Message, 0, len(msgs)+1)
-	if systemPrompt != "" {
-		history = append(history, providers.Message{Role: "system", Content: systemPrompt})
-	}
-	for _, m := range msgs {
-		history = append(history, providers.Message{Role: m.Role, Content: m.Content})
-	}
-	return history, nil
 }
 
 func (rn *Runner) targetFor(ctx context.Context, ep *store.Endpoint) (egress.Target, error) {
