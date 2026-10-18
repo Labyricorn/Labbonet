@@ -8,7 +8,7 @@ GobboNet: Copyright (C) 2026 Elodine / GoblinCorps. Licensed under the GNU Affer
 - Exact reference: `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`
 - Upstream license and copyright statement: [pinned LICENSE](https://github.com/ElodineOfficial/GobboNet/blob/314bdc9cae204ae38fdc1002ac6a9fb1437c109f/LICENSE)
 
-The reused material includes the theme, layout, chat/thread/modal/card/responsive CSS, search/model/reasoning style excerpts, and adapted shell/chat/CAST presentation structures. Original upstream split-file comments and added copyright/license notices accompany those files. Design and behavior references are credited separately from copied source.
+The reused material includes the theme, layout, chat/thread/modal/card/dashboard/responsive CSS, search/model/reasoning style excerpts, and adapted shell/chat/CAST/landing-page presentation structures. Original upstream split-file comments and added copyright/license notices accompany those files. Design and behavior references are credited separately from copied source.
 
 **Labbonet modifications and original implementation:** Copyright (C) 2026 Labbonet contributors. AGPL-3.0-or-later. The provider-aware Go/SQLite backend, security model, persistence, API/SSE client and safe UI integration are Labbonet work. This credit applies to the additions and modifications; it does not replace upstream copyright or claim the adapted interface as an original Labbonet design.
 

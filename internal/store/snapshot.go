@@ -19,7 +19,7 @@ var ErrInvalidImport = errors.New("invalid import")
 // ExportSnapshot builds a credential-free snapshot. scope "conversation" includes the
 // thread plus the cards it references; "cards" exports the library only.
 func (s *Store) ExportSnapshot(ctx context.Context, scope string, conversationID int64) (*interchange.Snapshot, error) {
-	if scope != "full" && scope != "cards" && scope != "conversation" {
+	if scope != "full" && scope != "cards" && scope != "conversation" && scope != "threads" {
 		return nil, ErrInvalidImport
 	}
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})

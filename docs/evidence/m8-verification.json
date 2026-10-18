@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-18",
+  "timezone": "America/Los_Angeles",
+  "build": "V0-2-0",
+  "reference_commit": "314bdc9cae204ae38fdc1002ac6a9fb1437c109f",
+  "gates": {
+    "baseline_go_test": "PASS",
+    "gofmt_l_empty": "PASS",
+    "go_vet_all": "PASS",
+    "go_test_all": "PASS",
+    "go_build_cmd_labbonet": "PASS",
+    "cgo_disabled_go_build_all": "PASS",
+    "all_frontend_js_syntax": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "chrome_renderer": {
+    "pass": 13,
+    "fail": 0,
+    "csp_violations": 0,
+    "console_warnings_errors": 0,
+    "style_elements_attributes": 0
+  },
+  "in_app_renderer": {
+    "pass": 13,
+    "fail": 0,
+    "note": "Blocked injected inline style reported; independent Chrome verification clean. CSP unchanged."
+  },
+  "layouts": {
+    "wide_css_px": [
+      1280,
+      720
+    ],
+    "panel_css_px": [
+      420,
+      900
+    ],
+    "document_horizontal_overflow": false
+  },
+  "embedded_smoke": "PASS: binary without frontend-dir, actual chooser import, MathML/highlighting and pinned assets rendered",
+  "browser_checks": [
+    "portrait chooser/preview/remove/reupload/save",
+    "card PNG export/download",
+    "GobboNet chooser/preview/commit",
+    "bulk thread export/download",
+    "text attachment chooser/remove",
+    "code clipboard exact text",
+    "generated-file Save",
+    "Source/Rendered",
+    "dirty editor Keep/Back/Escape/Discard",
+    "message delete Cancel/Confirm",
+    "starter install",
+    "profile delete",
+    "About/build Copy",
+    "About Memory access",
+    "schedule missing-model skip reason",
+    "folder reorder/reload",
+    "folder two-tab 409 notice/reload"
+  ],
+  "provenance_spans_verified": [
+    "frontend/css/01-tokens.css",
+    "frontend/css/02-layout.css",
+    "frontend/css/03-threads.css",
+    "frontend/css/04-chat.css",
+    "frontend/css/05-modals.css",
+    "frontend/css/06-cards.css",
+    "frontend/css/10-responsive.css",
+    "frontend/css/search.css",
+    "frontend/css/components.css",
+    "frontend/css/09-dashboard.css"
+  ],
+  "vendor_sha256": {
+    "markdown-it.min.js": "38c70a1e7ca91ab40e2d9e6e60129851a717ed1c7d4acbbdd41bf9503791cf68",
+    "purify.min.js": "68769fa503bf609ec914fdbeba73eb1ea6fb4491292d0d0e691ea75aad570217",
+    "katex.min.js": "e8d885505949f3a5f4abdd5dd0d53696bd1371ad26ffbf4f310dcd77c8cdae89",
+    "highlight.min.js": "c4a399dd6f488bc97a3546e3476747b3e714c99c57b9473154c6fb8d259b9381"
+  },
+  "evidence_sha256": {
+    "m8-chat-panel.jpg": "3569090777ec6db5e4b523fdcf19483459531a49ab00bafe2e09d97681330af3",
+    "m8-chat-wide.jpg": "89582cb3e356e1a9bdfbe06292f27da4b570ca505d9d053ca1cd493696de84d1",
+    "m8-embedded-wide.jpg": "2bc8cee0ab3c84c290f616b64dc7ca09cfc4b3f3d1151a7f62b2f466fc5186cf",
+    "m8-folder-conflict-wide.jpg": "25b6a370cc5ab4b2147c599ded7c8c36bfbcd2a22c5ee843fc41d2bdb7473d18",
+    "m8-home-panel.jpg": "a6de66bcab8b6c821dbde2c9b12c14c9c5a3594cef7f5744a1680c4b479b01e1",
+    "m8-home-wide.jpg": "24b5dca9f50eef64f7a1d06ddb6e7801aee1b5837b5c808ceadbd69a7a5e1e4c",
+    "m8-memory-panel.jpg": "d46f825f4510d50bc8fc66a123c9a5cffa63dad20f555aad9f049df2565f7596",
+    "m8-reference-panel.jpg": "6caa42a5fee12addb970d5a237ae7cde97aed8bcd4009c2b44cf18c9f1d67651",
+    "m8-reference-wide.jpg": "5852eff26112d24b361e48a25130f42241fcad97f2409dbffe8cdffada2deceb",
+    "m8-render-chrome.jpg": "e91895de2e72ec0b769006a5a7638487170ce121eeeb8446af5781977dfa2ea3",
+    "m8-schedule-skipped-panel.jpg": "b66b0426ba842658ff7444648bc197fa56f8fe51a0b677da04ee9477f556c322"
+  },
+  "reference_capture": "Static pinned shell/CSS projection; handlers removed and styles externalized; no upstream runtime or excluded code executed. Not pixel-diff proof of every screen.",
+  "real_provider_calls": false,
+  "owner_database_migrated": false,
+  "browser_permission_changed": false,
+  "full_parity": "limited; explicit remaining compatibility and browser/live limits in MILESTONE8-ACCEPTANCE.md",
+  "owner_visual_acceptance": "pending",
+  "phase1_remaining": "P3-P5/A-ST5/A-ST6/A-LM6 and final sign-off owner-deferred to V2-0-0; no waiver/pass inferred"
+}

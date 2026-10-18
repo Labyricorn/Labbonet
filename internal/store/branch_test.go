@@ -349,6 +349,38 @@ func TestForkCopiesChainWithCastAndProvenance(t *testing.T) {
 	}
 }
 
+func TestFolderReorderAtomicAndStale(t *testing.T) {
+	st := openTemp(t)
+	ctx := t.Context()
+	a, _ := st.CreateFolder(ctx, "A")
+	b, _ := st.CreateFolder(ctx, "B")
+	c, _ := st.CreateFolder(ctx, "C")
+	before := []int64{a.ID, b.ID, c.ID}
+	after := []int64{c.ID, a.ID, b.ID}
+	if err := st.ReorderFolders(ctx, before, []int64{a.ID, a.ID, c.ID}); !errors.Is(err, ErrInvalidOrganization) {
+		t.Fatal(err)
+	}
+	if err := st.ReorderFolders(ctx, before, after); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.ReorderFolders(ctx, before, before); !errors.Is(err, ErrConflict) {
+		t.Fatal("stale order accepted", err)
+	}
+	if err := st.ReorderFolders(ctx, after, []int64{a.ID, b.ID, 999}); !errors.Is(err, ErrInvalidOrganization) {
+		t.Fatal(err)
+	}
+	got, _ := st.ListFolders(ctx)
+	for i, f := range got {
+		if f.ID != after[i] {
+			t.Fatal("partial reorder", got)
+		}
+	}
+	_, _ = st.CreateFolder(ctx, "D")
+	if err := st.ReorderFolders(ctx, after, after); !errors.Is(err, ErrConflict) {
+		t.Fatal("missing new folder accepted", err)
+	}
+}
+
 func TestOrganizationFoldersTagsPinsOrderAndSearch(t *testing.T) {
 	st := openTemp(t)
 	ctx := t.Context()

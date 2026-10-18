@@ -187,3 +187,27 @@ New automated tests: `internal/search/search_test.go` (query building, URL/lengt
 - Scheduled search preserves the global enable/key gates and explicit per-schedule opt-in. Only the initial scheduled prompt requests search. No key is stored in schedules, profiles or run reasons; search errors are sanitized by the existing search layer.
 - Profiles contain validated settings, never credentials or database paths. They do not provide data isolation. Capture/apply retains appearance and memory validation; unavailable components produce notes. Existing declarative-only MODS and fixed-destination search boundaries remain intact.
 - Tests cover DST gap/repeat exact instants, UTC boundaries, concurrent claims, stale snapshots, missed/restart recovery, deleted/busy threads, not-loaded model refusal, bounded chain, single Stop before registration, revisions, reset scopes, migration preservation and credential-free backup. Profile API tests cover capture/apply with a missing preset and stale updates. Browser checks and remaining gaps are recorded in the handover; no live-provider claim is implied.
+## 18. Milestone 8 rendering and compatibility controls
+
+- TeX is untrusted. Vendored KaTeX uses `trust:false`, MathML-only output, 8 KiB
+  source, 200 expansions and 10 em bounds. Unsupported/invalid/excessive math falls
+  back to escaped source. DOMPurify sanitizes the complete output and forbids style
+  attributes. No KaTeX HTML/font CSS, auto-render or TeX HTML/URL extensions execute.
+- Known-language highlighting is capped at 32 KiB and sanitized with Markdown;
+  unknown languages retain escaped text. Copy/Save uses exact code text. Generated
+  filenames cannot name paths, control characters or Windows devices; saving never
+  executes content. Existing CSP remains unchanged.
+- Pinned GobboNet envelopes are parsed as inert data, converted with depth/variant/
+  expanded-byte limits, validated, then passed through the existing transactional
+  preview/import path. Provider/model settings, credentials, schedules and extension
+  activation are omitted. Invalid/remote assets are omitted with notes, never fetched.
+  Future versions, malformed roles/variants and duplicate identifiers are rejected.
+- Folder order applies only as a complete, validated permutation of the displayed
+  order in one transaction; stale tabs get 409. The API retains session/Origin/header
+  gates. In-app confirmations retain explicit consequences; Escape cancels. Browser
+  unload protection and unloaded-model warnings are retained.
+- Regressions cover hostile TeX/Markdown/highlighted code, fallback, exact code and
+  filenames (13 browser checks), import branch expansion/versions/roles/atomicity,
+  credential-free exports, stale folder ordering and static asset revalidation.
+  Chrome independently passes without console or CSP violations. No live-provider
+  security result or owner sign-off is inferred; see milestone 8 acceptance.

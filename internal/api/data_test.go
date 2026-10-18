@@ -42,6 +42,41 @@ func cardCount(t *testing.T, st *store.Store) int {
 	return len(cards)
 }
 
+func TestGobboNetPreviewCommitAndThreadsExport(t *testing.T) {
+	mux, st := dataMux(t)
+	body := []byte(`{"gobbonet_export":"threads","version":1,"threads":[{"id":"t","title":"Imported","messages":[{"role":"user","content":"hello"}]}],"settings":{"apiKey":"never-import"},"schedules":[{"enabled":true}]}`)
+	for _, mode := range []string{"preview", "commit"} {
+		r := raw(mux, "POST", "/api/data/import?mode="+mode+"&policy=add", body)
+		if r.Code != 200 {
+			t.Fatal(r.Code, r.Body.String())
+		}
+		threads, err := st.ListConversations(t.Context())
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := 0
+		if mode == "commit" {
+			want = 1
+		}
+		if len(threads) != want {
+			t.Fatal("preview wrote or commit lost data")
+		}
+	}
+	r := raw(mux, "GET", "/api/data/export?scope=threads", nil)
+	if r.Code != 200 || strings.Contains(r.Body.String(), "never-import") {
+		t.Fatal(r.Code, r.Body.String())
+	}
+	p, err := interchange.Parse(r.Body.Bytes())
+	if err != nil || len(p.Snapshot.Conversations) != 1 {
+		t.Fatalf("bad export: %v", err)
+	}
+	bad := raw(mux, "POST", "/api/data/import?mode=commit&policy=add", []byte(`{"gobbonet_export":"threads","version":999}`))
+	threads, _ := st.ListConversations(t.Context())
+	if bad.Code != 422 || len(threads) != 1 {
+		t.Fatal("bad import changed data")
+	}
+}
+
 func TestImportPreviewDoesNotWriteAndCommitDoes(t *testing.T) {
 	mux, st := dataMux(t)
 	card := interchange.ExportV3JSON(cast.Card{Kind: "character", Name: "Imported", Greetings: []string{"hi"}})

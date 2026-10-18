@@ -1,87 +1,70 @@
-# Implementation handover — current state
+# Implementation handover — milestone 8 closeout
 
-Updated 2026-10-18 (America/Los_Angeles). Supersedes the 2026-10-17 partial-backend handover. The original owner-authorized eight-milestone parity scope remains; milestone 1 is committed (1a7e106) with browser upload and dirty-editor checks still unverified, milestones 2, 3, 4, 5 and 6 are implemented (open items below), milestone 7 is implemented (see verification and adaptations below), milestone 8 is untouched. Current development version is **V0-2-0**. Remaining Phase 1 provider auth/cold-start checks (A-ST5/A-ST6/A-LM6; P3-P5) and final Phase 1 sign-off are owner-deferred until **V2-0-0**; they do not block current parity work. GobboNet style and owner visual acceptance remain open in current scope.
+Updated 2026-10-18 (America/Los_Angeles). Supersedes the milestone 1–7 working-tree
+handover. Development version: **V0-2-0**. The milestone 8 implementation/audit pass
+is complete; full application parity and owner visual acceptance are not claimed.
 
-## Current working tree
+## Current records
 
-The inherited backend WIP is retained and refined: schema 2, revisioned cast store/API, defaults frozen at conversation creation, immutable message speakers, bounded inert prompt assembly, transactional turn creation and pre-upgrade credential-free backup. CHARS is now wired: safe native-dialog character/persona library/editor, CRUD/copy/atomic order/defaults, text fields/macros/greeting/carousel/presets, local raster input/preview/remove, persisted per-thread cast and explicit greeting. History uses saved speaker names/portraits/colors; colors use validated CSSOM and safe quote spans. Unsupported provider samplers show a reason. No CSP, provider allowlist or model-management relaxation.
+- `MILESTONE8-ACCEPTANCE.md`: authoritative inventory disposition, evidence,
+  compatibility limits and remaining owner/provider/browser checks.
+- `GOBBONET-PARITY-PLAN.md`: original authorized scope and milestone 8 additions.
+- `ARCHITECTURE.md` section 16 and `SECURITY-MODEL.md` section 18: new boundaries.
+- `devlog.md`: milestone implementation history and final gate results.
+- `docs/evidence/m8-*`: current browser captures and machine-readable verification.
 
-Important fixes: finite numeric validation; full raster decoding after bounds; bounded macro builder; greeting persona macros; pinned persona cadence (0 disabled, first turn and multiples of N at tail); same-conversation history/revision/streaming conflict check; cancel registration before start callback; strict atomic card reorder; generic unexpected storage errors. Legacy conversations initialize with no cast. Prompt provenance omits embedded images/unused greetings; message portraits remain historical snapshots.
+## Changes in this pass
 
-The owner's additional request to document **every** reused GobboNet element is implemented in `docs/REUSE-LOG.md`, `docs/GOBBONET-PROVENANCE.json`, root `NOTICE.md`, README/About and per-file notices. Nine CSS files were compared against exact pinned source; equal spans and source hashes are recorded. Structure/behavior references are distinguished from copied source and original Labbonet runtime. Attribution is now a durable AGENTS contract. Check Git status/log for which documentation is committed; unfinished implementation must not be discarded.
+- Vendored, licensed, hashed KaTeX/MathML and highlight.js; bounded input and safe
+  source fallback through the existing sanitizer, without weakening CSP.
+- Bounded pinned GobboNet export import (cards, cast, threads, variants/continuations,
+  folders/pins/tags) with visible compatibility reports and no activated settings,
+  credentials, schedules or extension code. Added all-thread export.
+- Atomic complete-list folder reordering with stale-tab protection and real controls.
+- In-app confirmation/notice dialogs. Dirty-card Keep/Escape/Discard and message
+  deletion outcomes now work through these controls. Browser page-unload protection
+  remains native. Unloaded-model confirmation still explicitly warns about loading.
+- Pinned dashboard CSS/landing structure, original safe starter text, three sidebar
+  footer pairs, compact folder-create control, About → Memory, version/build copy.
+- Unversioned assets revalidate on reload, avoiding mixed-version module caches.
 
-## Verification completed
+## Verification
 
-- Baseline and subsequent `go test ./...` pass; Go formatting/vet, normal build and CGO-disabled build pass. Changed JS passes `node --check`. Re-run mandatory gates after any code change before a code push.
-- Dedicated cast/prompt/store/API/generation tests cover two characters/two personas after reopen, optimistic conflicts/wrong kinds/delete/defaults/history identity, atomic reorder rollback, populated v1 upgrade with live encrypted credential preservation and redacted backup, failed migration rollback, invalid prompts/assets/controls without new turns, correct fake-provider prompt/params, queued-edit snapshot and immediate cancel.
-- Browser on separate temp database at `127.0.0.1:4817`: create/copy/default/reorder, per-thread cast switch, explicit expanded greeting, old speaker after switch and reload, text/dialog computed colors, no inline styles or CSP errors, two-tab stale editor conflict, five S14 passes. Saved evidence: `cast-library-wide.png`, `cast-library-panel.png`, `cast-chat-wide.png`, `gobbonet-attribution-about.png`.
-- No new live inference requests; no provider settings/model operations; no owner database migration.
+Real browser chooser checks passed for portrait upload/preview/remove/reupload/save,
+GobboNet DATA preview/commit and text attachments. Card export, bulk-thread download,
+code Copy/Save, generated filename, Source/Rendered, profile deletion, starter install,
+About/build Copy, Memory access, skipped schedule reason and folder reorder/reload/
+two-tab 409 were exercised on disposable databases only. No live inference/search,
+model management, owner database migration or browser permission change occurred.
 
-## Milestone 1 closeout still required
+Chrome: 13 render PASS, zero FAIL/CSP violations/style elements or attributes,
+no console warnings/errors. The in-app browser independently had 13 passes but its
+comments harness reported a blocked inline style; CSP was retained. Static pinned
+shell/CSS and current app captures at 1280/420 CSS px support review, not pixel equality
+of every dialog. Temporary overrides are reset. See the acceptance record for limits.
 
-1. Finish browser file upload/preview/remove walkthrough. The Chrome extension refused chooser upload because “Allow access to file URLs” is off. This permission was not changed; do not bypass that refusal. Domain tests cover valid/truncated/unsafe rasters, but do not claim the UI upload path was verified.
-2. Finish reliable dirty-editor close/Escape/navigation walkthrough. Escape emitted the correct discard confirmation, but browser handling stalled and retain/dismiss outcomes were not established. Existing native confirmation should be checked with a reliable UI route.
-3. Complete live browser generation with saved cast if useful, using only an already-loaded model; automated fake-provider request/snapshot verification already passes. Phase 1 auth/cold-start windows and final sign-off are deferred until V2-0-0; do not treat them as current milestone blockers or load an unloaded LM Studio model.
-4. Review remaining UI refinements, exact pinned full-window/panel visual comparison and notices; owner visual acceptance remains separate. Check frontend errors on intentional conflict and after reload. Review context estimator limitations and snapshot storage growth (historical portraits still duplicate per message).
-5. Update the acceptance/proposal inventory and this handover when milestone 1 is actually complete; then commit/push tested code on main per plan. Continue milestones 2–8 in order. Do not infer full application parity from CHARS.
+Final formatting/vet/full tests/normal and CGO-disabled builds/all JS syntax/diff
+results are in `devlog.md` and `evidence/m8-verification.json`; rerun before code pushes.
 
-## Workspace / governing rules
+## Remaining work
 
-Read `G:\.vibe\AGENTS.md`, project `AGENTS.md`, root `devlog.md`, `frontend/AGENTS.md`, parity plan and reuse inventory before edits. No branches or PRs unless requested. No agents were delegated. Preserve the entire existing working tree. Exact upstream pin remains `314bdc9cae204ae38fdc1002ac6a9fb1437c109f` (GobboNet 1.7.6). Upstream read-only comparison files are in `%TEMP%\labbonet-gobbonet-pin`, not a second source of truth.
+1. Owner visual acceptance and decisions on the explicit compatibility limitations in
+   the acceptance record. They are not waivers. Do not call the application fully
+   GobboNet-equivalent based on this pass.
+2. Real embedding/search/summarizer and the listed long-stream/touch/browser-closed
+   schedule checks remain uncertified. Use only already-loaded models and owner
+   credentials; never operate model-management endpoints.
+3. Snapshot settings/schedule/profile interchange, CHARX sidecar modules, exact token
+   budgets, per-card compression model, isolated data profiles, per-schedule reply
+   caps, folder-aware schedule picker and desktop notifications are still limited
+   or absent as listed in the acceptance record. Credential-free database backups
+   retain the broader database; interchange remains cards/threads only.
+4. P3-P5, A-ST5/A-ST6/A-LM6 and final Phase 1 sign-off remain **owner-deferred until
+   V2-0-0**, neither passed nor waived. This does not defer current visual acceptance.
 
-## Milestone 2 (card interchange and DATA) — implemented 2026-10-18
+## Working rules
 
-`internal/interchange`, `internal/store/snapshot.go`, `internal/api/data.go`, `frontend/js/data.js`; design in `ARCHITECTURE.md` section 10, controls in `SECURITY-MODEL.md` section 12. Go tests cover round trips of all formats, malformed JSON/PNG/ZIP, traversal/executable/bomb/duplicate archives, snapshot validation, failure-injected rollback, unchanged DB after rejection, no credential leakage and reset scopes. Browser (temp DB, port 4818, built-in browser): preview wrote nothing, commit imported a Tavern V2 card with script-like extension kept inert, typed-confirmation reset removed cards and wrote a backup; no console errors.
-
-Not verified: the OS file-chooser path (a `File` was assigned to the input programmatically), the per-card export menu click, thread-level import/export through the UI, and owner visual acceptance. Not implemented from the plan row: GobboNet snapshot import (GobboNet's own export format is not parsed), CHARX asset modules/lorebooks beyond the main icon, and profile/preset sync (milestone 7). 
-
-## Milestone 3 (conversations and organization) — implemented 2026-10-18
-
-Design: `ARCHITECTURE.md` section 11, controls in `SECURITY-MODEL.md` section 13. Code: `migrations/0003_branches.sql`, `internal/store/{messages,turn,branch,organize,conversations}.go`, snapshot v2 in `internal/interchange/snapshot.go` and `internal/store/snapshot.go`, `internal/api/branches.go`, branch-aware `internal/generate/runner.go`, `frontend/js/{chat,conversations,dialogs,api}.js`. `StartTurn` now takes a `store.Turn`; `CreateMessage` always appends to the visible tip.
-
-Go tests cover legacy-to-branch migration, edit/reroll/switch continuations, delete repair, streaming refusals, fork provenance, folders/tags/pin/order/search (wildcards literal), snapshot v2 round trip and malformed trees, stale-revision conflicts through the API and runner, and (capturing fake provider) that only the visible branch is sent. Browser (temp DB, port 4819, fake OpenAI-compatible server, built-in browser): send, edit and "Save & reply", variant arrows restoring the original branch with its own second turn, reroll, fork from a reply, folder create, drag onto a folder header, drag reorder (persisted across reload), tag dialog, pin, content search with snippet, S14 page, narrow 420 px with no horizontal overflow, no console errors. Evidence: `docs/evidence/branches-wide.jpg`, `branches-narrow.jpg`.
-
-Not verified: message delete through the UI (native `confirm`), stale-tab conflict alert in the UI (API/runner tests cover the server side), copy button (clipboard permission), per-thread export click, thread import through the OS file chooser, drag across folders on touch devices, and owner visual acceptance (the action bar sits on the bubble's top edge, an adaptation of the pinned top-right overlay). Not implemented: folder reordering, bulk thread export, GobboNet snapshot import, variant-aware export of generation provenance (messages and their provenance stay in the database; snapshots carry text, speakers, tree and origin only). The in-app browser caches `app.css`; a `fetch("/app.css",{cache:"reload"})` then reload picks up CSS edits.
-
-## Milestone 4 (detached generation and chat tools) — implemented 2026-10-18
-
-Design: `ARCHITECTURE.md` section 12, controls in `SECURITY-MODEL.md` section 14. Code: `internal/generate/{jobs,limits}.go`, `Runner` limits/attachments, `internal/api/generate.go` (detached POST, `events`, `generation`), `Store.RecoverInterrupted`/`StreamingGeneration`, `cmd/labbonet/main.go` wiring, `frontend/js/{tools,chat,api}.js`, `app.css`.
-
-Go tests cover sentence-aware cap and hard stop, attachment fencing/name sanitizing/limits, reply cap and reasoning watchdog through the Runner, attachment provenance (names only), detach/re-attach with snapshot and late subscriber, second send refused (no duplicate turn), Stop on a queued job (provider never called), same-endpoint serialization, shutdown cancel + `Jobs.Wait`, restart recovery, and the API (client disconnect keeps the reply; re-attached stream has snapshot and `end`; bad attachments/limits are `400` with nothing stored). Browser (temp DB, port 4831, throwaway Node fake provider, built-in browser): reload mid-reply then re-open the thread resumed with a snapshot and growing text, Stop on a re-attached reply (`cancelled`), no duplicate user turns after reloads, reply cap 500 ended at a sentence (519 chars), reasoning limit 2000 produced status `error`/`reasoning_limit`, attach (name sanitized, 4-backtick fence, binary refused), code Copy/Save toolbar rendered, Source toggle round trip, jump-to-latest, no console errors. Evidence: `docs/evidence/chat-tools-wide.jpg`.
-
-Not verified: code Copy/Save clicks (clipboard/download permissions), file attach through the OS chooser and a real drag-drop (assigned programmatically), kill-and-restart recovery against the real binary (store-level test only), graceful Ctrl+C with a live reply, narrow-width layout of the new tool row, long-stream scroll behavior on a real model, owner visual acceptance. Not implemented: math rendering (needs a vendored, hashed library), per-event replay across restarts, provider-aware reasoning parsing beyond `reasoning_content`.
-
-## Milestone 5 (lore, context management and retrieval) — implemented 2026-10-18
-
-Design: `ARCHITECTURE.md` section 13, controls in `SECURITY-MODEL.md` section 15, embedding contract in `PROVIDER-SPEC.md` section 5.4. Code: `migrations/0004_memory.sql`, `internal/memory/` (storybook parser, `Retrieve`, vectors, settings), `internal/store/memory.go`, `internal/generate/memory.go` (compression planning, summariser with model fallbacks, semantic gathering, `SummarizeNow`), `Runner`/`Jobs.StartContext` changes, `internal/prompt/assemble.go` (summary block, `Retrieve` callback, memory provenance), `internal/providers/openai/embed.go` and the exact `/v1/embeddings` egress path, `internal/api/memory.go`, `frontend/js/memory.js`, the storybook field in `frontend/js/cast.js`, card/interchange `storybook` field.
-
-Go tests cover the parser (sections, flat directives, subtrees, limits), tag firing/thematic sums/offscreen suppression/budget/dedupe/warmth/semantic and fallbacks, vectors, settings validation, store revisions/summaries/branch anchors/embedding cache keyed by model/bounded records/v3-to-v4 upgrade with backup, prompt summary and retrieval bounds, adapter request/response and rejection cases, and through the `Runner` with a scripted provider: summary replaces old messages while source history is untouched, failed/oversized summaries keep history and back off, a not-loaded compression model is never called, a manual edit racing a pass wins, a summary does not apply on another branch, a cancelled request stores nothing, retrieved lore reaches the prompt and is recorded without text, embeddings are cached per model/content, a not-loaded embedding model is never called, an embedding server error degrades to tags. API tests cover settings conflicts, preview, edit/clear/history and summarise-now. Browser (temp DB, port 4842, throwaway Node LM Studio-shaped fake, built-in browser): lore injected after a real send (header chip `LORE 1`), inspector with candidates, budget and shadow thresholds, semantic hit on a message sharing no tag (one embeddings request, then query-only), automatic summary after the context filled (prompt had the summary block and not the archived text), hand edit (revision 2), two-step clear returning messages to the prompt, SUMMARISE NOW, a stale-tab save refused with the conflict message, a not-loaded embedding model producing no embedding request and a recorded reason, storybook check in the character editor, narrow 420 px width without horizontal overflow, S14 five passes. Evidence: `docs/evidence/memory-summary-wide.jpg`, `memory-settings-wide.jpg`, `memory-inspector-wide.jpg`, `memory-inspector-narrow.jpg`.
-
-Decisions to confirm: automatic summarising is **off by default** (it sends old messages to a model unasked); retrieval defaults to tags only; warmth keeps an entity for N extra turns; budgets use the existing byte-based unit.
-
-Not verified: a **live** `/v1/embeddings` response or semantic retrieval against a real embedding model (needs an owner-loaded embedding model; deferred with the V2-0-0 provider checks), a live summary from a real model, kill-and-restart during preparation, the OS file chooser for card import with storybooks. Not implemented: summaries in snapshots/exports (they reference message ids), per-card compression model, token-exact budgets, GobboNet snapshot import, an "index now" action (documents embed lazily, up to 31 per turn). Summaries and the retrieval inspector read the visible branch only. A summarising pass blocks the start of a send (bounded at 90 s; aborting the request before the turn exists cancels it).
-
-
-## Milestone 6 (web search and MODS) — implemented 2026-10-18
-
-Design: `ARCHITECTURE.md` section 14, controls in `SECURITY-MODEL.md` section 16 (S18 to S22). Code: `migrations/0005_mods_search.sql`, `internal/search/`, `internal/mods/`, `internal/egress/search.go` (fixed-destination `SearchClient`), `internal/store/mods.go`, `internal/generate/websearch.go` and `Runner` changes (`Request.WebSearch`, macro values, `Runner.Search`), `internal/prompt/assemble.go` (global macros, user-turn expansion, web block), `internal/api/mods.go`, `cmd/labbonet/main.go` wiring, `frontend/js/{mods,search}.js`, `chat.js`, `index.html` (MODS enabled), `app.css`. `Store.Backup` now also clears the search key.
-
-Go tests cover: query building, response sanitising (javascript/data URLs, credentials in URLs, length bounds), the keyed fixed-path request, error text never containing the key, redirect and oversize refusal, the external class refusing loopback, the fixed destination and unchanged provider allowlist, macro and preset validation (reserved names, case-insensitive duplicates, loops, growth bomb, unsafe values), store revisions/limits/reset scope/backup without the key/schema 4 to 5 upgrade, prompt precedence and expansion (user turn and history, assistant text untouched, date/time literal in history, budget), untrusted web block (end marker neutralised, dropped from the end, omitted when it cannot fit), Runner behavior with a fake search service and scripted provider (results reach the prompt as framed text, nothing sent unless asked or enabled, refusals store nothing, failures continue with a recorded error, abandoned search stores nothing, attachments are not sent, key absent from records and params), the API (key never echoed, refusals, preview, revisions, connection test sends only the fixed phrase) and import inertness. Browser (throwaway harness binary with a fake search service and fake chat model, temp DB, port 4851, built-in browser; the harness was deleted): macro add/duplicate/reserved/loop/invalid-name errors, nested macro and expansion preview, appearance preview/apply/new custom preset/revert on close/persist across reload, search key save (field cleared, status only), enable, test connection, search box enabled only when ready, a real send (model saw the expanded macro while the stored message kept the tag, untrusted-framed results with the bad `javascript:` hit dropped, citations with safe link attributes), a failed search shown as a failure while the reply continued, search turned off (box disabled with a reason; a bypassed request got `409`), narrow 420 px with no horizontal overflow, no CSP errors (the only console errors were the intentional `400`s). Evidence: `docs/evidence/mods-appearance-wide.jpg`, `mods-search-settings-wide.jpg`, `search-sources-wide.jpg`, `search-failed-wide.jpg`, `mods-appearance-narrow.jpg`.
-
-Decisions to confirm: the search query is the typed text only (macro tags removed, attachments excluded); results apply to one turn and are not saved into history (upstream saves them on the message); built-in macro names plus `current_dat` and `auto_continue` are reserved ahead of the scheduler; macros expand in earlier user messages too (date/time stay literal there); the connection test works even while search is off, because it is the owner's own action; macros and presets are not in snapshots and a full reset clears them but keeps the search key.
-
-Not verified: any **live** call to the search service (needs an owner key; the request/response shape comes from the pinned upstream and published API, so a real key may reveal differences in limits, error bodies or the allowed `max_results`), the OS colour picker, the first appearance screenshot predates the row-alignment CSS fix (the narrow one is after it), search and macros through card-carried macros in a live chat, owner visual acceptance. Not implemented: macros and presets in snapshots, GobboNet macro-list import, other search providers, page fetching, per-thread search default, the extension loader (an intentional, documented exception).
-
-## Milestone 7 (scheduler, dashboard, profiles) — implemented 2026-10-18
-
-Schema 6, `internal/schedule`, `internal/profile`, store/API counterparts and `internal/generate/scheduler.go` implement durable once/daily schedules and settings profiles. `frontend/js/schedule.js` provides CRUD, enable/duplicate/run-now, timezone display, ledger and Stop; `home.js` provides character shortcuts, recent threads, scheduler summary, connections and profile capture/apply/update/delete. HOME now returns to the dashboard. Design/security: architecture section 15 and security model section 17. Attribution: reuse log milestone 7 additions (no source copied).
-
-**Review fixes:** one successful Stop now propagates across the gap before a generation receives its id (the old test repeatedly canceled, masking this race). Timed/manual claims reject stale schedule revisions even when the next time is unchanged. DST resolution explicitly chooses the first repeated minute or the first valid minute after a gap; the inherited `time.Date` approach could run a spring-gap prompt early, despite its comment. Tests assert exact instants. Fixed the pre-existing macro API test's random map iteration over dependent edits/deletes; ten consecutive runs pass. Home polling preserves active profile edits and is disposed when opening a thread; scheduler polling pauses during editing.
-
-**Verification:** Go formatting/vet/full tests, normal and CGO-disabled builds, all browser JS syntax and diff whitespace checks pass before commit/push. Focused schedule/store/generation/API tests pass, including the new stale-claim, exact DST and pre-registration single-Stop regressions. Stop also cancels pre-turn preparation; shutdown cancellation propagates across generation registration. Unexpected schedule-start/storage errors are redacted. Browser on a separate temp DB at port 4840 with throwaway loopback fake provider 4841 verified daily creation/edit, three-turn auto-continue chain, single Stop (cancelled after one turn), missing endpoint/model skipped with reason, a real timed one-off completion and automatic disabling, profile capture/apply including memory and reply-cap persistence after reload, profile update persistence and a character shortcut assigning its cast to a new thread. A hard-kill/restart of the real test binary marked both the unfinished reply and run interrupted without replay. Hard kill left the ordinary lock file: verified the test process was gone, removed only its temp-data lock, then restarted. Wide and actual 420-CSS-pixel layouts have no horizontal overflow; the browser viewport tool required 504 physical pixels at the current scale to produce 420 CSS pixels. Evidence: `home-wide.png`, `home-narrow.png`, `sched-wide.png`, `sched-narrow.png`.
-
-S14 shows five PASS results. This in-app browser also injected `codex-browser-sidebar-comments-root` with an inline style and the test page reported a blocked inline `style-src-elem`; no application-origin inline style was found and app/test console logs were empty. Do not describe this run as completely CSP-error-free or weaken CSP to accommodate the browser harness.
-
-**Adaptations / open verification:** profiles are settings bundles in one shared database, not isolated data partitions. Scheduled prompts appear as ordinary turns; run-now can operate while a schedule is disabled. Missed occurrences produce one ledger entry without replay. Search applies to the first scheduled prompt only and still needs enable + stored key. These choices are implementation adaptations, not changes to accepted decisions. Browser-closed/server-running, real process termination across a missed time, busy/deleted-thread UI outcomes, multi-tab stale-editor UI and profile delete browser checks remain to be exercised (service/store/API coverage exists for the relevant state rules). No live provider request or owner database migration occurred.
-
-**Not implemented:** isolated profiles, GobboNet snapshot import, schedule/profile export in snapshots, per-schedule reply cap, folder-aware picker, notifications while browser is closed. Earlier milestone open items and owner visual acceptance remain; milestone 8 must audit them without claiming full parity. Provider auth/cold-start and Phase 1 sign-off remain deferred until V2-0-0.
+Read the root/project/frontend DOX chain and devlog. Commit verified work directly
+to main and push; no branches/PRs or delegated agents were used. Keep attribution,
+provenance, notices and dependency inventories synchronized. Preserve `LICENSE`.
+Pinned upstream remains `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`.

@@ -62,7 +62,7 @@ export function mountSchedule(trigger) {
     if (!data.schedules.length) list.append(node("p", "form-hint", "No schedules yet."));
     for (const s of data.schedules) {
       const row = node("div", "data-item schedule-item");
-      row.append(node("strong", "", s.name), node("p", "memory-line", `${s.enabled ? "Enabled" : "Disabled"} · ${s.kind} · ${nextTime(s)}`), node("p", "form-hint", `${s.last_status || "Never run"} · ${s.run_count} recorded runs`));
+      row.append(node("strong", "", s.name), node("p", "memory-line", `${s.enabled ? "Enabled" : "Disabled"} · ${s.kind} · ${nextTime(s)}`), node("p", "form-hint", `${s.last_status || "Never run"} · ${s.run_count} finished generation attempts (retained ledger)`));
       const controls = node("div", "schedule-actions");
       controls.append(button(s.enabled ? "DISABLE" : "ENABLE", () => perform(async () => { await api.saveSchedule({ ...s, enabled: !s.enabled }); changed(); await refresh(); })),
         button("EDIT", () => { selected = s.id; renderForm(s, threads); }),

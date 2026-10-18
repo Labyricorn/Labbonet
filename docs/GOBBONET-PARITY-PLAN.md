@@ -1,6 +1,6 @@
 # GobboNet application parity plan
 
-**Status:** owner authorized implementation with “implement this plan” (2026-10-17); milestone 1 committed (1a7e106); milestone 2 (card interchange and DATA), milestone 3 (conversation tree, variants, organization), milestone 4 (detached generation, chat tools) milestone 5 (lore, summaries, retrieval) milestone 6 (web search, MODS macros and appearance presets) and milestone 7 (scheduler, dashboard and settings profiles) implemented; browser upload via real file chooser and several milestone 3 UI paths unverified (see handover). Attribution inventory audited 2026-10-18. See `IMPLEMENTATION-HANDOVER.md` for working-tree status.
+**Status:** owner-authorized implementation (2026-10-17); milestones 1-7 and milestone 8's implementation/audit pass are implemented. Current verification, explicit compatibility limits and owner-pending visual acceptance are recorded in `MILESTONE8-ACCEPTANCE.md`. Full application parity and pixel equality are not claimed. Attribution audited 2026-10-18; current handover is `IMPLEMENTATION-HANDOVER.md`.
 **Requested:** 2026-10-17, "Add full functionality from Gabbonet to Labbonet."
 **Reference:** GobboNet 1.7.6, commit `314bdc9cae204ae38fdc1002ac6a9fb1437c109f`.
 
@@ -14,9 +14,9 @@ Current development version is **V0-2-0** (owner, 2026-10-18). Remaining Phase 1
 
 "All" includes secondary interactions, settings, import/export formats, recovery paths and mobile-width presentation, not just enabling CHARS, MODS and SCHED. Every row below needs an implementation, verification evidence, or a documented provider/security adaptation before parity can be claimed.
 
-## Source audit and implementation inventory
+## Source audit and original implementation inventory
 
-Source observations were checked through the GitHub file API at the exact pin. Paths below are upstream paths. Reading a file is not approval to copy it; every actual reuse must first be entered in `REUSE-LOG.md` with preserved notices. No upstream code was copied by this planning change.
+Source observations were checked through the GitHub file API at the exact pin. The “Current Labbonet” column below records the original planning baseline; the current implementation disposition is in `MILESTONE8-ACCEPTANCE.md`. Paths below are upstream paths. Reading a file is not approval to copy it; every actual reuse must first be entered in `REUSE-LOG.md` with preserved notices. No upstream code was copied by this planning change.
 
 | Area | Pinned source evidence | Current Labbonet | Planned result |
 |---|---|---|---|
@@ -63,6 +63,18 @@ Each milestone is a working vertical slice: migration and store, API/service, re
 8. **Parity and visual acceptance.** Exercise every inventory row against the pin, including secondary dialogs/actions and error paths. Capture full-window and Codex side-panel comparisons; document all model-dynamics adaptations and intentional security exceptions. Finish remaining applicable compatibility settings and regression gaps. Keep the remaining Phase 1 provider auth/cold-start checks and final Phase 1 sign-off deferred until V2-0-0. Claim completed application parity only with an explicit exception list and evidence; final visual acceptance belongs to the owner.
 
 ## Architecture and verification rules
+
+### Milestone 8 implementation/audit pass (2026-10-18)
+
+`MILESTONE8-ACCEPTANCE.md` is the current row-by-row disposition and evidence record.
+This pass adds safe math/highlighting and generated-file names, bounded pinned
+GobboNet export import, all-thread export, atomic conflict-protected folder ordering,
+in-app confirmations/notices, health-derived About/build copy and pinned landing-page
+presentation/starter tiles. It closes the real file-chooser, dirty-editor, code/file
+action, profile-delete and folder stale-tab browser gaps. Chrome has 13 render passes
+without CSP violations; wide and 420 CSS px comparisons are saved. Full parity,
+pixel equality and owner visual approval are **not** inferred: compatibility limits
+and remaining live/browser checks are listed in the acceptance record.
 
 - Keep Go backend / SQLite / plain ES modules / vendored browser assets. Add focused packages for prompt assembly, cards/interchange, jobs, memory/retrieval, search and scheduling as their milestones need them; backend/API contracts remain owned by project AGENTS. Extend frontend ownership when modules are added.
 - Use additive, tested migrations with a pre-upgrade backup and transactional import. A migration must preserve existing endpoints, credentials, conversations, messages and generation provenance. Profile deletion must never recursively delete arbitrary filesystem paths.

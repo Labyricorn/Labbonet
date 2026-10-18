@@ -4,6 +4,7 @@
 // 314bdc9cae204ae38fdc1002ac6a9fb1437c109f (Copyright (C) 2026 Elodine / GoblinCorps)
 // as a design reference; no upstream script is copied. See docs/REUSE-LOG.md.
 import { api, dataApi } from "./api.js";
+import { showConfirm } from "./dialogs.js";
 
 function node(tag, cls, text) {
   const el = document.createElement(tag);
@@ -47,7 +48,7 @@ export function mountDataDialog(trigger) {
   })));
 
   const exp = section("EXPORT", "Snapshots contain cards and threads only: never endpoints, keys or provider settings.");
-  const scope = select([["full", "Everything (cards + threads)"], ["cards", "Characters and personas only"], ["conversation", "One thread (with its cast)"]], "Export scope");
+  const scope = select([["full", "Everything (cards + threads)"], ["threads", "All threads (with referenced cast)"], ["cards", "Characters and personas only"], ["conversation", "One thread (with its cast)"]], "Export scope");
   const thread = select([], "Thread to export"); thread.hidden = true;
   scope.addEventListener("change", () => { thread.hidden = scope.value !== "conversation"; });
   exp.append(scope, thread, button("EXPORT", () => perform(async () => {
@@ -56,7 +57,7 @@ export function mountDataDialog(trigger) {
     status.textContent = `Saved ${name}`;
   })));
 
-  const imp = section("IMPORT", "Labbonet snapshots, Tavern V1/V2/V3 cards (JSON or PNG) and CHARX/ZIP cards. Preview first: nothing is written until you commit.");
+  const imp = section("IMPORT", "Labbonet snapshots, GobboNet exports, Tavern V1/V2/V3 cards (JSON or PNG) and CHARX/ZIP cards. Preview first: nothing is written until you commit. GobboNet settings, credentials, schedules and executable extensions are not activated.");
   const file = node("input"); file.type = "file"; file.accept = ".json,.png,.charx,.zip,application/json,image/png,application/zip";
   file.setAttribute("aria-label", "File to import");
   const policy = select([["add", "Add all (rename name collisions)"], ["skip", "Skip cards that already exist"]], "Merge policy");
@@ -95,7 +96,7 @@ export function mountDataDialog(trigger) {
   const resetBtn = button("RESET", () => perform(async () => {
     const expected = `RESET ${rscope.value.toUpperCase()}`;
     if (phrase.value !== expected) throw new Error(`Type ${expected} exactly to confirm.`);
-    if (!confirm(`Permanently delete: ${rscope.options[rscope.selectedIndex].text}? A backup is written first.`)) return;
+    if (!await showConfirm(`Permanently delete: ${rscope.options[rscope.selectedIndex].text}? A backup is written first.`,{confirmText:"RESET"})) return;
     const out = await dataApi.reset(rscope.value);
     phrase.value = ""; syncHint(); status.textContent = `Reset complete. Backup: ${out.backup}`; changed();
   }), "btn btn-sm btn-danger");

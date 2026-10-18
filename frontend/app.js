@@ -15,6 +15,7 @@ async function checkHealth() {
     const data = await api.health();
     statusEl.textContent = data.status === "ok" ? "ONLINE" : data.status;
     statusEl.title = `Labbonet ${data.version}`;
+    document.getElementById("build-info").textContent = `Labbonet ${data.version} · GobboNet reference 1.7.6 (314bdc9) · AGPLv3-or-later`;
     document.getElementById("status-dot").classList.add("connected");
     statusEl.classList.add("ok");
     statusEl.classList.remove("error");
@@ -39,6 +40,12 @@ function switchView(name) {
 const aboutDialog = document.getElementById("about-dialog");
 document.getElementById("about-button").addEventListener("click", () => aboutDialog.showModal());
 document.getElementById("close-about").addEventListener("click", () => aboutDialog.close());
+document.getElementById("copy-build").addEventListener("click", async (event) => {
+  try {
+    await navigator.clipboard.writeText(document.getElementById("build-info").textContent);
+    event.target.textContent = "COPIED";
+  } catch { event.target.textContent = "CLIPBOARD UNAVAILABLE"; }
+});
 mountDataDialog(document.getElementById("backup-button"));
 mountMemory(document.getElementById("memory-button"), document.getElementById("memory-chip"));
 mountMods(document.getElementById("mods-button"));

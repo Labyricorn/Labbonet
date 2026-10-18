@@ -7,7 +7,7 @@
 // Element-by-element source and authorship boundary: docs/REUSE-LOG.md and root NOTICE.md.
 import { api, dataApi } from "./api.js";
 import { mountChatPanel, loadConversationIntoPanel } from "./chat.js";
-import { showForm } from "./dialogs.js";
+import { showForm, showConfirm, showNotice } from "./dialogs.js";
 
 const COLLAPSED_KEY = "labbonet.collapsedFolders";
 
@@ -166,7 +166,7 @@ export function mountChatView(panel) {
   async function dropOnThread(movedId, target, before) {
     const moved = conversations.find((c) => c.id === movedId);
     if (!moved || moved.id === target.id) return;
-    if (moved.pinned !== target.pinned) { alert("Pinned threads stay above unpinned ones. Pin or unpin the thread to move it across."); return; }
+    if (moved.pinned !== target.pinned) { showNotice("Pinned threads stay above unpinned ones. Pin or unpin the thread to move it across."); return; }
     const order = conversations.map((c) => c.id).filter((id) => id !== movedId);
     const at = order.indexOf(target.id) + (before ? 0 : 1);
     order.splice(at, 0, movedId);
@@ -175,7 +175,7 @@ export function mountChatView(panel) {
         await api.organizeConversation(movedId, target.folder_id ? { folder_id: target.folder_id } : { clear_folder: true });
       }
       await api.reorderConversations(order);
-    } catch (err) { alert(err.status === 409 ? "The thread list changed elsewhere; it was reloaded." : err.message); }
+    } catch (err) { showNotice(err.status === 409 ? "The thread list changed elsewhere; it was reloaded." : err.message); }
     await refreshList();
   }
 
@@ -197,17 +197,30 @@ export function mountChatView(panel) {
     rename.addEventListener("click", async () => {
       const name = await showForm({ title: "RENAME FOLDER", label: "Folder name", value: folder.name, validate: validateFolderName });
       if (name === null) return;
-      try { await api.renameFolder(folder.id, name); } catch (err) { alert(err.message); }
+      try { await api.renameFolder(folder.id, name); } catch (err) { showNotice(err.message); }
       await refreshList();
     });
     const remove = el("button", "thread-ctrl-btn thread-del-btn", "×");
     remove.type = "button"; remove.title = "Delete folder"; remove.setAttribute("aria-label", `Delete folder ${folder.name}`);
     remove.addEventListener("click", async () => {
-      if (!confirm(`Delete folder "${folder.name}"? Its threads are kept and move to Unfiled.`)) return;
-      try { await api.deleteFolder(folder.id); } catch (err) { alert(err.message); }
+      if (!await showConfirm(`Delete folder "${folder.name}"? Its threads are kept and move to Unfiled.`,{confirmText:"DELETE"})) return;
+      try { await api.deleteFolder(folder.id); } catch (err) { showNotice(err.message); }
       await refreshList();
     });
     li.append(toggle, badge, rename, remove);
+    const index = folders.findIndex(f => f.id === folder.id);
+    for (const [label,delta] of [["▲",-1],["▼",1]]) {
+      const move = el("button", "thread-ctrl-btn", label); move.type = "button";
+      move.setAttribute("aria-label", `Move folder ${folder.name} ${delta < 0 ? "up" : "down"}`);
+      move.disabled = index + delta < 0 || index + delta >= folders.length;
+      move.addEventListener("click", async () => {
+        const expected = folders.map(f => f.id), ids = [...expected];
+        [ids[index],ids[index+delta]] = [ids[index+delta],ids[index]];
+        try { await api.reorderFolders(expected,ids); }
+        catch (err) { showNotice(err.status === 409 ? "Folders changed elsewhere; the list was reloaded." : err.message); }
+        await refreshList();
+      }); li.append(move);
+    }
     dropZone(li, folder.id);
     return li;
   }
@@ -249,7 +262,7 @@ export function mountChatView(panel) {
   }
 
   async function organize(id, body) {
-    try { await api.organizeConversation(id, body); } catch (err) { alert(err.message); }
+    try { await api.organizeConversation(id, body); } catch (err) { showNotice(err.message); }
     await refreshList();
   }
 
@@ -269,7 +282,7 @@ export function mountChatView(panel) {
   }
 
   async function moveToFolder(conv) {
-    if (!folders.length) { alert("Create a folder first with + FOLDER."); return; }
+    if (!folders.length) { showNotice("Create a folder first with + beside thread search."); return; }
     const choice = await showForm({
       title: "MOVE TO FOLDER", label: "Folder", confirmText: "MOVE",
       options: [["", "Unfiled"], ...folders.map((f) => [String(f.id), f.name])], value: conv.folder_id ? String(conv.folder_id) : "",
@@ -279,16 +292,16 @@ export function mountChatView(panel) {
   }
 
   async function exportThread(conv) {
-    try { await dataApi.download(dataApi.exportDataPath("conversation", conv.id)); } catch (err) { alert(err.message); }
+    try { await dataApi.download(dataApi.exportDataPath("conversation", conv.id)); } catch (err) { showNotice(err.message); }
   }
 
   async function removeConversation(conv) {
-    if (!confirm("Delete this conversation and all its messages?")) return;
+    if (!await showConfirm("Delete this conversation and all its messages?",{confirmText:"DELETE"})) return;
     try {
       await api.deleteConversation(conv.id);
       if (selectedId === conv.id) { selectedId = null; mountChatPanel(panel); }
       await refreshList();
-    } catch (err) { alert(err.message); }
+    } catch (err) { showNotice(err.message); }
   }
 
   async function selectConversation(id) {
@@ -306,7 +319,7 @@ export function mountChatView(panel) {
         onRenamed: refreshList,
         onForked: async (forkedId) => { await refreshList(); await selectConversation(forkedId); },
       });
-    } catch (err) { alert(`Could not open conversation: ${err.message}`); }
+    } catch (err) { showNotice(`Could not open conversation: ${err.message}`); }
   }
 
   newBtn.addEventListener("click", async () => {
@@ -314,7 +327,7 @@ export function mountChatView(panel) {
       const conv = await api.createConversation({ title: "New thread" });
       await refreshList();
       await selectConversation(conv.id);
-    } catch (err) { alert(err.message); }
+    } catch (err) { showNotice(err.message); }
   });
   for (const home of document.querySelectorAll('[data-view="chat"]')) home.addEventListener("click", () => { selectedId = null; mountChatPanel(panel); renderList(); });
   document.addEventListener("open-thread", event => selectConversation(event.detail.id));
@@ -326,12 +339,12 @@ export function mountChatView(panel) {
         await api.saveCast(conv.id, { ...cast, character_id: event.detail.character_id, greeting: 0 });
       }
       await refreshList(); await selectConversation(conv.id);
-    } catch (err) { alert(err.message); }
+    } catch (err) { showNotice(err.message); }
   });
   newFolderBtn.addEventListener("click", async () => {
     const name = await showForm({ title: "NEW FOLDER", label: "Folder name", validate: validateFolderName, confirmText: "CREATE" });
     if (name === null) return;
-    try { await api.createFolder(name.trim()); } catch (err) { alert(err.message); }
+    try { await api.createFolder(name.trim()); } catch (err) { showNotice(err.message); }
     await refreshList();
   });
   // Import or reset elsewhere may add or remove threads.

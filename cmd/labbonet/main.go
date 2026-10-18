@@ -125,6 +125,7 @@ func run(args []string) error {
 	srv.Handle("DELETE /api/conversations/{id}/messages/{mid}", http.HandlerFunc(branches.DeleteMessage))
 	srv.Handle("GET /api/folders", http.HandlerFunc(branches.ListFolders))
 	srv.Handle("POST /api/folders", http.HandlerFunc(branches.CreateFolder))
+	srv.Handle("PUT /api/folders/order", http.HandlerFunc(branches.ReorderFolders))
 	srv.Handle("PATCH /api/folders/{id}", http.HandlerFunc(branches.RenameFolder))
 	srv.Handle("DELETE /api/folders/{id}", http.HandlerFunc(branches.DeleteFolder))
 	cast := &api.Cast{Store: st}

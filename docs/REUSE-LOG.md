@@ -87,7 +87,34 @@ This inventory documents the current implementation's source lineage, not exclus
 
 ## Other third-party components
 
-These are independently sourced dependencies, not GobboNet reuse and not Labbonet-authored libraries. See [frontend/vendor/VENDOR.md](../frontend/vendor/VENDOR.md) for versions, source links, hashes and licenses (markdown-it: Vitaly Puzrin / Alex Kocharin; DOMPurify: Mario Heiderich / Cure53). Go dependencies and licenses are inventoried in [ARCHITECTURE.md section 8](ARCHITECTURE.md#8-dependency-inventory-dr-004). Do not attribute these libraries to GobboNet merely because a similar library appears upstream.
+### Milestone 8 additions (2026-10-18)
+
+`frontend/css/09-dashboard.css` copies the entire pinned `css/09-dashboard.css`
+unchanged after a three-line copyright/origin notice. The landing header, section
+headers, schedule rows and character tiles in `frontend/js/home.js` adapt the
+corresponding `js/13-dashboard.js` presentation with safe DOM and backend data.
+Settings/profile and connection controls remain Labbonet's provider-aware additions.
+
+`internal/interchange/gobbonet.go` independently maps the data envelope and card/thread
+fields documented by pinned `js/21-data.js`, `js/10-chat.js`, `js/17-personas.js` and
+`js/07-prompt.js` (Copyright (C) 2026 Elodine / GoblinCorps). No upstream runtime is
+copied or executed. Imported settings, scripts, credentials and schedules are not activated.
+`frontend/js/render.js` independently implements the code/math user outcomes referenced
+by pinned `js/18-utils.js`; KaTeX and highlight.js are separate third-party dependencies.
+`frontend/js/data.js` adds bulk thread export following the pinned DATA action;
+`frontend/app.js` adds version/copy-build information following pinned ABOUT behavior.
+The existing shell/search/footer adaptation in `frontend/index.html` now preserves
+the pinned three footer pairs; About owns Memory settings and folder creation sits
+beside search. `dialogs.js` and its chat/cast/DATA/endpoint/sidebar callers use safe
+HTML dialogs instead of blocking browser confirmations/notices. Folder arrows and
+their complete-order conflict handling are Labbonet runtime over the existing
+credited folder/action presentation classes. Starter character text is original
+Labbonet content, not copied upstream card data.
+All new runtime, renderer integration, tests and integration CSS are Labbonet work.
+Existing GobboNet CSS spans remain unchanged. Native MathML replaces the upstream math
+presentation to retain CSP without inline styles, font downloads or trusted TeX commands.
+
+These are independently sourced dependencies, not GobboNet reuse and not Labbonet-authored libraries. See [frontend/vendor/VENDOR.md](../frontend/vendor/VENDOR.md) for versions, source links, hashes and licenses (markdown-it: Vitaly Puzrin / Alex Kocharin; DOMPurify: Mario Heiderich / Cure53; KaTeX: Khan Academy and contributors; highlight.js: Ivan Sagalaev). Go dependencies and licenses are inventoried in [ARCHITECTURE.md section 8](ARCHITECTURE.md#8-dependency-inventory-dr-004). Do not attribute these libraries to GobboNet merely because a similar library appears upstream.
 
 ## Ongoing record contract
 

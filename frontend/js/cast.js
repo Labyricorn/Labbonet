@@ -6,6 +6,7 @@
 // Upstream credit covers presentation structure/design; runtime/API/state/security code is Labbonet work.
 // Element-by-element source and authorship boundary: docs/REUSE-LOG.md and root NOTICE.md.
 import { api, dataApi } from "./api.js";
+import { showConfirm } from "./dialogs.js";
 
 function node(tag, cls, text) {
   const el = document.createElement(tag);
@@ -49,7 +50,7 @@ export function markDialog(content) {
   const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
   const texts = []; while (walker.nextNode()) texts.push(walker.currentNode);
   for (const text of texts) {
-    if (text.parentElement?.closest("pre,code")) continue;
+    if (text.parentElement?.closest("pre,code,math")) continue;
     const matches = [...text.data.matchAll(/"[^"\n]+"|“[^”\n]+”/g)];
     if (!matches.length) continue;
     const fragment = document.createDocumentFragment(); let start = 0;
@@ -68,12 +69,12 @@ export function mountCastLibrary(trigger) {
   const error = node("p", "form-error"); error.setAttribute("role", "alert");
   const notice = node("p", "form-hint", "Select the default cast for new threads. Existing threads keep their own selection.");
   const body = node("div"); const title = node("h2", "", "CAST");
-  const close = button("CLOSE", () => { if (canLeave()) dialog.close(); });
+  const close = button("CLOSE", async () => { if (await canLeave()) dialog.close(); });
   dialog.append(title, error, notice, body, node("div", "modal-actions"));
   dialog.lastChild.append(close);
-  function canLeave() { return !busy && (!dirty || confirm("Discard unsaved card changes?")); }
+  async function canLeave() { return !busy && (!dirty || await showConfirm("Discard unsaved card changes?", {title:"UNSAVED CARD",confirmText:"DISCARD",cancelText:"KEEP EDITING"})); }
   dialog.addEventListener("close", () => { dirty = false; draft = null; });
-  dialog.addEventListener("cancel", e => { if (!canLeave()) e.preventDefault(); });
+  dialog.addEventListener("cancel", async e => { e.preventDefault(); if (await canLeave()) dialog.close(); });
   window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
   async function perform(action) {
     if (busy) return; busy = true; error.textContent = "";
@@ -122,8 +123,8 @@ export function mountCastLibrary(trigger) {
         });
         actions.append(button("Edit", () => { if (!busy) edit(card); }), exportMenu, button("Copy", () => perform(async () => {
           await api.saveCard({ ...card, id: 0, revision: 0, name: `${card.name.slice(0, 150)} copy`, position: list.length }); await refresh();
-        })), button("Del", () => {
-          if (confirm(`Delete ${card.name}? Historical speakers will be preserved.`)) perform(async () => { await api.deleteCard(card); await refresh(); });
+        })), button("Del", async () => {
+          if (await showConfirm(`Delete ${card.name}? Historical speakers will be preserved.`,{confirmText:"DELETE"})) perform(async () => { await api.deleteCard(card); await refresh(); });
         }));
         row.append(moves, avatar, info, actions); grid.append(row);
       }
@@ -196,7 +197,7 @@ export function mountCastLibrary(trigger) {
     field("macros", "Custom text macros (JSON object)", "textarea", "{{char}}, {{user}}, {{date}}, {{time}} and {{carousel}} are reserved. Text only; cycles and expansion size are checked before generation.").value = JSON.stringify(draft.macros || {}, null, 2);
     form.addEventListener("input", () => { dirty = true; });
     const actions = node("div", "modal-actions"); const save = node("button", "btn btn-fill", "SAVE"); save.type = "submit";
-    actions.append(button("BACK", () => { if (canLeave()) { draft = null; dirty = false; error.textContent=""; renderLibrary(); } }), save); form.append(actions);
+    actions.append(button("BACK", async () => { if (await canLeave()) { draft = null; dirty = false; error.textContent=""; renderLibrary(); } }), save); form.append(actions);
     form.addEventListener("submit", e => {
       e.preventDefault(); perform(async () => {
         const result = { ...draft };

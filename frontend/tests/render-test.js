@@ -4,6 +4,7 @@
 // legitimate Markdown input, and confirms none of the hostile ones
 // ran and the legitimate one still rendered correctly.
 import { renderMarkdown } from "../js/render.js";
+import { codeFileName } from "../js/tools.js";
 
 const cases = [
   {
@@ -44,6 +45,17 @@ const cases = [
 ];
 
 const results = document.getElementById("results");
+
+cases.push(
+  { name: "inline and block TeX become native MathML", input: "Inline $x^2$ and \\(y_1\\).\n\n$$\n\\frac{a}{b}\n$$", check: n => n.querySelectorAll("math").length === 3 && !!n.querySelector('math[display="block"]') },
+  { name: "math fences render; code and escaped dollars remain literal", input: "`$x$` and \\$5.\n\n```math\n\\sqrt{x}\n```", check: n => n.querySelectorAll("math").length === 1 && n.querySelector("code").textContent === "$x$" },
+  { name: "currency and unclosed math stay readable", input: "Cost $5 and $10. Unclosed $x", check: n => !n.querySelector("math") && n.textContent.includes("$5") },
+  { name: "trusted TeX commands cannot make links, images or styles", input: "$\\href{javascript:alert(1)}{x}$ $\\includegraphics{https://example.com/x}$ $\\htmlStyle{background:url(x)}{x}$", check: n => !n.querySelector("a,img,style,script,[style]") },
+  { name: "expansion bomb and malformed TeX fall back to source", input: "$\\def\\a{\\a}\\a$ and $\\frac{$", check: n => n.querySelectorAll(".math-source").length === 2 && !n.querySelector("[style]") },
+  { name: "highlighted code retains its exact text", input: '```javascript\nconst x = "<script>";\n```', check: n => !!n.querySelector(".hljs-keyword") && n.querySelector("code").textContent === 'const x = "<script>";\n' && !n.querySelector("script") },
+  { name: "unknown code language remains escaped text", input: '```unknown\n<img onerror=alert(1)>\n```', check: n => !n.querySelector("img") && n.querySelector("code").textContent.includes("<img") },
+  { name: "generated-file names cannot carry paths or reserved devices", input: "files", check: () => codeFileName("file:../../report.json", 0) === "report.json" && codeFileName("file:C:\\tmp\\report.csv", 0) === "report.csv" && codeFileName("file:CON.txt", 0) === "labbonet-code-1.txt" },
+);
 
 document.addEventListener("securitypolicyviolation", (e) => {
   const div = document.createElement("div");

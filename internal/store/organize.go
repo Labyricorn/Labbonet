@@ -207,6 +207,58 @@ func (s *Store) ListFolders(ctx context.Context) ([]Folder, error) {
 	return out, rows.Err()
 }
 
+// ReorderFolders applies a complete permutation only when the caller's displayed
+// order still matches storage, so a stale tab cannot overwrite another reorder.
+func (s *Store) ReorderFolders(ctx context.Context, expected, ids []int64) error {
+	if len(ids) > maxFolders || len(ids) != len(expected) {
+		return ErrInvalidOrganization
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `SELECT id FROM folders ORDER BY position,id`)
+	if err != nil {
+		return err
+	}
+	var current []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		current = append(current, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if len(current) != len(expected) {
+		return ErrConflict
+	}
+	seen := map[int64]bool{}
+	for i, id := range current {
+		if id != expected[i] {
+			return ErrConflict
+		}
+		seen[id] = true
+	}
+	for _, id := range ids {
+		if !seen[id] {
+			return ErrInvalidOrganization
+		}
+		delete(seen, id)
+	}
+	for i, id := range ids {
+		if _, err := tx.ExecContext(ctx, `UPDATE folders SET position=? WHERE id=?`, i, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 // CreateFolder adds a folder at the end. Names are unique ignoring case.
 func (s *Store) CreateFolder(ctx context.Context, name string) (*Folder, error) {
 	name, err := normalizeFolderName(name)

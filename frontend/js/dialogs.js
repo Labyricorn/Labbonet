@@ -10,6 +10,31 @@ function node(tag, cls, text) {
   return el;
 }
 
+// An explicit, keyboard-accessible confirmation. Esc always keeps the data.
+export function showConfirm(message, { title = "CONFIRM", confirmText = "CONFIRM", cancelText = "CANCEL" } = {}) {
+  return new Promise(resolve => {
+    const dialog = node("dialog", "modal cast-modal form-dialog");
+    dialog.setAttribute("aria-label", title);
+    const actions = node("div", "modal-actions");
+    const cancel = node("button", "btn", cancelText || ""); cancel.type = "button"; cancel.hidden = !cancelText;
+    const ok = node("button", "btn btn-fill", confirmText); ok.type = "button";
+    const text = node("p", "", message); text.id = `confirmation-${++confirmationId}`;
+    dialog.setAttribute("aria-describedby", text.id);
+    actions.append(cancel, ok); dialog.append(node("h2", "", title), text, actions);
+    document.body.append(dialog);
+    let settled = false;
+    const finish = value => { if (settled) return; settled = true; dialog.close(); dialog.remove(); resolve(value); };
+    cancel.addEventListener("click", () => finish(false)); ok.addEventListener("click", () => finish(true));
+    dialog.addEventListener("cancel", event => { event.preventDefault(); finish(false); });
+    dialog.showModal(); (cancelText ? cancel : ok).focus();
+  });
+}
+let confirmationId = 0;
+
+export function showNotice(message) {
+  return showConfirm(message, {title:"NOTICE",confirmText:"CLOSE",cancelText:null});
+}
+
 // showForm resolves with the entered value, or null when cancelled. options turns the
 // field into a select of [value, label] pairs. validate may return an error string.
 export function showForm({ title, label, value = "", options, hint, confirmText = "SAVE", validate }) {

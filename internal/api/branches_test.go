@@ -30,6 +30,7 @@ func newBranchMux(t *testing.T) (*http.ServeMux, *store.Store, int64) {
 	mux.HandleFunc("DELETE /api/conversations/{id}/messages/{mid}", b.DeleteMessage)
 	mux.HandleFunc("GET /api/folders", b.ListFolders)
 	mux.HandleFunc("POST /api/folders", b.CreateFolder)
+	mux.HandleFunc("PUT /api/folders/order", b.ReorderFolders)
 	mux.HandleFunc("PATCH /api/folders/{id}", b.RenameFolder)
 	mux.HandleFunc("DELETE /api/folders/{id}", b.DeleteFolder)
 	conv, err := st.CreateConversation(context.Background(), "T", nil, nil, "", "{}")
@@ -42,6 +43,30 @@ func newBranchMux(t *testing.T) (*http.ServeMux, *store.Store, int64) {
 		}
 	}
 	return mux, st, conv.ID
+}
+
+func TestFolderOrderAPI(t *testing.T) {
+	mux, st, _ := newBranchMux(t)
+	a, _ := st.CreateFolder(t.Context(), "A")
+	b, _ := st.CreateFolder(t.Context(), "B")
+	for _, tc := range []struct {
+		body   any
+		status int
+	}{
+		{map[string]any{"ids": []int64{a.ID, b.ID}}, 400},
+		{map[string]any{"expected": []int64{a.ID, b.ID}, "ids": []int64{a.ID, a.ID}}, 400},
+		{map[string]any{"expected": []int64{a.ID, b.ID}, "ids": []int64{b.ID, a.ID}}, 204},
+		{map[string]any{"expected": []int64{a.ID, b.ID}, "ids": []int64{a.ID, b.ID}}, 409},
+	} {
+		rr := doJSON(t, mux, "PUT", "/api/folders/order", tc.body)
+		if rr.Code != tc.status {
+			t.Fatal(rr.Code, rr.Body.String())
+		}
+	}
+	got, _ := st.ListFolders(t.Context())
+	if got[0].ID != b.ID {
+		t.Fatal("order lost")
+	}
 }
 
 func detail(t *testing.T, mux *http.ServeMux, id int64) conversationDetailResponse {

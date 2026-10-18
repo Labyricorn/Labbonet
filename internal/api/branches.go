@@ -260,6 +260,26 @@ type folderRequest struct {
 	Name string `json:"name"`
 }
 
+// ReorderFolders handles PUT /api/folders/order with a complete expected order.
+func (b *Branches) ReorderFolders(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Expected []int64 `json:"expected"`
+		IDs      []int64 `json:"ids"`
+	}
+	if !decodeBody(w, r, &req) {
+		return
+	}
+	if req.Expected == nil || req.IDs == nil {
+		http.Error(w, "expected and ids are required", 400)
+		return
+	}
+	if err := b.Store.ReorderFolders(r.Context(), req.Expected, req.IDs); err != nil {
+		treeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // CreateFolder handles POST /api/folders.
 func (b *Branches) CreateFolder(w http.ResponseWriter, r *http.Request) {
 	var req folderRequest

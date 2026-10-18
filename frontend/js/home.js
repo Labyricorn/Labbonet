@@ -6,10 +6,25 @@
 import { api } from "./api.js";
 import { loadPrefs, savePrefs } from "./tools.js";
 import { bootAppearance } from "./mods.js";
-import { node, button, section, confirmDelete, nextTime } from "./schedule.js";
+import { node, button, confirmDelete, nextTime } from "./schedule.js";
+
+// Landing structure/classes adapted from the pinned js/13-dashboard.js,
+// Copyright (C) 2026 Elodine / GoblinCorps. DOM/runtime remains Labbonet work.
+function section(title, action) {
+  const box = node("section", "landing-section");
+  const header = node("div", "landing-section-header"); header.append(node("span", "", title));
+  if (action) header.append(action); box.append(header); return box;
+}
+
+// Original Labbonet starter text; no upstream characters, hooks or settings.
+const STARTERS = [
+  {name:"Assistant",description:"Clear answers and practical help.",style:"Answer clearly and accurately. Ask for missing context when it changes the answer."},
+  {name:"Writing partner",description:"Develop scenes, characters and ideas.",style:"Help the user develop their writing. Preserve their voice and offer concrete revisions."},
+  {name:"Code reviewer",description:"Inspect code and explain actionable fixes.",style:"Review the supplied code for correctness and security. Explain concrete bugs and their fixes."},
+];
 
 export function mountHome(panel, signal) {
-  const home = node("div", "home-dashboard"); panel.replaceChildren(home);
+  const home = node("div", "landing-page"); panel.replaceChildren(home);
   const error = node("p", "form-error"); error.setAttribute("role", "alert");
   home.append(error);
   let busy = false, seq = 0, editingProfile = false;
@@ -27,22 +42,46 @@ export function mountHome(panel, signal) {
     ]);
     if (signal.aborted || ticket !== seq) return;
     editingProfile = false;
-    home.replaceChildren(node("h2", "", "SYSTEMS ONLINE"), error);
-    const chars = section("CHARACTERS");
-    chars.append(button("NEW THREAD", () => notify("new-thread", {})));
-    for (const c of cards.filter(c => c.kind === "character")) chars.append(button(c.name, () => notify("new-thread", { character_id: c.id })));
-    if (!cards.some(c => c.kind === "character")) chars.append(node("p", "form-hint", "Add characters in CHARS for quick starts."));
+    const heading = node("div", "landing-header");
+    heading.append(node("div", "landing-title", "LABBONET_HQ"), node("div", "landing-subtitle", "// local inference terminal"), node("div", "landing-subtitle", `${endpoints.length} registered connection${endpoints.length === 1 ? "" : "s"} · provider destination stays explicit`));
+    home.replaceChildren(heading, error);
+    const chars = section("⚨ YOUR CHARACTERS", button("MANAGE", () => document.getElementById("cast-button").click()));
+    const charList = node("div", "landing-char-list");
+    for (const c of cards.filter(c => c.kind === "character")) {
+      const tile = button("", () => notify("new-thread", { character_id: c.id })); tile.className = "landing-char-card landing-card-button";
+      const avatar = node("div", "landing-char-avatar", c.name.slice(0, 2));
+      if (/^data:image\/(png|jpeg);base64,/.test(c.portrait || "")) { const img = node("img"); img.src = c.portrait; img.alt = ""; avatar.replaceChildren(img); }
+      const info = node("div", "landing-char-info"); info.append(node("div", "landing-char-name", c.name), node("div", "landing-char-desc", c.description || c.personality || c.style || "Start a thread"));
+      tile.append(avatar, info); charList.append(tile);
+    }
+    if (!charList.childElementCount) charList.append(node("div", "landing-empty", "Add characters in CHARS for quick starts."));
+    chars.append(charList);
     const recent = section("RECENT THREADS");
     for (const t of [...threads].sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at))).slice(0, 6)) recent.append(button(t.title || "Untitled", () => notify("open-thread", { id: t.id })));
     if (!threads.length) recent.append(node("p", "form-hint", "No threads yet."));
-    const jobs = section("SCHEDULES");
-    jobs.append(node("p", "form-hint", `${schedules.status.running ? "Timer active" : "Timer stopped"} · ${schedules.status.active_runs} running. Server must stay running; browser may close.`), button("OPEN SCHED", () => document.getElementById("sched-button").click()));
-    for (const s of [...schedules.schedules].sort((a, b) => (a.next_run || "z").localeCompare(b.next_run || "z")).slice(0, 6)) jobs.append(node("p", "memory-line", `${s.name} · ${s.enabled ? nextTime(s) : "Disabled"} · ${s.last_status || "Never run"}`));
+    const jobs = section("⏱ SCHEDULED TASKS", button("MANAGE", () => document.getElementById("sched-button").click()));
+    const jobList = node("div", "landing-sched-list");
+    for (const s of [...schedules.schedules].sort((a, b) => (a.next_run || "z").localeCompare(b.next_run || "z")).slice(0, 6)) {
+      const row = button("", () => document.getElementById("sched-button").click()); row.className = `landing-sched-item landing-card-button ${s.enabled ? "landing-sched-active" : "landing-sched-done"}`;
+      row.append(node("span", "landing-sched-time", s.enabled ? nextTime(s) : "Disabled"), node("span", "landing-sched-thread", s.name), node("span", "landing-sched-prompt", s.last_status || "Never run")); jobList.append(row);
+    }
+    if (!jobList.childElementCount) jobList.append(node("div", "landing-empty", "No scheduled tasks yet."));
+    jobs.append(jobList, node("p", "form-hint", `${schedules.status.running ? "Timer active" : "Timer stopped"} · ${schedules.status.active_runs} running. Server must stay running; browser may close.`));
     const connections = section("CONNECTIONS");
     for (const e of endpoints) connections.append(node("p", "memory-line", `${e.name} · ${e.privacy_class || e.privacy || ""} · ${e.base_url}`));
     if (!endpoints.length) connections.append(node("p", "form-hint", "No endpoints registered. Add one in CONFIG."));
     connections.append(button("CONFIG", () => document.querySelector('[data-view="endpoints"]').click()));
-    home.append(chars, recent, jobs, connections);
+    const starters = section("👾 DEFAULT CHARACTERS");
+    const starterList = node("div", "landing-char-list");
+    for (const starter of STARTERS) {
+      const tile = button("", () => perform(async () => { await api.saveCard({...starter,kind:"character",macros:{},greetings:[],carousel:[]}); await refresh(); }));
+      tile.className = "landing-preset-card landing-preset-installable landing-card-button";
+      tile.setAttribute("aria-label", `Add ${starter.name} starter character`);
+      const info = node("div", "landing-char-info"); info.append(node("div", "landing-char-name", starter.name), node("div", "landing-char-desc", starter.description));
+      tile.append(node("div", "landing-preset-icon", "⚨"), info, node("span", "landing-preset-badge landing-preset-badge-install", "+ ADD")); starterList.append(tile);
+    }
+    starters.append(starterList);
+    home.append(jobs, chars, starters, recent, connections);
     renderProfiles(profiles);
   }
   function renderProfiles(data) {

@@ -1045,18 +1045,18 @@ This would be particularly useful when developing and testing the application wi
 
 # 19. GobboNet Feature Inventory
 
-The following inventory identifies what we should preserve, improve, or defer.
+The following inventory identifies the original treatment and current implementation disposition. Milestone 8 details/evidence and explicit limitations are in `docs/MILESTONE8-ACCEPTANCE.md`; implementation is not owner visual acceptance.
 
 | Feature | Proposed treatment |
 |---|---|
-| Streaming chat | Core |
-| Conversation history | Core |
-| Message editing and regeneration | Core |
-| Character cards | Core |
-| User personas | Core |
-| Lorebooks | Core |
-| Hybrid RAG | Core |
-| Conversation summarization | Core |
+| Streaming chat | Implemented, Phase 1/parity 4; detached jobs and restart interruption |
+| Conversation history | Implemented, Phase 1/parity 3; SQLite/revisions |
+| Message editing and regeneration | Implemented, parity 3; immutable variants |
+| Character cards | Implemented, parity 1/2/8; bounded assets/interchange |
+| User personas | Implemented, parity 1; historical identity snapshots |
+| Lorebooks | Implemented, parity 5; tag retrieval verified |
+| Hybrid RAG | Implemented, parity 5; real embedding model verification pending |
+| Conversation summarization | Implemented, parity 5; scripted-provider verification |
 | Model selection | Core, expanded |
 | Multiple endpoint connections | Core, new |
 | WebLLM | Core, new |
@@ -1064,15 +1064,15 @@ The following inventory identifies what we should preserve, improve, or defer.
 | Simultaneous inference across endpoints | Planned |
 | Model comparison mode | Planned |
 | Automatic routing | Later phase |
-| Prompt presets | Planned |
+| Prompt presets | Implemented supported sampler/starter/settings presets, parity 1/6/7/8 |
 | Generation parameters | Core |
-| Conversation branching | Planned |
-| Import/export | Core, expanded over time |
-| Character-card V2/V3 compatibility | Planned |
-| Alternate character greetings | Planned |
-| Web search | Optional later phase |
-| Macros and auto-continue | Optional later phase |
-| Scheduled prompts | Optional later phase |
+| Conversation branching | Implemented, parity 3; branch-aware interchange |
+| Import/export | Implemented, parity 2/3/8; cards/threads only, explicit compatibility limits |
+| Character-card V2/V3 compatibility | Implemented, parity 2; main-card/icon CHARX support |
+| Alternate character greetings | Implemented, parity 1 |
+| Web search | Implemented, parity 6; fixed service, live key verification pending |
+| Macros and auto-continue | Implemented, parity 6/7; bounded scheduled follow-ups |
+| Scheduled prompts | Implemented, parity 7; server-running only, no unattended loading |
 | Multi-device access | Later phase |
 | API-based extensions | Future consideration |
 | Arbitrary JavaScript extensions | Excluded by default |

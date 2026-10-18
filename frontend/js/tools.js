@@ -40,6 +40,10 @@ const EXTENSIONS = {
 // codeFileName picks a download name from the fence language. Only known extensions
 // are used; the name never contains model-supplied text.
 export function codeFileName(lang, index) {
+  if (/^file:/i.test(lang || "")) {
+    const name = lang.slice(5).split(/[\\/]/).pop().replace(/[<>:"|?*\x00-\x1f\x7f]/g, "_").replace(/^[. ]+|[. ]+$/g, "").slice(0, 100);
+    if (name && !/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)) return name;
+  }
   const ext = EXTENSIONS[(lang || "").toLowerCase()] || "txt";
   return `labbonet-code-${index + 1}.${ext}`;
 }

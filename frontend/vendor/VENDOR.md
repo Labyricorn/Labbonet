@@ -12,4 +12,19 @@ Both files are the upstream UMD build (unmodified, minified by upstream), downlo
 - `markdown-it.min.js` sets `window.markdownit` (a constructor function).
 - `purify.min.js` sets `window.DOMPurify`.
 
-`frontend/js/render.js` is the only file that reads these globals. To update either dependency: download the new version's `dist/<file>.min.js` and `LICENSE`, replace the files here, recompute the SHA-256, and update this table and the devlog entry recording the change.
+`frontend/js/render.js` is the only application file that reads these globals. To update a dependency: download the pinned browser build and license, replace the files here, recompute SHA-256, and update this inventory and the devlog.
+
+Milestone 8 additions (downloaded 2026-10-18, unmodified upstream browser builds):
+
+| File | Package | Version | License | SHA-256 |
+|---|---|---|---|---|
+| `katex.min.js` | [KaTeX](https://github.com/KaTeX/KaTeX/tree/v0.16.22) | 0.16.22 | MIT; Khan Academy and contributors; tagged license in `katex.LICENSE` | `e8d885505949f3a5f4abdd5dd0d53696bd1371ad26ffbf4f310dcd77c8cdae89` |
+| `highlight.min.js` | [highlight.js](https://github.com/highlightjs/highlight.js/tree/11.11.1) | 11.11.1 | BSD-3-Clause; Ivan Sagalaev; tagged license in `highlight.LICENSE` | `c4a399dd6f488bc97a3546e3476747b3e714c99c57b9473154c6fb8d259b9381` |
+
+Build sources: `https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js`
+and `https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js`.
+They set `window.katex` and `window.hljs`. KaTeX emits **MathML only** with trust
+disabled, bounded expansion and size. No KaTeX CSS/fonts/auto-render, remote loads,
+inline styles or trusted HTML commands are used. Highlighting uses explicit known
+languages only, skips code over 32 KiB, and passes through DOMPurify with the whole
+Markdown result. Source is retained for malformed/oversized math and unknown code.

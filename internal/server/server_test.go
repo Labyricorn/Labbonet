@@ -2,10 +2,29 @@ package server_test
 
 import (
 	"net"
+	"net/http/httptest"
 	"testing"
+	"testing/fstest"
 
 	"github.com/Labyricorn/Labbonet/internal/server"
 )
+
+func TestUnversionedAssetsRevalidate(t *testing.T) {
+	sessions, err := server.NewSessionManager()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := server.New(server.Config{Host: "127.0.0.1", Port: 4815, Sessions: sessions, Frontend: fstest.MapFS{"app.js": {Data: []byte("export const version = 2;")}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := httptest.NewRequest("GET", "http://127.0.0.1:4815/app.js", nil)
+	w := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(w, r)
+	if w.Code != 200 || w.Header().Get("Cache-Control") != "no-cache" {
+		t.Fatalf("asset response: %d %v", w.Code, w.Header())
+	}
+}
 
 // S7: a non-loopback --host value is refused before anything starts
 // listening.

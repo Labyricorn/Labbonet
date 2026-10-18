@@ -249,3 +249,57 @@ Proposed sequencing moves application parity before WebLLM and broader multi-mod
 **Verification:** focused API/store/schedule/generation tests pass. Browser used only an isolated temp DB and loopback fake provider: daily edit, run-now three-turn chain, one Stop, missing-model skip reason, real due tick one-off/automatic disabling, profile capture/apply/memory/reload and 500-character preference restoration. Screenshots cover default wide and actual 420 CSS pixels with no overflow. S14 five PASS results; the in-app comments harness injected an inline style blocked by CSP, separately recorded in the handover; no app-origin inline style or app console errors found. Real hard-kill/restart marked reply/run interrupted without replay after clearing only the verified-dead test process lock. Character shortcuts and profile update/reload passed. No owner data migration, real inference call or model management occurred. Full formatting/vet/tests/normal and CGO-disabled builds/JS syntax/diff gates pass.
 
 **DOX pass:** updated project/frontend AGENTS, architecture section 15, security model section 17, README, parity progress, handover and reuse inventory. Root `G:\.vibe\AGENTS.md`, NOTICE and provenance JSON intentionally unchanged: no new child boundary, third-party source or copied CSS spans. Profiles do not implement isolated data; full parity and owner visual acceptance are still open. Prior provider deferrals remain unchanged.
+## 2026-10-18 — Parity audit, remaining compatibility fixes and visual review evidence
+
+**Built:** bounded pinned GobboNet export conversion (including user-variant parked
+continuations, assistant rerolls, cast identities and thread `name`), all-thread
+export, transactional complete-list folder order with stale-tab protection, vendored
+KaTeX MathML and explicit-language highlight.js, safe generated-file basenames,
+accessible in-app confirmation/notice dialogs, health-derived About/build copy,
+pinned dashboard CSS/landing structure and original safe starter-character text.
+Restored the three footer pairs; Memory settings is in About/the thread chip and
+folder creation is beside search. Assets revalidate because module URLs are unversioned.
+
+**Verified:** baseline full Go suite passed before changes. Final `gofmt -l .` empty,
+`go vet ./...`, `go test ./...`, `go build ./cmd/labbonet`, CGO-disabled `go build ./...`,
+all application/test JS syntax and diff whitespace gates pass. Focused regressions
+cover GobboNet malformed/future/duplicate/variant/nesting/expanded-byte limits,
+branch/cast mapping, inert settings, preview rollback, bulk-thread round trip,
+folder invalid/stale/atomic order/API status and static cache revalidation. Chrome
+independently has 13 renderer passes, zero failures/CSP violations/style attributes
+or elements, and no console warnings/errors. The normal embedded binary was exercised
+without `--frontend-dir`: actual chooser import, math/highlighting and pinned assets work.
+
+**Browser:** disposable loopback databases only; actual portrait chooser/preview/
+remove/reupload/save, card PNG export, DATA GobboNet chooser/preview/commit/bulk download,
+text attachment chooser/removal, exact code Copy/Save and `file:report.json`, Source/
+Rendered, message-delete Cancel/Confirm, dirty-card Keep/Back/Escape/Discard, starter
+install, profile deletion, About/build Copy, Memory access and missing-model schedule
+skip reason passed. Folder order persisted after reload; a second stale tab received
+409 and a visible notice before reloading. Full-window (1280 CSS px) and panel
+(420 CSS px) app/reference captures show no document horizontal overflow. Temporary
+overrides are reset. No live inference/search, model management, owner-data migration
+or browser permission change occurred.
+
+**Learnings:** native browser confirmation again stalled the in-app driver, so the
+explicit decisions now use HTML dialogs. An old cached `dialogs.js` caused a mixed
+module export error during development; clean-origin verification passed and static
+asset revalidation now has a regression. The in-app comments harness still reported
+a blocked injected inline style; independent Chrome verification is clean. Static
+pinned shell/CSS was rendered with handlers removed and inline presentation moved to
+a fixture stylesheet; no upstream runtime/excluded hooks executed. This comparison
+is not a pixel-diff proof of all screens. Source review caught the pinned thread
+`name` field (not just `title`); a regression asserts its mapping. Skipped schedule
+runs are excluded from the existing run counter; corrected its UI label to finished
+generation attempts in the retained ledger. Reference fixture was moved out of the
+workspace after capture rather than shipped.
+
+**DOX/limits:** `docs/MILESTONE8-ACCEPTANCE.md` owns the row-by-row disposition and
+explicit remaining compatibility/live/browser gaps. Full parity/pixel equality and
+owner visual acceptance are not claimed. Provider P3-P5/A-ST5/A-ST6/A-LM6 and final
+Phase 1 sign-off remain deferred until V2-0-0, not passed or waived. Project/frontend
+contracts, proposal inventory, architecture/security/acceptance, parity plan, current
+handover, notices/reuse/provenance/vendor inventories updated. `LICENSE` and parent
+`G:\.vibe\AGENTS.md` intentionally unchanged: no license text or shared workflow/child
+boundary changes. No subagents, branch or PR. Results/hashes are recorded in
+`docs/evidence/m8-verification.json`; verified work is committed directly to main.

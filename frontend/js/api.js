@@ -96,6 +96,7 @@ export const api = {
   forkMessage: (id, mid) => request("POST", `/api/conversations/${id}/messages/${mid}/fork`, {}),
   listFolders: () => request("GET", "/api/folders"),
   createFolder: (name) => request("POST", "/api/folders", { name }),
+  reorderFolders: (expected, ids) => request("PUT", "/api/folders/order", {expected, ids}),
   renameFolder: (id, name) => request("PATCH", `/api/folders/${id}`, { name }),
   deleteFolder: (id) => request("DELETE", `/api/folders/${id}`),
 

@@ -134,3 +134,14 @@ Implementation is wired; this is additional progress, not Phase 1 sign-off or co
 | Remaining Phase 1 provider auth/cold-start checks and final Phase 1 sign-off | Owner-deferred until V2-0-0; not passed or waived |
 
 No live inference requests or model-management operations were made in this continuation. The browser work used a separate temporary data directory; the owner's database was not migrated by this verification instance.
+
+## Milestone 8 additional evidence (2026-10-18)
+
+`MILESTONE8-ACCEPTANCE.md` records the current inventory, limits and wide/panel
+captures. Real chooser checks for portrait/import/attachment, dirty-editor outcomes,
+code/file actions, folder order/two-tab conflict, profile deletion and build copy now
+have browser verification. Chrome has 13 render passes with zero CSP violations and
+console warnings/errors. Full parity/pixel equality and owner visual approval are
+not claimed. Earlier unverified labels are historical, superseded only for the
+specific checks above. Provider auth/cold-start checks and final Phase 1 sign-off
+remain owner-deferred to V2-0-0; no status or waiver changes.

@@ -89,7 +89,7 @@ func (s *Snapshot) Validate() error {
 	if s.Version < minSnapshotVersion || s.Version > SnapshotVersion {
 		return fmt.Errorf("unsupported snapshot version %d (this build reads versions %d to %d)", s.Version, minSnapshotVersion, SnapshotVersion)
 	}
-	if s.Scope != "full" && s.Scope != "conversation" && s.Scope != "cards" {
+	if s.Scope != "full" && s.Scope != "conversation" && s.Scope != "cards" && s.Scope != "threads" {
 		return errors.New("unknown snapshot scope")
 	}
 	if len(s.Cards) > maxSnapCards || len(s.Conversations) > maxSnapConvs {
@@ -230,6 +230,9 @@ func Parse(data []byte) (*Parsed, error) {
 		p, err = parseArchive(data)
 	default:
 		trimmed := bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
+		if parsed, isGobbo, gerr := decodeGobboNet(trimmed); isGobbo {
+			return parsed, gerr
+		}
 		if snap, isSnap, serr := decodeSnapshot(trimmed); isSnap {
 			if serr != nil {
 				return nil, serr

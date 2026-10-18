@@ -105,7 +105,7 @@ func (d *Data) Export(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, sql.ErrNoRows):
 			http.Error(w, "conversation not found", 404)
 		case errors.Is(err, store.ErrInvalidImport):
-			http.Error(w, "scope must be full, cards or conversation", 400)
+			http.Error(w, "scope must be full, cards, threads or conversation", 400)
 		default:
 			http.Error(w, "export failed", 500)
 		}

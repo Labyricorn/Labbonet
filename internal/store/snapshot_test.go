@@ -22,6 +22,29 @@ func openTemp(t *testing.T) *Store {
 	return st
 }
 
+func TestThreadsSnapshotScope(t *testing.T) {
+	st := openTemp(t)
+	seed(t, st)
+	snap, err := st.ExportSnapshot(t.Context(), "threads", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(snap.Conversations) != 1 || len(snap.Cards) != 2 || snap.Defaults != nil {
+		t.Fatalf("threads scope: %+v", snap)
+	}
+	if err = snap.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	other := openTemp(t)
+	if _, err = other.ImportSnapshot(t.Context(), snap, ImportOptions{Policy: "add"}); err != nil {
+		t.Fatal(err)
+	}
+	back, err := other.ExportSnapshot(t.Context(), "threads", 0)
+	if err != nil || len(back.Conversations) != 1 || len(back.Conversations[0].Messages) != 2 {
+		t.Fatalf("round trip: %v", err)
+	}
+}
+
 // seed creates two characters, two personas, a thread using the cast and a speaker snapshot.
 func seed(t *testing.T, st *Store) (convID int64) {
 	t.Helper()

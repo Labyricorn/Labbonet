@@ -5,7 +5,7 @@
   "version": "1.7.6",
   "copyright": "Copyright (C) 2026 Elodine / GoblinCorps",
   "license": "AGPL-3.0-or-later",
-  "scope": "Current working tree, including unfinished milestone 1. Source lineage, not a feature or visual acceptance claim.",
+  "scope": "Milestones 1-8 implementation; source lineage, not a feature or owner visual acceptance claim.",
   "files": [
     {
       "local": "frontend/css/01-tokens.css",
@@ -253,6 +253,46 @@
       "upstream_sha256": "8ffc231ab9b18214276fa0b30ce6188e96898a0d83407c2351d4002f06d85290",
       "treatment": "functional reference; Labbonet implementation",
       "elements": "Tavern V1/V2/V3 JSON/PNG and CHARX import/export scope (public community formats; no upstream source read into or copied into the code)"
+    },
+    {
+      "local": "frontend/css/09-dashboard.css",
+      "source": "css/09-dashboard.css",
+      "treatment": "copy with notices",
+      "verified_equal_line_spans": [
+        {
+          "upstream": [
+            1,
+            282
+          ],
+          "local": [
+            4,
+            285
+          ]
+        }
+      ],
+      "upstream_sha256": "2f3470d170bf1a401b81b5c501b4d00370566e7c53b12bec39ce386b929d10a0",
+      "comparison": "equal text lines; Labbonet origin notice excluded"
+    },
+    {
+      "local": "frontend/js/home.js",
+      "source": "js/13-dashboard.js",
+      "upstream_sha256": "eabe18ac9a4ecbe3c872b55e54cd4779b815128de062d8292b6ece52d933fb51",
+      "treatment": "design/behavior reference; Labbonet implementation",
+      "elements": "Landing header, sections, schedule/character/starter tiles; adapted presentation, original safe DOM/API and starter text"
+    },
+    {
+      "local": "frontend/js/render.js",
+      "source": "js/18-utils.js",
+      "upstream_sha256": "6bead0940aea15aaad9b326d0863a0daeca0df602d39dde681ec1fac1bab93a6",
+      "treatment": "design/behavior reference; Labbonet implementation",
+      "elements": "Code/math behavior reference; independent sanitized MathML/highlighting integration, no upstream runtime copied"
+    },
+    {
+      "local": "internal/interchange/gobbonet.go",
+      "source": "js/21-data.js",
+      "upstream_sha256": "e86971d329bdb0b000524f08d10b22e7303b6ab8812e337dc5e8f9bc576ea53a",
+      "treatment": "design/behavior reference; Labbonet implementation",
+      "elements": "Pinned export envelope and card/thread data shape; independent bounded conversion, no executable settings or upstream runtime copied"
     }
   ]
 }

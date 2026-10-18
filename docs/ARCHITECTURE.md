@@ -57,7 +57,7 @@ Boundaries:
 - Phase 1 views: conversation list, chat thread with streaming output and a stop button, endpoint manager (register, test, credential set/clear), model selector grouped by endpoint (proposal section 18), diagnostics panel.
 - Reasoning content (`reasoning_content`) is shown in a collapsible block, separate from the answer.
 - Owner visual requirement: match the pinned GobboNet interface pixel for pixel except for model dynamics. Presentation files in `frontend/css/` are selectively adapted from the pinned source with notices and entries in `REUSE-LOG.md`; `app.css` contains Labbonet integration rules. Upstream HTML presentation structures are adapted in the shell/chat/cast modules; JavaScript runtime logic is Labbonet work. No upstream JS runtime, inline handlers/styles or excluded behaviors are imported. Authorship boundaries are recorded in `REUSE-LOG.md`, pinned source hashes/spans in `GOBBONET-PROVENANCE.json`, and public credit in root `NOTICE.md`. The pinned tree omits its referenced Atkinson font file, so its original Cascadia/Consolas fallback stack is used.
-- The reference sidebar retains its footer positions: CONFIG opens endpoint controls (including Diagnostics), DATA creates a credential-free backup, ABOUT shows attribution and a Diagnostics entry. The in-progress parity milestone 1 adds a working CHARS library/editor and per-thread cast; extensions and scheduling remain disabled. Visual acceptance is separate from functional verification and awaits owner review.
+- The reference sidebar retains three footer pairs: CHARS/CONFIG, MODS/DATA and SCHED/ABOUT. These open their implemented screens; DATA contains backup/interchange/reset. ABOUT supplies version/build copy, Memory settings and Diagnostics; active-thread Memory remains available through its header chip. Executable extensions remain excluded. Visual acceptance is separate from functional verification and awaits owner review.
 
 ## 4. Backend
 
@@ -176,6 +176,8 @@ Dependencies must be AGPLv3-compatible. Record each one here when it is added.
 | `markdown-it` | Markdown rendering | MIT | Added (Phase 1 step 6, v14.1.0; vendored UMD build, license confirmed from the tagged `LICENSE` file; see `frontend/vendor/VENDOR.md`) |
 | `DOMPurify` | HTML sanitization | Apache-2.0 or MPL-2.0 | Added (Phase 1 step 6, v3.2.3; vendored UMD build, license confirmed from the tagged `LICENSE` file; see `frontend/vendor/VENDOR.md`) |
 | `@mlc-ai/web-llm` | Browser inference | Apache-2.0 | Planned (Phase 2) |
+| `KaTeX` | Bounded TeX to native MathML (no remote fonts or inline styles) | MIT | Milestone 8, v0.16.22; tagged LICENSE vendored; hashes in `frontend/vendor/VENDOR.md` |
+| `highlight.js` | Explicit-language code highlighting, bounded input | BSD-3-Clause | Milestone 8, v11.11.1 common browser build; tagged LICENSE vendored; hashes in `frontend/vendor/VENDOR.md` |
 
 Licenses above are from general knowledge and must be confirmed from each package's own license file, at the pinned version, when it is added.
 
@@ -269,3 +271,32 @@ Licenses above are from general knowledge and must be confirmed from each packag
 | `GET/POST /api/profiles`, `PUT/DELETE /api/profiles/{id}`, `POST .../{id}/apply` | List/last applied, capture, revisioned update/delete, apply with notes |
 
 All routes retain the existing session/Origin/header checks. Credentials never enter profile bundles or the schedule ledger. GobboNet behavior references and independent implementation boundaries are in `REUSE-LOG.md`.
+
+## 16. Milestone 8 parity closeout
+
+- `internal/interchange/gobbonet.go` maps the pinned version-1 export envelope to
+  validated native snapshots. Its types omit global settings, credentials, model
+  selections, schedules and extensions; imported card extras remain inert. Branch
+  conversion retains user-variant continuations and copies the shared assistant
+  continuation. Depth 64, 64 variants/message, 64 MiB expanded text and existing
+  snapshot/file limits bound conversion. Invalid future envelopes fail before writes.
+- `scope=threads` on `/api/data/export` exports every thread and its referenced cast,
+  without library-only cards or default-cast changes. Native snapshots still contain
+  cards/threads only; database backups preserve the broader credential-free database.
+- `PUT /api/folders/order` accepts `{expected:[ids],ids:[ids]}`. Both arrays are
+  complete; malformed permutations fail atomically and changed current order yields
+  409. SQLite `folders.position` already existed; no migration is required.
+- `render.js` converts bounded TeX to MathML with vendored KaTeX, then sanitizes the
+  whole Markdown output without style attributes. Explicit-language highlight.js
+  skips blocks above 32 KiB. Native MathML preserves CSP without inline styles or
+  downloaded fonts. Unknown/invalid/oversized input retains readable source.
+- `tools.js` supports `file:filename.ext` fences with basename/device/character
+  validation; downloads never execute. Original source/code copy remains exact.
+- `dialogs.js` supplies accessible asynchronous confirmations/notices, with Escape
+  cancelling. Browser unload protection remains native. Destructive/reset/model-load
+  warning text and server validation remain in place.
+- Dashboard presentation uses pinned `09-dashboard.css` and adapted landing sections;
+  starter text is original Labbonet content. About derives its build version from
+  health. Static assets send `Cache-Control: no-cache` because URLs are unversioned.
+- See `MILESTONE8-ACCEPTANCE.md` for inventory disposition and compatibility limits.
+  No completed pixel equality, owner approval or Phase 1 sign-off is implied.

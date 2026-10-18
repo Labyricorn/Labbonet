@@ -54,7 +54,13 @@ func New(cfg Config) (*Server, error) {
 
 	s.mux.HandleFunc("GET /launch", s.handleLaunch)
 	if cfg.Frontend != nil {
-		s.mux.Handle("/", http.FileServerFS(cfg.Frontend))
+		files := http.FileServerFS(cfg.Frontend)
+		s.mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Asset URLs are deliberately unversioned. Revalidate them on reload so
+			// a new binary cannot run against stale ES modules from an older build.
+			w.Header().Set("Cache-Control", "no-cache")
+			files.ServeHTTP(w, r)
+		}))
 	}
 
 	allowedHosts := map[string]bool{

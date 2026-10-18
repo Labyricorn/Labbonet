@@ -15,6 +15,7 @@ import { renderMarkdown } from "./render.js";
 import { mountModelSelector } from "./models.js";
 import { createSearchToggle, renderSources, loadSources } from "./search.js";
 import { mountHome } from "./home.js";
+import { showConfirm, showNotice } from "./dialogs.js";
 
 let castLifecycle;
 
@@ -128,7 +129,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   async function takeFiles(files) {
     const problems = await addAttachments(attachments, [...files]);
     renderChips();
-    if (problems.length) alert(problems.join("\n"));
+    if (problems.length) showNotice(problems.join("\n"));
   }
   fileInput.addEventListener("change", () => { takeFiles(fileInput.files).finally(() => { fileInput.value = ""; }); });
   composer.addEventListener("dragover", (e) => { if (e.dataTransfer?.types.includes("Files")) { e.preventDefault(); composer.classList.add("drop-target"); } });
@@ -180,7 +181,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     try {
       await action();
     } catch (err) {
-      alert(err.status === 409 ? `${err.message}. The thread was reloaded.` : err.message);
+      showNotice(err.status === 409 ? `${err.message}. The thread was reloaded.` : err.message);
     }
     try { await reload(); } catch { /* conversation may have been deleted elsewhere */ }
   }
@@ -192,7 +193,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
       button.textContent = "COPIED";
       setTimeout(() => { button.textContent = old; }, 1200);
     } catch {
-      alert("Copy is not available in this browser context.");
+      showNotice("Copy is not available in this browser context.");
     }
   }
 
@@ -232,8 +233,8 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
       const forked = await api.forkMessage(conversationId, msg.id);
       callbacks.onForked?.(forked.id);
     })));
-    bar.append(actionButton("Delete", "btn-delete", "Delete this message and the replies below it", () => {
-      if (!confirm("Delete this message and every reply below it? Other variants of this message are kept.")) return;
+    bar.append(actionButton("Delete", "btn-delete", "Delete this message and the replies below it", async () => {
+      if (!await showConfirm("Delete this message and every reply below it? Other variants of this message are kept.",{confirmText:"DELETE"})) return;
       mutate(() => api.deleteMessage(conversationId, msg.id, revision));
     }));
     return bar;
@@ -252,13 +253,13 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     const done = () => { editing = null; renderThread(); };
     const save = async (thenRegenerate) => {
       const text = area.value.trim();
-      if (!text) { alert("A message cannot be empty."); return; }
+      if (!text) { showNotice("A message cannot be empty."); return; }
       if (text === msg.content) { done(); return; }
       let created;
       try {
         created = await api.editMessage(conversationId, msg.id, text, revision);
       } catch (err) {
-        alert(err.status === 409 ? `${err.message}. The thread was reloaded.` : err.message);
+        showNotice(err.status === 409 ? `${err.message}. The thread was reloaded.` : err.message);
         editing = null;
         try { await reload(); } catch { /* ignore */ }
         return;
@@ -364,7 +365,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
       await api.patchConversation(conversationId, { endpoint_id: endpointId, model_id: modelId });
       currentModelId = modelId;
     } catch (err) {
-      alert(`Could not switch model: ${err.message}`);
+      showNotice(`Could not switch model: ${err.message}`);
       throw err;
     } finally {
       sendBtn.disabled = !currentModelId;
@@ -375,7 +376,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     try {
       await api.patchConversation(conversationId, { title: titleInput.value });
       callbacks.onRenamed?.();
-    } catch (err) { alert(err.message); }
+    } catch (err) { showNotice(err.message); }
   };
   titleInput.onchange = saveTitle;
   titleInput.onkeydown = (event) => {
@@ -531,7 +532,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     } catch (err) {
       if (body.attachments?.length) { attachments.unshift(...body.attachments); renderChips(); }
       if (err.status === 409 && /not.loaded/i.test(err.message) && !confirmLoad) {
-        const proceed = confirm(
+        const proceed = await showConfirm(
           `Model "${currentModelId}" is not loaded. Loading it now may take a while and could evict ` +
             "another client's model from memory. Load it and continue?",
         );
@@ -545,10 +546,10 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
         }
       } else if (!leaving()) {
         if (err.status === 409 && /^web search/i.test(err.message)) {
-          alert(err.message);
+          showNotice(err.message);
           searchToggle.refresh();
         } else {
-          alert(err.status === 409 ? `${err.message}. The thread was reloaded.` : `Generation failed: ${err.message}`);
+          showNotice(err.status === 409 ? `${err.message}. The thread was reloaded.` : `Generation failed: ${err.message}`);
         }
       }
     }
@@ -577,7 +578,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
 
   function regenerate(parentId) {
     if (streaming || sendBtn.disabled) {
-      if (!streaming) alert("Choose a model first.");
+      if (!streaming) showNotice("Choose a model first.");
       return Promise.resolve();
     }
     return generate({ regenerate_parent_id: parentId }, false);

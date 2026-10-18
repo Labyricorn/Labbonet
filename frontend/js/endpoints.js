@@ -2,6 +2,7 @@
 // credential set/clear, privacy class and plain-HTTP warning
 // (SECURITY-MODEL.md section 5.1).
 import { api } from "./api.js";
+import { showConfirm, showNotice } from "./dialogs.js";
 
 export function mountEndpointsView(root) {
   root.innerHTML = "";
@@ -133,7 +134,7 @@ export function mountEndpointsView(root) {
       try {
         await api.refreshModels(ep.id);
       } catch (err) {
-        alert(`Refreshing models failed: ${err.message}`);
+        showNotice(`Refreshing models failed: ${err.message}`);
       } finally {
         refreshModelsBtn.disabled = false;
       }
@@ -154,14 +155,14 @@ export function mountEndpointsView(root) {
           } catch {
             // Some embedding contexts disable prompt(); fail quietly
             // rather than leaving an unhandled rejection.
-            alert("This browser does not allow entering a credential here.");
+            showNotice("This browser does not allow entering a credential here.");
             return;
           }
           if (!value) return;
           await api.setCredential(ep.id, value);
         }
       } catch (err) {
-        alert(`Could not update the credential: ${err.message}`);
+        showNotice(`Could not update the credential: ${err.message}`);
         return;
       }
       refresh();
@@ -172,7 +173,7 @@ export function mountEndpointsView(root) {
     deleteBtn.className = "btn btn-danger btn-sm";
     deleteBtn.textContent = "Delete";
     deleteBtn.addEventListener("click", async () => {
-      if (!confirm(`Delete endpoint "${ep.name}"? Its credential and model inventory go with it.`)) return;
+      if (!await showConfirm(`Delete endpoint "${ep.name}"? Its credential and model inventory go with it.`,{confirmText:"DELETE"})) return;
       await api.deleteEndpoint(ep.id);
       refresh();
     });
