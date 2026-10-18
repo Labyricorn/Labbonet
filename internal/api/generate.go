@@ -30,6 +30,7 @@ type generateRequest struct {
 
 type sseEventPayload struct {
 	Kind             string  `json:"kind"`
+	GenerationID     int64   `json:"generation_id,omitempty"`
 	Content          string  `json:"content,omitempty"`
 	Reasoning        string  `json:"reasoning,omitempty"`
 	PromptTokens     int     `json:"prompt_tokens,omitempty"`
@@ -41,9 +42,14 @@ type sseEventPayload struct {
 	ModelReported    string  `json:"model_reported,omitempty"`
 }
 
-func writeSSEEvent(w http.ResponseWriter, flusher http.Flusher, ev providers.Event) error {
+// writeSSEEvent writes one normalized event as an SSE "data:" line.
+// generationID is included on every event (not just the first), so the
+// client's Stop button always has it on hand to call
+// POST /api/generations/{id}/cancel, even if it only kept the latest
+// event.
+func writeSSEEvent(w http.ResponseWriter, flusher http.Flusher, generationID int64, ev providers.Event) error {
 	payload := sseEventPayload{
-		Kind: string(ev.Kind), Content: ev.Content, Reasoning: ev.Reasoning,
+		Kind: string(ev.Kind), GenerationID: generationID, Content: ev.Content, Reasoning: ev.Reasoning,
 		PromptTokens: ev.PromptTokens, CompletionTokens: ev.CompletionTokens, CachedTokens: ev.CachedTokens,
 		TTFTMillis: ev.TTFTMillis, TokensPerSecond: ev.TokensPerSecond,
 		FinishReason: ev.FinishReason, ModelReported: ev.ModelReported,
@@ -99,15 +105,18 @@ func (g *Generate) Generate(w http.ResponseWriter, r *http.Request) {
 		ReasoningEffort: req.ReasoningEffort, ConfirmLoad: req.ConfirmLoad,
 	}
 
+	var genID int64
 	headersSent := false
-	runErr := g.Runner.Run(r.Context(), genReq, func(ev providers.Event) error {
+	runErr := g.Runner.Run(r.Context(), genReq, func(generationID int64) {
+		genID = generationID
+	}, func(ev providers.Event) error {
 		if !headersSent {
 			headersSent = true
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.Header().Set("Cache-Control", "no-store")
 			w.WriteHeader(http.StatusOK)
 		}
-		return writeSSEEvent(w, flusher, ev)
+		return writeSSEEvent(w, flusher, genID, ev)
 	})
 
 	if runErr == nil || headersSent {

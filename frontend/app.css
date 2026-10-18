@@ -1,18 +1,336 @@
-body {
-  font-family: system-ui, sans-serif;
-  margin: 2rem;
-  color: #1a1a1a;
-  background: #fafafa;
+:root {
+  color-scheme: light;
+  --bg: #fafafa;
+  --fg: #1a1a1a;
+  --border: #d8d8d8;
+  --accent: #2b6cb0;
+  --danger: #b00020;
+  --ok: #0a7a2a;
+  --muted: #6b6b6b;
 }
 
-h1 {
-  font-size: 1.5rem;
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  color: var(--fg);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.app-header nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.app-header nav button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+
+.app-header nav button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+#status {
+  margin: 0 0 0 auto;
+  font-size: 0.85rem;
 }
 
 #status.ok {
-  color: #0a7a2a;
+  color: var(--ok);
 }
 
 #status.error {
-  color: #b00020;
+  color: var(--danger);
+}
+
+main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.view {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 1.5rem;
+}
+
+/* Chat view */
+
+/* Author rules with display:flex/etc. below have the same specificity
+   as the UA's own `[hidden] { display: none }` default, and author
+   rules win ties over UA defaults regardless of source order; without
+   this, a hidden .chat-view (or any other .view with its own display
+   override) would render anyway. */
+.view[hidden] {
+  display: none !important;
+}
+
+.chat-view {
+  display: flex;
+  padding: 0;
+  height: 100%;
+}
+
+.conversation-sidebar {
+  width: 240px;
+  border-right: 1px solid var(--border);
+  padding: 1rem;
+  overflow: auto;
+}
+
+.new-conversation {
+  width: 100%;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.conversation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.conversation-list li {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.conversation-list li:hover {
+  background: var(--border);
+}
+
+.conversation-list li.selected {
+  background: var(--accent);
+  color: white;
+}
+
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.chat-title {
+  flex: 1;
+  font-size: 1rem;
+  padding: 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+}
+
+.chat-title:focus {
+  border-color: var(--accent);
+}
+
+.chat-thread {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.message {
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.5rem;
+  max-width: 80%;
+}
+
+.message-user {
+  background: var(--accent);
+  color: white;
+  margin-left: auto;
+}
+
+.message-assistant {
+  background: white;
+  border: 1px solid var(--border);
+}
+
+.message-content :last-child {
+  margin-bottom: 0;
+}
+
+.reasoning {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.reasoning summary {
+  cursor: pointer;
+}
+
+.status-badge {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  background: var(--border);
+}
+
+.status-error .status-badge,
+.status-cancelled .status-badge,
+.status-interrupted .status-badge {
+  background: var(--danger);
+  color: white;
+}
+
+.chat-composer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.chat-composer textarea {
+  flex: 1;
+  resize: vertical;
+  min-height: 2.5rem;
+  padding: 0.5rem;
+}
+
+.chat-composer button {
+  align-self: flex-end;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+/* Endpoints view */
+
+.endpoint-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.endpoint-form input {
+  padding: 0.4rem;
+}
+
+.ack-external {
+  font-size: 0.85rem;
+}
+
+.form-error {
+  color: var(--danger);
+  width: 100%;
+  margin: 0;
+}
+
+.endpoint-row {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.endpoint-url {
+  color: var(--muted);
+}
+
+.privacy-badge,
+.detected-service,
+.credential-badge {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  margin-left: 0.3rem;
+  background: var(--border);
+}
+
+.plain-http-warning {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 0.3rem 0 0;
+}
+
+.endpoint-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.endpoint-actions button,
+.chat-header button {
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+/* Diagnostics view */
+
+.diagnostics-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.diagnostics-table th,
+.diagnostics-table td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+/* Shared */
+
+.empty-state {
+  color: var(--muted);
+  padding: 2rem;
+}
+
+.reauth-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--danger);
+  color: white;
+  text-align: center;
+  padding: 0.5rem;
+  z-index: 1000;
 }

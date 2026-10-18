@@ -14,8 +14,9 @@ type Diagnostics struct {
 }
 
 // diagnosticsEntry is request metadata only: endpoint, model, status
-// and timings. It is built from the generations table alone, which
-// never holds message content, so this handler cannot leak
+// and timings. Status comes from the associated message's own status
+// column (never from message content, and every other field here
+// comes from the generations table alone), so this handler cannot leak
 // conversation text or a credential (SECURITY-MODEL.md section 7;
 // A-D2).
 type diagnosticsEntry struct {
@@ -45,13 +46,15 @@ func (d *Diagnostics) List(w http.ResponseWriter, r *http.Request) {
 
 	out := make([]diagnosticsEntry, 0, len(gens))
 	for _, g := range gens {
+		// generations has no status column of its own (ARCHITECTURE.md
+		// section 5): "complete" vs "cancelled" vs "interrupted" vs
+		// "error" lives on the message it belongs to. Deriving status
+		// from error_kind/finished_at alone would show "complete" for a
+		// generation a user explicitly stopped, since Runner finishes
+		// a cancelled generation with an empty error_kind.
 		status := "running"
-		if g.FinishedAt != nil {
-			if g.ErrorKind != "" {
-				status = "error"
-			} else {
-				status = "complete"
-			}
+		if msg, err := d.Store.GetMessage(r.Context(), g.MessageID); err == nil {
+			status = msg.Status
 		}
 		entry := diagnosticsEntry{
 			GenerationID: g.ID, EndpointID: g.EndpointID, ModelRequested: g.ModelRequested,

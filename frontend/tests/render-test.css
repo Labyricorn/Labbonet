@@ -1,0 +1,32 @@
+main.view {
+  display: block;
+}
+
+.render-test-case {
+  border: 1px solid #d8d8d8;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.render-test-case.pass {
+  border-left: 4px solid #0a7a2a;
+}
+
+.render-test-case.fail {
+  border-left: 4px solid #b00020;
+}
+
+.render-preview {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #fafafa;
+  border-radius: 0.25rem;
+}
+
+.csp-violation {
+  background: #b00020;
+  color: white;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}

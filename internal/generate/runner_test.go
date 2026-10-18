@@ -54,7 +54,7 @@ func TestRunner_CompletesAndRecordsProvenance(t *testing.T) {
 	_, conv := mustEndpointAndConversation(t, st, srv.URL, "requested-model")
 
 	var events []providers.Event
-	err := rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "hi"}, func(ev providers.Event) error {
+	err := rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "hi"}, nil, func(ev providers.Event) error {
 		events = append(events, ev)
 		return nil
 	})
@@ -96,6 +96,45 @@ func TestRunner_CompletesAndRecordsProvenance(t *testing.T) {
 	}
 }
 
+// Regression: persistence writes must not share one context with a
+// deadline fixed when Run started. A single persistCtx with, say, a
+// 5-second timeout created once at the top of Run would already have
+// expired by the time a generation slower than that reaches its final
+// write, silently leaving the message stuck at status "streaming"
+// forever even though the request itself completed successfully. This
+// was caught against the real Strata server during the step 6 manual
+// walkthrough, where a generation that took about 12 seconds left its
+// assistant message empty and still marked "streaming" in the
+// database despite the HTTP request itself finishing with 200 OK.
+func TestRunner_SlowGenerationStillPersistsFinalState(t *testing.T) {
+	srv := fakeprovider.New(fakeprovider.Script{
+		ChatSSE: runnerTestSSE, ModelsPath: "/v1/models", ModelsBody: `{"data":[]}`,
+		// Longer than any single fixed deadline this step's bug used.
+		ChatFirstByteDelay: 5500 * time.Millisecond,
+	})
+	defer srv.Close()
+
+	rn, st := newRunner(t)
+	_, conv := mustEndpointAndConversation(t, st, srv.URL, "m")
+
+	err := rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "hi"}, nil, func(providers.Event) error { return nil })
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	msgs, err := st.ListMessages(context.Background(), conv.ID)
+	if err != nil {
+		t.Fatalf("list messages: %v", err)
+	}
+	if len(msgs) != 2 {
+		t.Fatalf("len(msgs) = %d, want 2", len(msgs))
+	}
+	assistant := msgs[1]
+	if assistant.Status != "complete" || assistant.Content != "Hello" {
+		t.Fatalf("assistant message = %+v, want status complete with its content persisted", assistant)
+	}
+}
+
 // A-C4: an explicit cancel through Registry aborts the upstream
 // request and keeps the partial text, marked "cancelled".
 func TestRunner_ExplicitCancelMarksCancelled(t *testing.T) {
@@ -107,22 +146,16 @@ func TestRunner_ExplicitCancelMarksCancelled(t *testing.T) {
 	rn, st := newRunner(t)
 	_, conv := mustEndpointAndConversation(t, st, srv.URL, "m")
 
-	// Find the generation ID as soon as it is created, from another
-	// goroutine, so we can cancel it mid-flight.
-	go func() {
-		time.Sleep(50 * time.Millisecond)
-		msgs, err := st.ListMessages(context.Background(), conv.ID)
-		if err != nil || len(msgs) < 2 {
-			return
-		}
-		gens, err := st.ListGenerationsForMessage(context.Background(), msgs[1].ID)
-		if err != nil || len(gens) == 0 {
-			return
-		}
-		rn.Registry.Cancel(gens[0].ID)
-	}()
-
-	_ = rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "hi"}, func(providers.Event) error { return nil })
+	// onStarted hands us the generation ID as soon as it exists; cancel
+	// it shortly after, once Register has had time to run, so this
+	// exercises a genuine mid-flight cancel rather than one raced
+	// against the registration itself.
+	_ = rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "hi"}, func(generationID int64) {
+		go func() {
+			time.Sleep(50 * time.Millisecond)
+			rn.Registry.Cancel(generationID)
+		}()
+	}, func(providers.Event) error { return nil })
 
 	msgs, err := st.ListMessages(context.Background(), conv.ID)
 	if err != nil {
@@ -149,7 +182,7 @@ func TestRunner_ContextCancelMarksInterrupted(t *testing.T) {
 		cancel()
 	}()
 
-	_ = rn.Run(ctx, Request{ConversationID: conv.ID, UserContent: "hi"}, func(providers.Event) error { return nil })
+	_ = rn.Run(ctx, Request{ConversationID: conv.ID, UserContent: "hi"}, nil, func(providers.Event) error { return nil })
 
 	msgs, err := st.ListMessages(context.Background(), conv.ID)
 	if err != nil {
@@ -172,7 +205,7 @@ func TestRunner_RefusesNotLoadedModelWithoutConfirmation(t *testing.T) {
 		t.Fatalf("upsert model: %v", err)
 	}
 
-	err := rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "hi"}, func(providers.Event) error { return nil })
+	err := rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "hi"}, nil, func(providers.Event) error { return nil })
 	if err != ErrModelNotLoaded {
 		t.Fatalf("err = %v, want ErrModelNotLoaded", err)
 	}
@@ -185,7 +218,7 @@ func TestRunner_RefusesNotLoadedModelWithoutConfirmation(t *testing.T) {
 	}
 
 	// With confirmation, the same request goes through.
-	err = rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "hi", ConfirmLoad: true}, func(providers.Event) error { return nil })
+	err = rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "hi", ConfirmLoad: true}, nil, func(providers.Event) error { return nil })
 	if err != nil {
 		t.Fatalf("Run with ConfirmLoad: %v", err)
 	}
@@ -202,7 +235,7 @@ func TestRunner_ModelSwitchKeepsHistory(t *testing.T) {
 	rn, st := newRunner(t)
 	epA, conv := mustEndpointAndConversation(t, st, srvA.URL, "model-a")
 
-	if err := rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "first"}, func(providers.Event) error { return nil }); err != nil {
+	if err := rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "first"}, nil, func(providers.Event) error { return nil }); err != nil {
 		t.Fatalf("first Run: %v", err)
 	}
 
@@ -215,7 +248,7 @@ func TestRunner_ModelSwitchKeepsHistory(t *testing.T) {
 		t.Fatalf("switch model: %v", err)
 	}
 
-	if err := rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "second"}, func(providers.Event) error { return nil }); err != nil {
+	if err := rn.Run(context.Background(), Request{ConversationID: conv.ID, UserContent: "second"}, nil, func(providers.Event) error { return nil }); err != nil {
 		t.Fatalf("second Run: %v", err)
 	}
 

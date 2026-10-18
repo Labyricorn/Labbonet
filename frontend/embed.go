@@ -4,5 +4,5 @@ package frontend
 
 import "embed"
 
-//go:embed index.html app.js app.css
+//go:embed index.html app.js app.css js vendor
 var FS embed.FS

@@ -7,10 +7,22 @@
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<main>
+<header class="app-header">
   <h1>Labbonet</h1>
+  <nav>
+    <button type="button" data-view="chat">Chat</button>
+    <button type="button" data-view="endpoints">Endpoints</button>
+    <button type="button" data-view="diagnostics">Diagnostics</button>
+  </nav>
   <p id="status">Checking backend health&hellip;</p>
+</header>
+<main>
+  <section id="view-chat" class="view"></section>
+  <section id="view-endpoints" class="view" hidden></section>
+  <section id="view-diagnostics" class="view" hidden></section>
 </main>
+<script src="/vendor/markdown-it.min.js"></script>
+<script src="/vendor/purify.min.js"></script>
 <script type="module" src="/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Labbonet render pipeline test</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="./render-test.css">
+</head>
+<body>
+<main class="view">
+<h1>Markdown + sanitizer pipeline test (S14)</h1>
+<p>
+  Open this page by running
+  <code>go run ./cmd/labbonet --frontend-dir frontend</code>
+  and visiting <code>/tests/render.html</code> on the printed port
+  (no launch code needed; static files aren't session-gated). Check the
+  browser console: it must show no errors and no CSP violations, and
+  every case below must say PASS.
+</p>
+<div id="results"></div>
+</main>
+<script src="../vendor/markdown-it.min.js"></script>
+<script src="../vendor/purify.min.js"></script>
+<script type="module" src="./render-test.js"></script>
+</body>
+</html>

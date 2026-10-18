@@ -25,6 +25,22 @@ var ErrNoModelSelected = errors.New("conversation has no endpoint or model selec
 // (SECURITY-MODEL.md S15, PROVIDER-SPEC.md section 6).
 var ErrModelNotLoaded = errors.New("model is not loaded; resend with confirm_load to allow it to load, which may evict another client's model")
 
+// persistWrite runs fn with a short-lived context independent of the
+// generation's own ctx. A browser disconnect or an explicit stop both
+// cancel ctx (or a context derived from it) mid-stream, and "partial
+// text is always kept" (ARCHITECTURE.md section 4.2) requires writing
+// it with a context that isn't itself the thing that just got
+// cancelled. Each call gets its own fresh deadline rather than sharing
+// one set when Run started — a single shared deadline would itself
+// expire partway through any generation slower than the deadline,
+// silently failing every later write for the rest of that same
+// request, including the final one.
+func persistWrite(fn func(context.Context) error) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return fn(ctx)
+}
+
 // Request is what the API layer gathers before calling Run.
 type Request struct {
 	ConversationID  int64
@@ -57,15 +73,12 @@ type Runner struct {
 // Cancelling ctx (the browser disconnecting) marks the message
 // "interrupted". A generation registered here and then aborted through
 // Registry.Cancel instead marks it "cancelled" (A-C4 vs. A-C5).
-func (rn *Runner) Run(ctx context.Context, req Request, emit func(providers.Event) error) error {
-	// Persistence during and after the stream must survive ctx being
-	// cancelled (a browser disconnect or an explicit stop both cancel
-	// ctx or a context derived from it): "Partial text is always kept"
-	// requires writing it with a context that isn't itself the thing
-	// that just got cancelled.
-	persistCtx, cancelPersist := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelPersist()
-
+//
+// onStarted, if not nil, is called once the generation row exists
+// (before any upstream request), with its ID — the caller's only
+// chance to learn it before streaming starts, for example to let a
+// client cancel a generation whose first event hasn't arrived yet.
+func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generationID int64), emit func(providers.Event) error) error {
 	conv, err := rn.Store.GetConversation(ctx, req.ConversationID)
 	if err != nil {
 		return fmt.Errorf("conversation not found: %w", err)
@@ -106,10 +119,13 @@ func (rn *Runner) Run(ctx context.Context, req Request, emit func(providers.Even
 	if err != nil {
 		return fmt.Errorf("create generation: %w", err)
 	}
+	if onStarted != nil {
+		onStarted(gen.ID)
+	}
 
 	target, err := rn.targetFor(ctx, ep)
 	if err != nil {
-		rn.recordFailure(persistCtx, assistantMsg.ID, gen.ID, err)
+		rn.recordFailure(assistantMsg.ID, gen.ID, err)
 		return err
 	}
 
@@ -122,7 +138,7 @@ func (rn *Runner) Run(ctx context.Context, req Request, emit func(providers.Even
 
 	release, err := rn.Slots.Acquire(runCtx, endpointID, ep.ConcurrencyLimit)
 	if err != nil {
-		rn.recordFailure(persistCtx, assistantMsg.ID, gen.ID, err)
+		rn.recordFailure(assistantMsg.ID, gen.ID, err)
 		return err
 	}
 	defer release()
@@ -143,12 +159,15 @@ func (rn *Runner) Run(ctx context.Context, req Request, emit func(providers.Even
 			acc.add(ev)
 			if !acc.firstTokenRecorded {
 				acc.firstTokenRecorded = true
-				_ = rn.Store.RecordFirstToken(persistCtx, gen.ID, "")
+				_ = persistWrite(func(c context.Context) error { return rn.Store.RecordFirstToken(c, gen.ID, "") })
 			}
 			if time.Since(lastFlush) >= time.Second {
 				lastFlush = time.Now()
-				if err := rn.Store.UpdateMessageContent(persistCtx, assistantMsg.ID, acc.content.String(), acc.reasoning.String(), "streaming"); err != nil {
-					return err
+				flushErr := persistWrite(func(c context.Context) error {
+					return rn.Store.UpdateMessageContent(c, assistantMsg.ID, acc.content.String(), acc.reasoning.String(), "streaming")
+				})
+				if flushErr != nil {
+					return flushErr
 				}
 			}
 		case providers.EventUsage:
@@ -157,7 +176,8 @@ func (rn *Runner) Run(ctx context.Context, req Request, emit func(providers.Even
 			acc.timings = ev
 		case providers.EventDone:
 			if ev.ModelReported != "" {
-				_ = rn.Store.SetModelReported(persistCtx, gen.ID, ev.ModelReported)
+				modelReported := ev.ModelReported
+				_ = persistWrite(func(c context.Context) error { return rn.Store.SetModelReported(c, gen.ID, modelReported) })
 			}
 		}
 		return emit(ev)
@@ -165,11 +185,15 @@ func (rn *Runner) Run(ctx context.Context, req Request, emit func(providers.Even
 
 	// ARCHITECTURE.md section 4.2: "Partial text is always kept."
 	finalStatus, errorKind := rn.finalStatus(gen.ID, streamErr)
-	_ = rn.Store.UpdateMessageContent(persistCtx, assistantMsg.ID, acc.content.String(), acc.reasoning.String(), finalStatus)
+	_ = persistWrite(func(c context.Context) error {
+		return rn.Store.UpdateMessageContent(c, assistantMsg.ID, acc.content.String(), acc.reasoning.String(), finalStatus)
+	})
 
 	usageJSON, _ := json.Marshal(acc.usageJSON())
 	timingsJSON, _ := json.Marshal(acc.timingsJSON())
-	_ = rn.Store.FinishGeneration(persistCtx, gen.ID, result.FinishReason, string(usageJSON), string(timingsJSON), errorKind)
+	_ = persistWrite(func(c context.Context) error {
+		return rn.Store.FinishGeneration(c, gen.ID, result.FinishReason, string(usageJSON), string(timingsJSON), errorKind)
+	})
 
 	return streamErr
 }
@@ -232,12 +256,13 @@ func (rn *Runner) targetFor(ctx context.Context, ep *store.Endpoint) (egress.Tar
 }
 
 // recordFailure finalizes a generation that never got as far as
-// streaming (target resolution or slot acquisition failed). persistCtx
-// must not be one that err's own cancellation already cancelled.
-func (rn *Runner) recordFailure(persistCtx context.Context, messageID, generationID int64, err error) {
+// streaming (target resolution or slot acquisition failed).
+func (rn *Runner) recordFailure(messageID, generationID int64, err error) {
 	status, errorKind := rn.finalStatus(generationID, err)
-	_ = rn.Store.UpdateMessageContent(persistCtx, messageID, "", "", status)
-	_ = rn.Store.FinishGeneration(persistCtx, generationID, "", "{}", "{}", errorKind)
+	_ = persistWrite(func(c context.Context) error { return rn.Store.UpdateMessageContent(c, messageID, "", "", status) })
+	_ = persistWrite(func(c context.Context) error {
+		return rn.Store.FinishGeneration(c, generationID, "", "{}", "{}", errorKind)
+	})
 }
 
 // finalStatus maps a stream result to a message status and, for
