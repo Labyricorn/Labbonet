@@ -7,7 +7,7 @@ import { api } from "./api.js";
 // with (endpointId, modelId) whenever the user picks a different
 // model. Throws nothing to the caller; a failed endpoint's models are
 // simply skipped so one broken endpoint doesn't break the selector.
-export async function mountModelSelector(root, currentEndpointId, currentModelId, onChange) {
+export async function mountModelSelector(root, currentEndpointId, currentModelId, onChange, signal) {
   root.innerHTML = "";
   const select = document.createElement("select");
   select.className = "model-selector";
@@ -32,6 +32,7 @@ export async function mountModelSelector(root, currentEndpointId, currentModelId
   }
 
   for (const ep of endpoints) {
+    if (signal?.aborted) return;
     let models = [];
     try {
       models = await api.listModels(ep.id);
@@ -72,5 +73,7 @@ export async function mountModelSelector(root, currentEndpointId, currentModelId
     finally { select.disabled = false; }
   });
 
+  // The caller may have navigated away while the inventory loaded; never touch the shared slot then.
+  if (signal?.aborted) return;
   root.appendChild(select);
 }

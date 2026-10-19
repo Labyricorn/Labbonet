@@ -47,6 +47,16 @@ function actionButton(label, cls, title, handler) {
 export async function loadConversationIntoPanel(panel, conversationId, callbacks) {
   castLifecycle?.abort();
   const lifecycle = new AbortController(); castLifecycle = lifecycle;
+  try {
+    await mountConversation(panel, conversationId, callbacks, lifecycle);
+  } catch (err) {
+    // A load that fails part-way must not leave listeners or timers behind.
+    lifecycle.abort();
+    throw err;
+  }
+}
+
+async function mountConversation(panel, conversationId, callbacks, lifecycle) {
   let activeCharacter, activePersona;
   panel.innerHTML = "";
 
@@ -77,6 +87,10 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   stopBtn.textContent = "Stop";
   stopBtn.hidden = true;
   composer.append(textarea, sendBtn, stopBtn);
+  // The form is on screen before initialization finishes: until it does, Send stays disabled
+  // and a submit (button, Enter) must never navigate the page or reach the server.
+  sendBtn.disabled = true;
+  composer.addEventListener("submit", (e) => e.preventDefault());
 
   // Chat tools (milestone 4): text-file attachments, reply limits, scroll follow, run status.
   const prefs = loadPrefs();
@@ -148,7 +162,17 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   panel.append(castSlot, threadWrap, tools, composer);
   const follow = createFollow(thread, jumpBtn, () => prefs.follow);
 
+  // Disposal is registered before the first await. Every continuation that touches shared
+  // header DOM or document events first checks leaving().
+  let timer = null;
+  let abortController = null;
+  const leaving = () => lifecycle.signal.aborted;
+  // Navigating to another thread only stops watching: the reply keeps running on the server
+  // and is re-attached when this thread is opened again.
+  lifecycle.signal.addEventListener("abort", () => { clearInterval(timer); abortController?.abort(); searchToggle.dispose(); });
+
   const conv = await api.getConversation(conversationId);
+  if (leaving()) return;
   titleInput.value = conv.title;
   document.dispatchEvent(new CustomEvent("conversation-changed", { detail: { id: conversationId } }));
   let currentModelId = conv.model_id;
@@ -158,7 +182,6 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   let messages = conv.messages;
   let streaming = false;
   let editing = null;
-  sendBtn.disabled = !conv.endpoint_id || !conv.model_id;
 
   function applyConversation(fresh) {
     revision = fresh.revision;
@@ -349,6 +372,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   }
 
   sources = await loadSources(conversationId);
+  if (leaving()) return;
   renderThread();
   const castControls = await mountCastControls(castSlot, conversationId, async () => {
     await reload();
@@ -357,7 +381,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     background.hidden = !character?.background;
     if (character?.background) background.src = character.background; else background.removeAttribute("src");
   }, lifecycle.signal, conv.messages.length === 0);
-
+  if (leaving()) return;
 
   await mountModelSelector(modelSlot, conv.endpoint_id, conv.model_id, async (endpointId, modelId) => {
     sendBtn.disabled = true;
@@ -370,7 +394,8 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     } finally {
       sendBtn.disabled = !currentModelId;
     }
-  });
+  }, lifecycle.signal);
+  if (leaving()) return;
 
   const saveTitle = async () => {
     try {
@@ -385,14 +410,11 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   titleInput.disabled = false;
 
   let currentGenerationId = null;
-  let abortController = null;
-  let timer = null;
+  // Explicit Stop intent, kept apart from the watch being aborted (navigation, dropped stream).
+  let stopRequested = false;
+  let stopUnconfirmed = false;
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  const leaving = () => lifecycle.signal.aborted;
-  // Navigating to another thread only stops watching: the reply keeps running on the server
-  // and is re-attached when this thread is opened again.
-  lifecycle.signal.addEventListener("abort", () => { clearInterval(timer); abortController?.abort(); searchToggle.dispose(); });
 
   function startTimer(label = "generating") {
     const started = Date.now();
@@ -469,9 +491,19 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
 
   // After a stream stops early, re-attach while the server still reports the reply running.
   async function reattach(outcome) {
+    let stopFailures = 0;
     for (let attempt = 0; !outcome.ended && !leaving() && attempt < 30; attempt++) {
       const active = await api.activeGeneration(conversationId).catch(() => null);
       if (!active?.active) break;
+      if (stopRequested) {
+        // The user asked to stop: finish the cancellation instead of resuming the watch.
+        const ok = await api.cancelGeneration(active.generation_id).then((r) => r.cancelled, () => false);
+        if (!ok) {
+          if (++stopFailures >= 3) { stopUnconfirmed = true; break; }
+          await sleep(300);
+          continue;
+        }
+      }
       try {
         outcome = await consume((handler, signal) => attachGeneration(active.generation_id, handler, signal));
       } catch {
@@ -485,7 +517,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   async function settle(outcome) {
     if (leaving()) return;
     clearInterval(timer);
-    runStatus.textContent = endNote(outcome);
+    runStatus.textContent = outcome.note || (stopUnconfirmed ? "stop not confirmed; the reply may still be running" : endNote(outcome));
     setBusy(false);
     currentGenerationId = null;
     live = null;
@@ -496,10 +528,34 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
     }
   }
 
+  // turnStored reports whether the server kept the user message of a send that did not return
+  // normally: a new user message with this text, or a reply already running.
+  async function turnStored(body, knownIds) {
+    if (body.content === undefined) return true;
+    try {
+      const fresh = await api.getConversation(conversationId);
+      if (fresh.messages.some((m) => !knownIds.has(m.id) && m.role === "user" && m.content.startsWith(body.content))) return true;
+      return !!(await api.activeGeneration(conversationId).catch(() => null))?.active;
+    } catch {
+      return true; // cannot tell: assume stored rather than risk a duplicate
+    }
+  }
+
+  // restoreDraft puts an unsent message (and its attachments) back in the composer without
+  // overwriting anything typed since.
+  function restoreDraft(body) {
+    if (body.content !== undefined) {
+      textarea.value = textarea.value.trim() ? body.content + "\n\n" + textarea.value : body.content;
+    }
+    if (body.attachments?.length) { attachments.unshift(...body.attachments); renderChips(); }
+  }
+
   // generate starts one reply. body is either {content, attachments} (a new user turn appended to
   // the visible branch) or {regenerate_parent_id} (a new reply variant to that user message).
   async function generate(body, confirmLoad) {
     const searching = searchToggle.on;
+    stopRequested = stopUnconfirmed = false;
+    const knownIds = new Set(messages.map((m) => m.id));
     setBusy(true);
     startTimer(searching ? "searching the web, then generating" : "generating");
 
@@ -529,9 +585,20 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
         web_search: searching || undefined,
       };
       outcome = await reattach(await consume((handler, signal) => streamGenerate(conversationId, payload, handler, signal)));
+      if (stopRequested && !outcome.ended && !leaving() && !await turnStored(body, knownIds)) {
+        // Stop landed before the turn was stored: nothing was sent, so the draft comes back.
+        restoreDraft(body);
+        outcome.note = "stopped before sending";
+      }
     } catch (err) {
-      if (body.attachments?.length) { attachments.unshift(...body.attachments); renderChips(); }
-      if (err.status === 409 && /not.loaded/i.test(err.message) && !confirmLoad) {
+      // 4xx: the server refused the request before storing anything. Anything else (a 502, a
+      // dropped connection) is checked against stored state so a committed turn is never
+      // resent or its attachments duplicated.
+      const refused = (err.status >= 400 && err.status < 500) || !await turnStored(body, knownIds);
+      const needsLoadConfirm = err.status === 409 && /not.loaded/i.test(err.message) && !confirmLoad;
+      // The load prompt below decides for itself: accepting resends this same body.
+      if (refused && !leaving() && !needsLoadConfirm) restoreDraft(body);
+      if (needsLoadConfirm) {
         const proceed = await showConfirm(
           `Model "${currentModelId}" is not loaded. Loading it now may take a while and could evict ` +
             "another client's model from memory. Load it and continue?",
@@ -539,11 +606,10 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
         if (proceed) {
           clearInterval(timer);
           setBusy(false);
-          if (body.attachments?.length) attachments.splice(0);
-          renderChips();
           await generate(body, true);
           return;
         }
+        if (!leaving()) restoreDraft(body);
       } else if (!leaving()) {
         if (err.status === 409 && /^web search/i.test(err.message)) {
           showNotice(err.message);
@@ -559,6 +625,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   // resume re-attaches to a reply that is still running on the server (the tab was closed or
   // the thread was left while it generated).
   async function resume(generationId) {
+    stopRequested = stopUnconfirmed = false;
     const partial = messages.at(-1);
     if (!partial || partial.status !== "streaming") return;
     setBusy(true);
@@ -585,7 +652,6 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   }
 
   composer.addEventListener("submit", (e) => {
-    e.preventDefault();
     if (sendBtn.disabled) return;
     const content = textarea.value.trim();
     if (!content) return;
@@ -606,6 +672,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   // reply is a detached job, so aborting the browser's fetch alone would not stop it; only
   // when the server does not know the job is the stream abandoned locally.
   stopBtn.addEventListener("click", async () => {
+    stopRequested = true;
     let cancelled = false;
     if (currentGenerationId) {
       try {
@@ -618,5 +685,7 @@ export async function loadConversationIntoPanel(panel, conversationId, callbacks
   });
 
   const running = await api.activeGeneration(conversationId).catch(() => null);
-  if (running?.active && !leaving()) resume(running.generation_id);
+  if (leaving()) return;
+  sendBtn.disabled = !conv.endpoint_id || !currentModelId;
+  if (running?.active) resume(running.generation_id);
 }

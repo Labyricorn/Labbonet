@@ -370,3 +370,13 @@ not reused source or presentation. No branch or PR.
 **Verification:** `gofmt -l`, `go vet`, `go test ./...`, build pass; new tests cover disabled endpoints (zero requests), EOF/terminator cases, reroll/branch-local summaries and attachment-header forms. No live provider calls; `-race` still unavailable (CGO off).
 
 **DOX:** triage 2.3, 2.4, 2.9, 2.12e checked; AGENTS.md unchanged (no contract change).
+
+## 2026-10-18 — Triage Batch C: chat frontend lifecycle (3.1, 3.3, 3.5)
+
+**Changed:** `chat.js` mounts through a wrapper that disposes on failure, registers disposal before any await, guards shared-DOM continuations and gates Send/submit until init finishes; `models.js` honours the lifecycle signal; the composer restores unsent drafts only when state shows nothing was stored; explicit Stop is tracked separately from aborted watches and `reattach` completes cancellation instead of resuming.
+
+**Learnings:** the pre-commit Stop path depends on the Batch A server change (aborting the POST cancels preparation), so UI and server semantics must stay paired. A 502 or dropped connection cannot be classified without checking stored messages.
+
+**Verification:** `node --check` on changed modules; Go format/vet/tests/build pass; in the browser pane the app loads, rapid thread switching leaves a single selector, an early submit is prevented, `/tests/render.html` passes, console clean. Draft restore and Stop flows were not exercised in a browser (no fake provider reachable from the UI); no wide/side-panel visual comparison was done, and no presentation CSS changed.
+
+**DOX:** triage 3.1, 3.3, 3.5 checked; frontend/AGENTS.md unchanged (contracts already state Stop-through-API and detached replies).
