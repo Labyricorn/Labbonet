@@ -23,6 +23,10 @@ import (
 var ErrNoModelSelected = errors.New("conversation has no endpoint or model selected")
 var ErrPrompt = errors.New("invalid prompt")
 
+// ErrEndpointDisabled is returned when new traffic would go through a disabled endpoint.
+// Requests already running on it are not cancelled; they drain.
+var ErrEndpointDisabled = errors.New("endpoint is disabled; enable it before sending")
+
 // ErrModelNotLoaded is returned when the target model's cached state
 // is not-loaded and the request did not set ConfirmLoad
 // (SECURITY-MODEL.md S15, PROVIDER-SPEC.md section 6).
@@ -136,6 +140,9 @@ func (rn *Runner) run(ctx context.Context, req Request, beforeCommit func() erro
 	if err != nil {
 		return fmt.Errorf("endpoint not found: %w", err)
 	}
+	if !ep.Enabled {
+		return ErrEndpointDisabled
+	}
 
 	if !req.ConfirmLoad {
 		if err := rn.refuseIfNotLoaded(ctx, endpointID, modelID); err != nil {
@@ -214,7 +221,7 @@ func (rn *Runner) run(ctx context.Context, req Request, beforeCommit func() erro
 		macroValues[strings.ToLower(m.Trigger)] = m.Text
 	}
 	now := time.Now()
-	mem, err := rn.prepareMemory(ctx, memoryInput{Conv: conv, Endpoint: ep, ModelID: modelID, Character: character, Persona: persona, Path: path,
+	mem, err := rn.prepareMemory(ctx, memoryInput{Conv: conv, Endpoint: ep, ModelID: modelID, Character: character, Persona: persona, Path: path, PendingID: req.RegenerateParentID,
 		User: userContent, Turn: turn, ContextLimit: contextLimit, MaxTokens: req.MaxTokens, Now: now})
 	if err != nil {
 		return err

@@ -3,6 +3,7 @@ package generate
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -690,5 +691,68 @@ func TestRefusedTurnDoesNotAgeOrAddWarmth(t *testing.T) {
 		if after[id] != n {
 			t.Fatalf("warmth aged by a refused turn: %v -> %v", before, after)
 		}
+	}
+}
+
+// 2.3: a disabled endpoint receives no new traffic from chat or manual summary.
+func TestDisabledEndpointReceivesNoRequests(t *testing.T) {
+	p := newMemProvider(t)
+	rn, st := newRunner(t)
+	ep, conv := mustEndpointAndConversation(t, st, p.URL, "m")
+	setModel(t, st, ep.ID, "m", "llm", "loaded", 4000)
+	fillConversation(t, st, conv.ID, 2)
+	if _, err := st.UpdateEndpoint(t.Context(), ep.ID, ep.Name, false, ep.ConcurrencyLimit); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(t, rn, conv.ID, "hello"); !errors.Is(err, ErrEndpointDisabled) {
+		t.Fatalf("Run err = %v", err)
+	}
+	if _, _, err := rn.SummarizeNow(t.Context(), conv.ID); !errors.Is(err, ErrEndpointDisabled) {
+		t.Fatalf("SummarizeNow err = %v", err)
+	}
+	if chats, sums, embeds := p.counts(); chats+sums+embeds != 0 {
+		t.Fatalf("disabled endpoint received %d/%d/%d requests", chats, sums, embeds)
+	}
+	if msgs, _ := st.ListMessages(t.Context(), conv.ID); len(msgs) != 4 {
+		t.Fatalf("refused send stored messages: %d", len(msgs))
+	}
+}
+
+// 2.9: a manual summary survives rerolling the reply it was written beside, but stays off a
+// branch that does not contain the user message it is anchored to.
+func TestManualSummarySurvivesRerollAndStaysBranchLocal(t *testing.T) {
+	p := newMemProvider(t)
+	rn, st := newRunner(t)
+	ep, conv := mustEndpointAndConversation(t, st, p.URL, "m")
+	setModel(t, st, ep.ID, "m", "llm", "loaded", 4000)
+	fillConversation(t, st, conv.ID, 2)
+	path, _, err := st.ActivePath(t.Context(), conv.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	anchor := store.ManualAnchor(path)
+	if *anchor != path[2].ID {
+		t.Fatalf("anchor = %d, want the user message the last reply answers (%d)", *anchor, path[2].ID)
+	}
+	if _, err := st.AddSummary(t.Context(), store.Summary{ConversationID: conv.ID, Text: "MANUAL-NOTE", AnchorMessageID: anchor, Source: "manual"}, 0); err != nil {
+		t.Fatal(err)
+	}
+	user := path[2].ID
+	if err := rn.Run(t.Context(), Request{ConversationID: conv.ID, RegenerateParentID: &user}, nil, noop); err != nil {
+		t.Fatal(err)
+	}
+	if s := sent(p.lastChat()); !strings.Contains(s, "MANUAL-NOTE") {
+		t.Fatalf("manual summary lost on reroll: %s", s)
+	}
+	// Editing the first message makes a branch without the anchor: no leak.
+	c, _ := st.GetConversation(t.Context(), conv.ID)
+	if _, err := st.EditMessage(t.Context(), conv.ID, path[0].ID, "EDITED-OPENING", c.Revision); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(t, rn, conv.ID, "after edit"); err != nil {
+		t.Fatal(err)
+	}
+	if s := sent(p.lastChat()); strings.Contains(s, "MANUAL-NOTE") {
+		t.Fatalf("manual summary leaked onto a sibling branch: %s", s)
 	}
 }

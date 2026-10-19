@@ -384,3 +384,19 @@ func (s *Store) ListRetrievalRecords(ctx context.Context, convID int64, limit in
 	}
 	return out, rows.Err()
 }
+
+// ManualAnchor picks the message a hand-edited or cleared summary is scoped to, independently of
+// how far the summary archives. It is the user message the visible reply answers, so rerolling
+// the last reply (a new sibling under that user message) keeps the edit, while a branch that
+// does not contain that user message does not see it. With no reply yet it is the leaf.
+func ManualAnchor(path []PathMessage) *int64 {
+	if len(path) == 0 {
+		return nil
+	}
+	i := len(path) - 1
+	if path[i].Role == "assistant" && i > 0 && path[i-1].Role == "user" {
+		i--
+	}
+	id := path[i].ID
+	return &id
+}

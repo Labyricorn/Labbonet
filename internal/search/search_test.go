@@ -24,12 +24,15 @@ func fake(t *testing.T, h http.HandlerFunc) *egress.SearchClient {
 func TestQuery(t *testing.T) {
 	long := strings.Repeat("word ", 200)
 	for name, c := range map[string]struct{ in, want string }{
-		"plain":       {"  what   is\n a tide? ", "what is a tide?"},
-		"attachment":  {"summarise this\n\n[Attached file: a.txt]\n```\nsecret\n```", "summarise this"},
-		"control":     {"a\x00b‮c d", "abc d"},
-		"macro tags":  {"why tides? {{WRAP_UP}} {{user}} please", "why tides? please"},
-		"empty":       {" \n\t ", ""},
-		"only attach": {"\n\n[Attached file: a.txt]\nx", ""},
+		"plain":                       {"  what   is\n a tide? ", "what is a tide?"},
+		"attachment":                  {"summarise this\n\n[Attached file: a.txt]\n```\nsecret\n```", "summarise this"},
+		"control":                     {"a\x00b‮c d", "abc d"},
+		"macro tags":                  {"why tides? {{WRAP_UP}} {{user}} please", "why tides? please"},
+		"empty":                       {" \n\t ", ""},
+		"only attach":                 {"\n\n[Attached file: a.txt]\nx", ""},
+		"attach at start":             {"[Attached file: a.txt]\n```\nsecret\n```", ""},
+		"attach after single newline": {"hello\n[Attached file: a.txt]\nsecret", "hello"},
+		"attach after crlf":           {"hello\r\n\r\n[Attached file: a.txt]\r\nsecret", "hello"},
 	} {
 		if got := Query(c.in); got != c.want {
 			t.Errorf("%s: Query = %q, want %q", name, got, c.want)

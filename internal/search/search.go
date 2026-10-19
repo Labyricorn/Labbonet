@@ -72,14 +72,19 @@ type Result struct {
 	Content string `json:"content"`
 }
 
+var attachHeader = regexp.MustCompile(`(?m)^\[Attached file:`)
+
 var macroTag = regexp.MustCompile(`\{\{[A-Za-z][A-Za-z0-9_]*\}\}`)
 
 // Query turns a user message into the single-line query sent to the service: the typed
 // text before any attachment block, with {{macro}} tags removed (they are neither expanded
 // nor sent), whitespace collapsed, bounded. Empty means there is nothing to search for.
 func Query(message string) string {
-	if i := strings.Index(message, "\n\n[Attached file:"); i >= 0 {
-		message = message[:i]
+	// Attachments are appended as "[Attached file: name]" blocks. Cut at the first such header
+	// at the start of any line (start of message, after LF or CRLF), so a regenerated, edited or
+	// imported message never sends file content, whatever blank lines surround the block.
+	if loc := attachHeader.FindStringIndex(message); loc != nil {
+		message = message[:loc[0]]
 	}
 	return clean(macroTag.ReplaceAllString(message, " "), MaxQueryRunes)
 }

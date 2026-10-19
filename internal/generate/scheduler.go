@@ -399,6 +399,8 @@ func classifyStart(err error) (string, string) {
 	switch {
 	case errors.Is(err, ErrModelNotLoaded):
 		return store.RunSkipped, "the thread's model is not loaded; scheduled runs never load a model"
+	case errors.Is(err, ErrEndpointDisabled):
+		return store.RunSkipped, "the thread's endpoint is disabled"
 	case errors.Is(err, ErrNoModelSelected):
 		return store.RunSkipped, "the thread has no endpoint or model selected"
 	case errors.Is(err, sql.ErrNoRows):

@@ -360,3 +360,13 @@ not reused source or presentation. No branch or PR.
 **Verification:** `gofmt -l`, `go vet`, `go test ./...`, `go build ./cmd/labbonet` pass. `go test -race` could not run (CGO disabled in this environment), so race-freedom is by construction plus concurrent-loop tests only. No live provider calls. No test for `main` failure paths (no seam).
 
 **DOX:** triage tasks 1.1-1.5 checked with residuals; AGENTS.md files unchanged (no contract/ownership change).
+
+## 2026-10-18 — Triage Batch B: privacy and correctness (2.3, 2.4, 2.9, 2.12e)
+
+**Changed:** disabled endpoints are refused at `Run`/`SummarizeNow`/chat fallback; the OpenAI stream requires a terminator; manual summary branch scope (`store.ManualAnchor`) is separated from archive coverage and regeneration sees its pending user message; search queries cut at any line-start attachment header.
+
+**Learnings:** the old leaf anchor could never survive a reroll because regeneration drops the answered user message from the path before memory preparation; anchoring on that user message plus including it in branch membership fixes it without moving anchors to shared ancestors. All existing fake streams already carried terminators.
+
+**Verification:** `gofmt -l`, `go vet`, `go test ./...`, build pass; new tests cover disabled endpoints (zero requests), EOF/terminator cases, reroll/branch-local summaries and attachment-header forms. No live provider calls; `-race` still unavailable (CGO off).
+
+**DOX:** triage 2.3, 2.4, 2.9, 2.12e checked; AGENTS.md unchanged (no contract change).

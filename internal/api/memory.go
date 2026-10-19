@@ -27,7 +27,7 @@ func memoryError(w http.ResponseWriter, err error) {
 		http.Error(w, "conversation not found", http.StatusNotFound)
 	case errors.Is(err, store.ErrConflict):
 		http.Error(w, "The summary or settings changed in another tab or window; reload before saving", http.StatusConflict)
-	case errors.Is(err, store.ErrBusy), errors.Is(err, generate.ErrNoModelSelected):
+	case errors.Is(err, store.ErrBusy), errors.Is(err, generate.ErrNoModelSelected), errors.Is(err, generate.ErrEndpointDisabled):
 		http.Error(w, err.Error(), http.StatusConflict)
 	case errors.Is(err, store.ErrInvalidMemory), memory.IsSettingError(err), errors.Is(err, generate.ErrNothingToSummarise):
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -213,17 +213,11 @@ func (m *Memory) EditSummary(w http.ResponseWriter, r *http.Request) {
 		memoryError(w, err)
 		return
 	}
-	row := store.Summary{ConversationID: id, Text: in.Text, Source: "manual"}
-	if len(path) > 0 {
-		leaf := path[len(path)-1].ID
-		row.AnchorMessageID = &leaf
-	}
+	// Branch scope (anchor) and archive coverage (through/count) are independent: an edit keeps
+	// the coverage of the summary it replaces but is visible only where its anchor is.
+	row := store.Summary{ConversationID: id, Text: in.Text, Source: "manual", AnchorMessageID: store.ManualAnchor(path)}
 	if in.Text != "" && eff != nil {
-		row.ThroughMessageID, row.AnchorMessageID, row.ArchivedCount = eff.ThroughMessageID, eff.AnchorMessageID, eff.ArchivedCount
-		if row.AnchorMessageID == nil && len(path) > 0 {
-			leaf := path[len(path)-1].ID
-			row.AnchorMessageID = &leaf
-		}
+		row.ThroughMessageID, row.ArchivedCount = eff.ThroughMessageID, eff.ArchivedCount
 	}
 	saved, err := m.Store.AddSummary(r.Context(), row, in.ExpectedSeq)
 	if err != nil {

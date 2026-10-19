@@ -75,12 +75,15 @@ func (rn *Runner) commitWarmth(convID int64, w memory.Warmth) {
 }
 
 type memoryInput struct {
-	Conv         *store.Conversation
-	Endpoint     *store.Endpoint
-	ModelID      string
-	Character    *cast.Card
-	Persona      *cast.Card
-	Path         []store.PathMessage // the visible branch before the pending user message
+	Conv      *store.Conversation
+	Endpoint  *store.Endpoint
+	ModelID   string
+	Character *cast.Card
+	Persona   *cast.Card
+	Path      []store.PathMessage // the visible branch before the pending user message
+	// PendingID is the stored user message a regeneration answers. It is not in Path (it is the
+	// pending message) but a summary anchored there still belongs to this branch.
+	PendingID    *int64
 	User         string
 	Turn         int
 	ContextLimit int
@@ -186,6 +189,9 @@ func (rn *Runner) prepareMemory(ctx context.Context, in memoryInput) (*memoryRun
 	onPath := make(map[int64]int, len(in.Path))
 	for i, m := range in.Path {
 		onPath[m.ID] = i
+	}
+	if in.PendingID != nil {
+		onPath[*in.PendingID] = len(in.Path)
 	}
 	eff, err := rn.Store.EffectiveSummary(ctx, in.Conv.ID, onPath)
 	if err != nil {
@@ -323,6 +329,9 @@ func (rn *Runner) SummarizeNow(ctx context.Context, convID int64) (*store.Summar
 	if err != nil {
 		return nil, nil, err
 	}
+	if !ep.Enabled {
+		return nil, nil, ErrEndpointDisabled
+	}
 	_, character, persona, err := rn.Store.ReadCast(ctx, convID)
 	if err != nil {
 		return nil, nil, err
@@ -393,7 +402,7 @@ func (rn *Runner) summarizeWithFallback(ctx context.Context, in memoryInput, s m
 			choices = append(choices, choice{ep, s.CompressionModel})
 		}
 	}
-	if len(choices) == 0 || choices[0].ep.ID != in.Endpoint.ID || choices[0].model != in.ModelID {
+	if (len(choices) == 0 || choices[0].ep.ID != in.Endpoint.ID || choices[0].model != in.ModelID) && in.Endpoint.Enabled {
 		choices = append(choices, choice{in.Endpoint, in.ModelID})
 	}
 	var firstErr error

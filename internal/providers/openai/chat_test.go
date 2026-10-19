@@ -207,3 +207,44 @@ func TestBuildChatBody_NeverSendsStrataMCPOrTTL(t *testing.T) {
 		t.Fatalf("request body contains a forbidden field: %s", s)
 	}
 }
+
+// 2.4: a clean EOF with no [DONE] and no finish reason is a truncated stream.
+func TestStreamChat_CleanEOFWithoutTerminatorIsProtocolError(t *testing.T) {
+	for name, sse := range map[string]string{
+		"empty":   "",
+		"partial": `data: {"choices":[{"delta":{"content":"Hel"},"finish_reason":null}]}` + "\n\n",
+	} {
+		srv := fakeprovider.New(fakeprovider.Script{ChatSSE: sse})
+		a := New(egress.NewClient(), targetFor(t, srv.URL))
+		a.profile = ProfileLMStudio
+		var text string
+		_, err := a.StreamChat(context.Background(), chatReq(), func(ev providers.Event) error {
+			text += ev.Content
+			return nil
+		})
+		srv.Close()
+		var pe *providers.Error
+		if !errors.As(err, &pe) || pe.Kind != providers.ErrProtocolError {
+			t.Fatalf("%s: err = %v, want a protocol error", name, err)
+		}
+		if name == "partial" && text != "Hel" {
+			t.Fatalf("partial text = %q, want it retained", text)
+		}
+	}
+}
+
+func TestStreamChat_FinishWithoutDoneAndDoneWithoutFinishAreComplete(t *testing.T) {
+	for name, sse := range map[string]string{
+		"finish only": `data: {"choices":[{"delta":{"content":"OK"},"finish_reason":"stop"}]}` + "\n\n",
+		"done only":   `data: {"choices":[{"delta":{"content":"OK"},"finish_reason":null}]}` + "\n\n" + "data: [DONE]\n\n",
+	} {
+		srv := fakeprovider.New(fakeprovider.Script{ChatSSE: sse})
+		a := New(egress.NewClient(), targetFor(t, srv.URL))
+		a.profile = ProfileLMStudio
+		_, err := a.StreamChat(context.Background(), chatReq(), func(providers.Event) error { return nil })
+		srv.Close()
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+	}
+}

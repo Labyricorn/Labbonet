@@ -164,7 +164,7 @@ func (g *Generate) Generate(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Conversation changed or is generating; reload before sending", http.StatusConflict)
 		case errors.Is(err, generate.ErrPrompt), errors.Is(err, generate.ErrAttachment), errors.Is(err, generate.ErrLimits):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, generate.ErrModelNotLoaded), errors.Is(err, generate.ErrNoModelSelected), errors.Is(err, generate.ErrSearch):
+		case errors.Is(err, generate.ErrModelNotLoaded), errors.Is(err, generate.ErrNoModelSelected), errors.Is(err, generate.ErrEndpointDisabled), errors.Is(err, generate.ErrSearch):
 			http.Error(w, err.Error(), http.StatusConflict)
 		default:
 			http.Error(w, err.Error(), http.StatusBadGateway)
