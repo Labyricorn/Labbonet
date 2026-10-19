@@ -61,6 +61,9 @@ func (c *Client) Do(ctx context.Context, target Target, method, path string, bod
 		Transport: &http.Transport{
 			DialContext:           dialGuard(target.PrivacyClass).DialContext,
 			ResponseHeaderTimeout: DefaultFirstByteTimeout,
+			// A transport is built per request, so a pooled idle connection could never be
+			// reused and would outlive the call; close it when the response ends.
+			DisableKeepAlives: true,
 		},
 		CheckRedirect: refuseRedirects,
 	}

@@ -58,6 +58,7 @@ func (c *SearchClient) Post(ctx context.Context, key string, body io.Reader) (in
 		Transport: &http.Transport{
 			DialContext:           dialGuard(c.class).DialContext,
 			ResponseHeaderTimeout: searchTimeout,
+			DisableKeepAlives:     true, // per-call transport: never leave an idle pool behind
 		},
 		CheckRedirect: refuseRedirects,
 	}

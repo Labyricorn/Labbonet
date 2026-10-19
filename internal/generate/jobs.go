@@ -132,12 +132,20 @@ type Jobs struct {
 	byConv map[int64]*Job
 	recent []*Job
 	wg     sync.WaitGroup
+
+	base       context.Context // parent of every run; cancelled by Shutdown
+	baseCancel context.CancelFunc
 }
 
 // NewJobs builds a job service around rn.
 func NewJobs(rn *Runner) *Jobs {
-	return &Jobs{Runner: rn, byGen: map[int64]*Job{}, byConv: map[int64]*Job{}}
+	base, cancel := context.WithCancel(context.Background())
+	return &Jobs{Runner: rn, byGen: map[int64]*Job{}, byConv: map[int64]*Job{}, base: base, baseCancel: cancel}
 }
+
+// Shutdown aborts every job, including ones still preparing or between storing their turn and
+// registering for Stop, which Registry.CancelAll cannot see. New starts are refused afterwards.
+func (js *Jobs) Shutdown() { js.baseCancel() }
 
 type started struct {
 	job *Job
@@ -156,7 +164,13 @@ func (js *Jobs) Start(req Request) (*Job, error) {
 // abandoned and nothing is stored. Once the turn exists the job no longer depends on it.
 func (js *Jobs) StartContext(prepare context.Context, req Request) (*Job, error) {
 	res := make(chan started, 1)
-	runCtx, cancelRun := context.WithCancel(context.Background())
+	if err := js.base.Err(); err != nil {
+		return nil, err
+	}
+	if err := prepare.Err(); err != nil {
+		return nil, err
+	}
+	runCtx, cancelRun := context.WithCancel(js.base)
 	var gate sync.Mutex
 	begun := false
 	stopWatch := make(chan struct{})
@@ -177,10 +191,19 @@ func (js *Jobs) StartContext(prepare context.Context, req Request) (*Job, error)
 		defer cancelRun()
 		defer close(stopWatch)
 		var job *Job
-		err := js.Runner.Run(runCtx, req, func(id int64) {
+		// The check and the commit marker share one critical section with the watcher
+		// above: either the watcher cancels first and nothing is stored, or the turn is
+		// committed first and later disconnects no longer touch it.
+		beforeCommit := func() error {
 			gate.Lock()
+			defer gate.Unlock()
+			if err := runCtx.Err(); err != nil {
+				return err
+			}
 			begun = true
-			gate.Unlock()
+			return nil
+		}
+		err := js.Runner.run(runCtx, req, beforeCommit, func(id int64) {
 			job = newJob(id, req.ConversationID)
 			js.mu.Lock()
 			js.byGen[id], js.byConv[req.ConversationID] = job, job

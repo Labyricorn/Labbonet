@@ -101,6 +101,15 @@ type Runner struct {
 // chance to learn it before streaming starts, for example to let a
 // client cancel a generation whose first event hasn't arrived yet.
 func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generationID int64), emit func(providers.Event) error) error {
+	return rn.run(ctx, req, nil, onStarted, emit)
+}
+
+// run is Run with an optional beforeCommit hook. It is called immediately before the turn
+// is stored: a non-nil error aborts the run with nothing stored, and a nil return means the
+// caller must treat the turn as committed from then on (JOBS: no further preparation-phase
+// cancellation). Calling it just before StartTurn, under the caller's lock, is what makes
+// "cancel before commit" and "commit" mutually exclusive.
+func (rn *Runner) run(ctx context.Context, req Request, beforeCommit func() error, onStarted func(generationID int64), emit func(providers.Event) error) error {
 	if err := validateLimits(req.MaxReplyChars, req.ReasoningLimitChars); err != nil {
 		return err
 	}
@@ -237,12 +246,26 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 	if req.RegenerateParentID == nil {
 		turnSpec.User = &userContent
 	}
+	if beforeCommit != nil {
+		if err := beforeCommit(); err != nil {
+			return err
+		}
+	}
 	msgID, genID, err := rn.Store.StartTurn(ctx, turnSpec)
 	if err != nil {
 		return fmt.Errorf("persist turn: %w", err)
 	}
 	assistantMsg := &store.Message{ID: msgID}
 	gen := &store.Generation{ID: genID}
+	mem.CommitWarmth()
+	// Register for Stop/shutdown and announce the ID as soon as the turn exists, before the
+	// optional record writes below, so there is no window with a stored but unowned turn.
+	runCtx, cancel := context.WithCancel(ctx)
+	rn.Registry.Register(gen.ID, cancel)
+	defer func() { cancel(); rn.Registry.Unregister(gen.ID) }()
+	if onStarted != nil {
+		onStarted(gen.ID)
+	}
 	if mem.Keep {
 		record := mem.Record
 		_ = persistWrite(func(c context.Context) error {
@@ -255,12 +278,6 @@ func (rn *Runner) Run(ctx context.Context, req Request, onStarted func(generatio
 		_ = persistWrite(func(c context.Context) error {
 			return rn.Store.AddSearchRecord(c, req.ConversationID, &genID, record)
 		})
-	}
-	runCtx, cancel := context.WithCancel(ctx)
-	rn.Registry.Register(gen.ID, cancel)
-	defer func() { cancel(); rn.Registry.Unregister(gen.ID) }()
-	if onStarted != nil {
-		onStarted(gen.ID)
 	}
 	target, err := rn.targetFor(runCtx, ep)
 	if err != nil {

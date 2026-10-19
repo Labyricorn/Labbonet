@@ -350,3 +350,13 @@ and visual approval remain unchanged.
 boundary, shared workflow, runtime contract or frontend file changed. Reuse inventory,
 provenance, NOTICE and LICENSE unchanged: this step adds original review documentation,
 not reused source or presentation. No branch or PR.
+
+## 2026-10-18 — Triage Batch A: backend lifecycle and concurrency (1.1-1.5)
+
+**Changed:** per-request transports disable keep-alive (client and search); `Slots` is a stable per-endpoint gate with FIFO cancellable waiters; retrieval warmth is a request-local copy committed only for a stored turn; `Runner.run(beforeCommit)` makes pre-commit cancellation and commit exclusive and registers for Stop before optional writes; `Jobs.Shutdown` plus a once-guarded `cleanup` in `main` run on every exit after scheduler start.
+
+**Learnings:** the old "Run then onStarted" handoff could not be closed by moving the callback alone; the decision point has to share the watcher's lock. Registry.CancelAll cannot see preparing jobs or the gap before Register, so a Jobs-level base context is needed. Rejected: copying the warmth map alone (does not stop stale commits); keep-alive pool cleanup (transports are never reused).
+
+**Verification:** `gofmt -l`, `go vet`, `go test ./...`, `go build ./cmd/labbonet` pass. `go test -race` could not run (CGO disabled in this environment), so race-freedom is by construction plus concurrent-loop tests only. No live provider calls. No test for `main` failure paths (no seam).
+
+**DOX:** triage tasks 1.1-1.5 checked with residuals; AGENTS.md files unchanged (no contract/ownership change).

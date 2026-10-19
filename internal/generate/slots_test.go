@@ -84,3 +84,90 @@ func TestSlots_DifferentEndpointsDoNotContend(t *testing.T) {
 		t.Fatal("a different endpoint's acquire was blocked by endpoint 1's slot")
 	}
 }
+
+// 1.4: changing the limit while a slot is held must not create a second pool.
+func TestSlots_LimitChangeKeepsActiveCount(t *testing.T) {
+	s := NewSlots()
+	ctx := context.Background()
+	release1, err := s.Acquire(ctx, 1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Raised to 2: one more holder fits, a third waits.
+	release2, err := s.Acquire(ctx, 1, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	third := make(chan func(), 1)
+	go func() {
+		r, err := s.Acquire(ctx, 1, 2)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		third <- r
+	}()
+	select {
+	case <-third:
+		t.Fatal("third holder admitted beyond the limit of 2")
+	case <-time.After(100 * time.Millisecond):
+	}
+	// Lowered to 1 while two hold: releasing one must not admit the waiter.
+	lowered := make(chan func(), 1)
+	go func() {
+		r, err := s.Acquire(ctx, 1, 1)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		lowered <- r
+	}()
+	time.Sleep(50 * time.Millisecond)
+	release1()
+	select {
+	case <-third:
+		t.Fatal("waiter admitted while one holder still fills the lowered limit")
+	case <-time.After(100 * time.Millisecond):
+	}
+	release2()
+	select {
+	case r := <-third:
+		r()
+	case <-time.After(time.Second):
+		t.Fatal("waiter not admitted after holders drained")
+	}
+	select {
+	case r := <-lowered:
+		r()
+	case <-time.After(time.Second):
+		t.Fatal("second waiter not admitted")
+	}
+}
+
+func TestSlots_CancelledWaiterFreesQueueAndDoubleReleaseIsSafe(t *testing.T) {
+	s := NewSlots()
+	release, err := s.Acquire(context.Background(), 1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cctx, cancel := context.WithCancel(context.Background())
+	errc := make(chan error, 1)
+	go func() { _, err := s.Acquire(cctx, 1, 1); errc <- err }()
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+	if err := <-errc; err == nil {
+		t.Fatal("cancelled waiter did not error")
+	}
+	release()
+	release() // must not free a slot twice
+	r1, err := s.Acquire(context.Background(), 1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	short, cancel2 := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel2()
+	if _, err := s.Acquire(short, 1, 1); err == nil {
+		t.Fatal("double release granted extra capacity")
+	}
+	r1()
+}

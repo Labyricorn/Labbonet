@@ -636,3 +636,59 @@ func TestRunnerEmbeddingFailureDegradesToTags(t *testing.T) {
 		t.Fatalf("cache written after a failure: %+v", stats)
 	}
 }
+
+// 1.1: retrieval works on a private copy of the warmth map and publishes it only for a stored turn.
+func TestWarmthCopyIsPrivateUntilCommitted(t *testing.T) {
+	rn := &Runner{}
+	rn.commitWarmth(1, memory.Warmth{"a": 3})
+	w := rn.warmthCopy(1)
+	w["a"], w["b"] = 1, 2
+	if got := rn.warmthCopy(1); len(got) != 1 || got["a"] != 3 {
+		t.Fatalf("committed warmth changed before commit: %v", got)
+	}
+	rn.commitWarmth(1, w)
+	if got := rn.warmthCopy(1); got["a"] != 1 || got["b"] != 2 {
+		t.Fatalf("commit lost: %v", got)
+	}
+	// Overlapping readers/writers must be race-free (run with -race).
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				c := rn.warmthCopy(1)
+				c["x"]++
+				rn.commitWarmth(1, c)
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestRefusedTurnDoesNotAgeOrAddWarmth(t *testing.T) {
+	p := newMemProvider(t)
+	rn, st := newRunner(t)
+	_, conv := mustEndpointAndConversation(t, st, p.URL, "m")
+	saveCharacter(t, st, conv.ID, testBook)
+	if err := run(t, rn, conv.ID, "is that an angel?"); err != nil {
+		t.Fatal(err)
+	}
+	before := rn.warmthCopy(conv.ID)
+	if len(before) == 0 {
+		t.Skip("default settings keep no warmth; nothing to protect")
+	}
+	err := rn.Run(t.Context(), Request{ConversationID: conv.ID, UserContent: "angel again", ExpectedRevision: 9999}, nil, noop)
+	if err == nil {
+		t.Fatal("stale revision was accepted")
+	}
+	after := rn.warmthCopy(conv.ID)
+	if len(after) != len(before) {
+		t.Fatalf("warmth changed by a refused turn: %v -> %v", before, after)
+	}
+	for id, n := range before {
+		if after[id] != n {
+			t.Fatalf("warmth aged by a refused turn: %v -> %v", before, after)
+		}
+	}
+}

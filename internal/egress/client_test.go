@@ -2,11 +2,14 @@ package egress
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 )
 
 func mustParseURL(t *testing.T, raw string) *url.URL {
@@ -196,5 +199,46 @@ func TestDoLimited_ReturnsBodyUnderLimit(t *testing.T) {
 	}
 	if string(data) != "ok" {
 		t.Fatalf("data = %q, want %q", data, "ok")
+	}
+}
+
+// 1.2: a completed request must not leave its connection open on a per-request transport.
+func TestDo_ClosesConnectionAfterResponse(t *testing.T) {
+	var mu sync.Mutex
+	open := map[net.Conn]bool{}
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	srv.Config.ConnState = func(c net.Conn, st http.ConnState) {
+		mu.Lock()
+		defer mu.Unlock()
+		switch st {
+		case http.StateNew:
+			open[c] = true
+		case http.StateClosed, http.StateHijacked:
+			delete(open, c)
+		}
+	}
+	srv.Start()
+	defer srv.Close()
+	target := Target{BaseURL: mustParseURL(t, srv.URL), PrivacyClass: ClassLocal}
+	for i := 0; i < 5; i++ {
+		_, _, err := NewClient().DoLimited(context.Background(), target, http.MethodGet, "/v1/models", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		mu.Lock()
+		n := len(open)
+		mu.Unlock()
+		if n == 0 {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("%d connections still open after completed requests", n)
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }

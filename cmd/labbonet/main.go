@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 
@@ -185,6 +186,25 @@ func run(args []string) error {
 	} else if n > 0 {
 		fmt.Printf("Marked %d scheduled run(s) left running by the previous run as interrupted.\n", n)
 	}
+	// From here on every exit (Listen failure, Serve failure, signal) must stop launches, abort
+	// work and let it persist before the deferred store close runs.
+	var cleanupOnce sync.Once
+	cleanup := func() {
+		cleanupOnce.Do(func() {
+			// ARCHITECTURE.md section 6: "cancel running generations (partial text saved)".
+			// The scheduler stops first so no timed run starts while the process is closing;
+			// Shutdown reaches jobs still preparing, which the registry does not know about.
+			scheduler.Stop()
+			registry.CancelAll()
+			jobs.Shutdown()
+			// Let cancelled jobs store their partial text before the database closes.
+			waitCtx, waitCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			jobs.Wait(waitCtx)
+			scheduler.Wait(waitCtx)
+			waitCancel()
+		})
+	}
+	defer cleanup()
 	schedules := &api.Schedules{Store: st, Sched: scheduler}
 	srv.Handle("GET /api/schedules", http.HandlerFunc(schedules.List))
 	srv.Handle("POST /api/schedules", http.HandlerFunc(schedules.Save))
@@ -231,19 +251,7 @@ func run(args []string) error {
 	case <-ctx.Done():
 	}
 
-	// ARCHITECTURE.md section 6: "cancel running generations (partial
-	// text saved)". http.Server.Shutdown alone only waits for in-flight
-	// handlers to return; it never cancels their contexts, so a
-	// streaming request would otherwise hold the shutdown open until
-	// the upstream provider itself finishes or the client disconnects.
-	// The scheduler stops first so no timed run starts while the process is closing.
-	scheduler.Stop()
-	registry.CancelAll()
-	// Let cancelled jobs store their partial text before the database closes.
-	waitCtx, waitCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	jobs.Wait(waitCtx)
-	scheduler.Wait(waitCtx)
-	waitCancel()
+	cleanup()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

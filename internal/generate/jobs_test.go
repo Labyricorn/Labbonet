@@ -264,3 +264,64 @@ func TestShutdownCancelKeepsPartialAndWaitReturns(t *testing.T) {
 		t.Fatalf("status = %q", msgs[1].Status)
 	}
 }
+
+// 1.3: a preparation context that ended before the turn was stored stores nothing, and one
+// that ends after the job exists no longer affects it.
+func TestStartContext_CancelBeforeCommitStoresNothing(t *testing.T) {
+	srv := scripted(t, sse("hello"), 0)
+	defer srv.Close()
+	rn, st := newRunner(t)
+	_, conv := mustEndpointAndConversation(t, st, srv.URL, "m")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if job, err := NewJobs(rn).StartContext(ctx, Request{ConversationID: conv.ID, UserContent: "hi"}); err == nil || job != nil {
+		t.Fatalf("job=%v err=%v, want a refusal", job, err)
+	}
+	if msgs, _ := st.ListMessages(context.Background(), conv.ID); len(msgs) != 0 {
+		t.Fatalf("%d messages stored for an abandoned start", len(msgs))
+	}
+}
+
+func TestStartContext_CancelAfterCommitKeepsJobRunning(t *testing.T) {
+	srv := scripted(t, sse("hello"), 200*time.Millisecond)
+	defer srv.Close()
+	rn, st := newRunner(t)
+	_, conv := mustEndpointAndConversation(t, st, srv.URL, "m")
+	ctx, cancel := context.WithCancel(context.Background())
+	job, err := NewJobs(rn).StartContext(ctx, Request{ConversationID: conv.ID, UserContent: "hi"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancel()
+	_, _, end := drain(t, job.Subscribe())
+	if end.Status != "complete" {
+		t.Fatalf("end = %+v, want complete after prepare cancellation post-commit", end)
+	}
+}
+
+// 1.3/1.5: Shutdown aborts a job that Registry.CancelAll alone would not reach and the partial
+// reply is stored before Wait returns.
+func TestJobs_ShutdownAbortsAndStoresPartial(t *testing.T) {
+	srv := scripted(t, sse("hello"), 30*time.Second)
+	defer srv.Close()
+	rn, st := newRunner(t)
+	_, conv := mustEndpointAndConversation(t, st, srv.URL, "m")
+	js := NewJobs(rn)
+	if _, err := js.Start(Request{ConversationID: conv.ID, UserContent: "hi"}); err != nil {
+		t.Fatal(err)
+	}
+	js.Shutdown()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	js.Wait(ctx)
+	if ctx.Err() != nil {
+		t.Fatal("Wait did not return after Shutdown")
+	}
+	msgs, _ := st.ListMessages(context.Background(), conv.ID)
+	if len(msgs) != 2 || msgs[1].Status == "streaming" {
+		t.Fatalf("messages after shutdown = %+v", msgs)
+	}
+	if _, err := js.Start(Request{ConversationID: conv.ID, UserContent: "again"}); err == nil {
+		t.Fatal("Start accepted after Shutdown")
+	}
+}

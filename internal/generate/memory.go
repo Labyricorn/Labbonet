@@ -49,16 +49,29 @@ type memoryState struct {
 	warmth map[int64]memory.Warmth
 }
 
-func (rn *Runner) warmthFor(convID int64) memory.Warmth {
+// warmthCopy returns a private working copy of the conversation's committed warmth.
+// Retrieval ages and extends the copy; nothing reaches shared state until commitWarmth, so
+// overlapping preparations cannot race on the map and a turn that is never stored (conflict,
+// cancellation, failed assembly) neither ages nor adds warmth.
+func (rn *Runner) warmthCopy(convID int64) memory.Warmth {
+	rn.mem.mu.Lock()
+	defer rn.mem.mu.Unlock()
+	out := make(memory.Warmth, len(rn.mem.warmth[convID]))
+	for id, n := range rn.mem.warmth[convID] {
+		out[id] = n
+	}
+	return out
+}
+
+// commitWarmth publishes the working copy once the turn it was computed for is stored. When
+// several accepted turns overlap, the last to commit wins.
+func (rn *Runner) commitWarmth(convID int64, w memory.Warmth) {
 	rn.mem.mu.Lock()
 	defer rn.mem.mu.Unlock()
 	if rn.mem.warmth == nil {
 		rn.mem.warmth = map[int64]memory.Warmth{}
 	}
-	if rn.mem.warmth[convID] == nil {
-		rn.mem.warmth[convID] = memory.Warmth{}
-	}
-	return rn.mem.warmth[convID]
+	rn.mem.warmth[convID] = w
 }
 
 type memoryInput struct {
@@ -88,6 +101,20 @@ type memoryRun struct {
 	Notes      []string
 	Record     *memory.Record
 	Keep       bool // worth storing: a storybook, semantic request or summary activity
+
+	// WarmthNext is the working warmth Retrieve produced; commit it with CommitWarmth only
+	// after the turn is stored. ConvID names the conversation it belongs to.
+	WarmthNext memory.Warmth
+	ConvID     int64
+	commit     func(convID int64, w memory.Warmth)
+}
+
+// CommitWarmth publishes the retrieval warmth for an accepted turn. It is a no-op when
+// retrieval did not run.
+func (m *memoryRun) CommitWarmth() {
+	if m.WarmthNext != nil && m.commit != nil {
+		m.commit(m.ConvID, m.WarmthNext)
+	}
 }
 
 // planArchive decides how many of the oldest live messages to replace by a summary.
@@ -557,8 +584,10 @@ func (rn *Runner) prepareRetrieval(ctx context.Context, in memoryInput, s memory
 	}
 	out.Retrieve = func(headroom int) []memory.Injection {
 		sem := rn.semanticFor(ctx, s, book, window, out)
-		inj, r := memory.Retrieve(memory.Input{Book: book, Window: window, Settings: s, Free: headroom, Warmth: rn.warmthFor(in.Conv.ID), Semantic: sem, Now: in.Now})
+		warmth := rn.warmthCopy(in.Conv.ID)
+		inj, r := memory.Retrieve(memory.Input{Book: book, Window: window, Settings: s, Free: headroom, Warmth: warmth, Semantic: sem, Now: in.Now})
 		*out.Record = r
+		out.WarmthNext, out.ConvID, out.commit = warmth, in.Conv.ID, rn.commitWarmth
 		return inj
 	}
 }
