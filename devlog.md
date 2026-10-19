@@ -318,3 +318,35 @@ Parent `G:\.vibe\AGENTS.md` unchanged: shared workflow/ownership boundaries unch
 Prior devlog/evidence observations remain historical. No code/provider operations.
 Documentation consistency, JSON parsing and diff whitespace checks passed; code tests
 were not repeated for this documentation-only status change.
+
+## 2026-10-18 — Post-implementation product report triage
+
+**Reviewed:** owner-supplied backend/frontend product report against `0487709`.
+Created `docs/post_implement_triage.md` with report-numbered, prioritized fix tasks,
+source evidence, proposed approaches and per-task acceptance conditions. All application
+issues remain unfixed in this documentation-only step. No implementation or behavior
+decision was silently accepted. Zero-score fallback ranking and global greeting-macro
+scope are explicitly dispositioned as behavior questions rather than automatic fixes.
+
+**Learnings:** source inspection supports the shared warmth race, pre-detachment
+cancellation window, replaced slot pools, startup cleanup gaps and UI async-state
+findings. Qualified broad report claims: fresh sends use typed-only search text;
+stored/regenerated content has the attachment-marker gap; parser prose remains buffered
+but can merge distinct chunks; same-schedule manual runs have a database guard;
+search request-context cancellation makes an indefinite transport leak less certain.
+The triage distinguishes clean premature EOF from read errors and source-supported
+findings from runtime reproductions.
+
+**Verification:** existing `go test ./...` passed before and after documentation
+changes (several packages cached). `gofmt -l .` was empty; `go vet ./...`,
+`go build ./cmd/labbonet` and diff whitespace checks passed. All 27 numbered report
+items are represented, with compound findings split into 41 open tasks and two
+behavior questions. No live provider/search calls, model
+management, browser reproduction or race-detector claim. Existing owner deferrals
+and visual approval remain unchanged.
+
+**DOX:** added the triage document to project AGENTS ownership. Parent
+`G:\.vibe\AGENTS.md` and `frontend/AGENTS.md` intentionally unchanged: no new child
+boundary, shared workflow, runtime contract or frontend file changed. Reuse inventory,
+provenance, NOTICE and LICENSE unchanged: this step adds original review documentation,
+not reused source or presentation. No branch or PR.

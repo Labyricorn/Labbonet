@@ -20,6 +20,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `docs/GOBBONET-PARITY-PLAN.md`: owner-authorized application parity inventory, implementation milestones and explicit adaptations; milestones 1-7 and milestone 8's audit/fixes are implemented; full parity remains limited by the acceptance record; owner visual approval passed on 2026-10-18.
 - `docs/MILESTONE8-ACCEPTANCE.md`: row-by-row parity audit, browser/regression evidence, compatibility limitations, exceptions and owner acceptance/deferral statuses. It does not grant Phase 1 sign-off.
 - `docs/IMPLEMENTATION-HANDOVER.md`: current parity closeout, remaining verification and review risks; update or retire when superseded.
+- `docs/post_implement_triage.md`: source-reviewed product-report dispositions, prioritized remediation tasks, acceptance checks and unresolved behavior questions; keep status/evidence synchronized as fixes land.
 - `docs/REUSE-LOG.md`: element-by-element GobboNet source/design attribution and Labbonet authorship boundaries (DR-003).
 - `docs/GOBBONET-PROVENANCE.json`: pinned-source hashes and exact reused CSS spans; keep synchronized with the reuse inventory.
 - `NOTICE.md`: public upstream/project attribution and third-party notice links.
