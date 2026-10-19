@@ -380,3 +380,26 @@ not reused source or presentation. No branch or PR.
 **Verification:** `node --check` on changed modules; Go format/vet/tests/build pass; in the browser pane the app loads, rapid thread switching leaves a single selector, an early submit is prevented, `/tests/render.html` passes, console clean. Draft restore and Stop flows were not exercised in a browser (no fake provider reachable from the UI); no wide/side-panel visual comparison was done, and no presentation CSS changed.
 
 **DOX:** triage 3.1, 3.3, 3.5 checked; frontend/AGENTS.md unchanged (contracts already state Stop-through-API and detached replies).
+
+## 2026-10-18 — Home dashboard scrolling fix
+
+**Changed:** enabled vertical overflow on `#view-chat` only while it directly
+contains `.landing-page`. The shared panel had clipped the dashboard with the
+thread layout's `overflow: hidden`; the existing non-shrinking dashboard now scrolls
+as a whole. Active threads retain hidden panel overflow and their message scroller.
+
+**Verification:** baseline and final Go tests pass; gofmt output empty, vet/build
+and diff whitespace checks pass. Chrome at 1920x903 scrolled 489px to the bottom
+of 1336px content in an 847px panel; at 560x800 it scrolled 476px to the bottom
+of 1202px content in a 726px panel. Profile actions are visible in both saved
+`docs/evidence/home-scroll-{wide,narrow}.png` captures. Opened a new thread in the
+isolated test database and confirmed panel overflow returns to hidden. Render
+harness: 13 PASS; app and harness warning/error logs empty. Viewport override reset.
+The original port 4815 instance was unavailable on reload; verification used a
+separate temporary database on port 4816 with `--frontend-dir frontend`. No live
+provider calls. Test server stopped after verification.
+
+**DOX:** reuse inventory records the original integration fix. Parent/project/
+frontend AGENTS files intentionally unchanged: existing scrolling/presentation
+ownership and workflows suffice; no new durable boundary or preference. Provenance,
+NOTICE and LICENSE unchanged: copied spans, source lineage and credits unchanged.

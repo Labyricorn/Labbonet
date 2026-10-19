@@ -9,6 +9,9 @@ button:disabled { opacity: .45; cursor: default; }
 #chat { min-height: 0; }
 .view { flex: 1; min-height: 0; min-width: 0; overflow: auto; }
 #view-chat { display: flex; flex-direction: column; overflow: hidden; }
+/* Labbonet integration, 2026-10-18: the dashboard scrolls as a whole;
+   active threads retain their separate message scroller and fixed composer. */
+#view-chat:has(> .landing-page) { overflow-y: auto; }
 .messages { min-height: 0; }
 #msg-input { field-sizing: content; }
 .message { flex-shrink: 0; overflow-wrap: anywhere; }

@@ -85,6 +85,11 @@ This inventory documents the current implementation's source lineage, not exclus
 | Presentation integration | `frontend/app.css`: original overrides/integration over credited GobboNet CSS (branding, view visibility, endpoint/diagnostic/cast layouts, native dialogs, responsiveness). It is not a claim of an independently designed overall interface. |
 | Verification / documentation | `frontend/tests/`, Go tests and `docs/evidence/` verification records are Labbonet work. Reference screenshots, future imported content or additional vendored assets must retain their own provenance if introduced. |
 
+2026-10-18 dashboard scrolling correction: `frontend/app.css` enables vertical
+overflow only when the shared chat panel directly contains the landing dashboard.
+This is original Labbonet integration over the credited Elodine / GoblinCorps
+presentation; no copied CSS spans, upstream source or attribution boundaries changed.
+
 ## Other third-party components
 
 ### Milestone 8 additions (2026-10-18)
