@@ -1,0 +1,39 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: Message trees, variants, and replies that outlive the browser tab
+---
+date: 2026-10-18
+---
+author: Labyricorn
+---
+summary: Parity milestones three and four turn messages into a branching tree and run generation as a detached job that clients can leave and rejoin.
+---
+tags: architecture, sqlite, interface
+---
+source_commit: 77d71a3f7a923913446048cdc6d991557b1468ea
+---
+body:
+
+**Message tree.** Messages became a real tree with a remembered selected child,
+so editing a message inserts a sibling variant instead of rewriting history,
+rerolling creates a new sibling, and forking copies the path from the root. Each
+tree edit must present the revision the caller last saw, so a stale browser tab
+can never silently overwrite newer work. Threads gained folders, pins, tags,
+manual ordering, and content search. Destructively replacing message text was
+ruled out, and storing the active path as a list was rejected in favor of a leaf
+pointer that survives deletions.
+
+**Detached generation.** Generation now runs on a context independent of the HTTP
+request. A job keeps the accumulated text rather than an event log, so a client
+that connects, or reconnects, receives a snapshot followed by live updates. Slow
+subscribers are dropped instead of buffered. Navigating away stops only the
+watcher; Stop remains an explicit call. After an unclean exit, replies still
+marked streaming are marked interrupted and never resubmitted.
+
+The same milestone added reply length caps that cut at sentence ends, a reasoning
+watchdog, and validated text attachments, plus code copy and save tools and a
+jump-to-latest control.
+
+[Commit 77d71a3](https://github.com/Labyricorn/Labbonet/commit/77d71a3f7a923913446048cdc6d991557b1468ea)

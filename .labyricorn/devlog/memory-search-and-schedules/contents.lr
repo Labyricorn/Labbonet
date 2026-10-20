@@ -1,0 +1,44 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: Lore, opt-in search, declarative mods, and schedules
+---
+date: 2026-10-18
+---
+author: Labyricorn
+---
+summary: Parity milestones five to seven add retrieval memory, a single fixed search path, validated macros and appearance, and server-side schedules, each defaulting to off.
+---
+tags: ai, privacy, user-control, architecture
+---
+source_commit: d28f6a5a2bcbf9d98e7c5e4f91d6be5e2bd62e27
+---
+body:
+
+The next three milestones added the features most likely to send private text
+somewhere, and each was built around a conservative default.
+
+**Memory.** Lore storybooks, append-only summaries, and hybrid retrieval were
+added with automatic summaries off and retrieval limited to tags, so nothing
+sends old messages to a model unasked. A summary applies only when its anchor is
+on the visible branch, so edits and forks never inherit stale ones. Retrieval
+records keep ids and scores, not text.
+
+**Search and mods.** Web search has three gates, all enforced on the server: an
+owner switch, a stored key, and a per-message request. Its destination is a
+constant, not a setting, because a configurable URL could redirect a key and the
+user's text anywhere; a test guards the constructor. The query is typed text with
+macro tags removed, since a macro could carry private text. Macros are validated
+as a set so a loop or growth bomb cannot reach a send. Appearance is an allowlist
+applied through the style object model, which keeps the strict content security
+policy intact.
+
+**Schedules and profiles.** Unattended runs have a small cap on follow-ups, never
+confirm model loading, and record missed times without replaying them. Profiles
+bundle settings but share the database, and the interface says they do not
+isolate data.
+
+Real embedding, search, and summarizer services were not exercised here.
+
+[Commit d28f6a5](https://github.com/Labyricorn/Labbonet/commit/d28f6a5a2bcbf9d98e7c5e4f91d6be5e2bd62e27)

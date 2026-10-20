@@ -403,3 +403,11 @@ provider calls. Test server stopped after verification.
 frontend AGENTS files intentionally unchanged: existing scrolling/presentation
 ownership and workflows suffice; no new durable boundary or preference. Provenance,
 NOTICE and LICENSE unchanged: copied spans, source lineage and credits unchanged.
+
+## 2026-10-19 — Labyricorn site publishing content
+
+**Changed:** added `.labyricorn/` (project record plus ten condensed public devlog entries, each tied to a full source commit on `main`) so the Labyricorn site can import Labbonet as a tracked project. Entries summarize milestones from this log; internal addresses, ports and owner quotations were left out.
+
+**Learnings:** the site's importer requires every `source_commit` to be an ancestor of the published branch, so entries reference only commits already on `origin/main`. Retrospective entries use the commit's own date. The site's `devlog_editor.py` validators run headlessly against this checkout (tree, project, index, commit ancestry) and passed.
+
+**DOX:** project AGENTS owns `.labyricorn/` and indexes its child contract. Root `G:\.vibe\AGENTS.md` child index lists the new boundary. No application code changed, so Go/JS tests were not repeated.

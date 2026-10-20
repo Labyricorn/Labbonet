@@ -1,0 +1,52 @@
+_model: project
+---
+schema_version: 1
+---
+project_id: labbonet
+---
+title: Labbonet
+---
+summary: A secure, local, multi-provider AI chat application that keeps conversations independent of whichever model answered them.
+---
+status: active
+---
+started: 2026-10-17
+---
+author: Labyricorn
+---
+repository_url: https://github.com/Labyricorn/Labbonet
+---
+default_branch: main
+---
+tags: Go, SQLite, JavaScript, local-first, privacy, user-control
+---
+body:
+
+Labbonet is a chat client and workflow orchestrator for inference services
+that you already run. It is not an engine installer: it connects to local or
+trusted-network providers such as Strata and LM Studio, treats them as
+interchangeable, and records which model actually produced each reply so a
+conversation can move between models without losing its history.
+
+The application is a small Go backend with a browser interface. The backend
+holds credentials, talks only to endpoints you have registered, and stores
+conversations in SQLite. It listens on the loopback interface by default, asks
+for no elevated privileges, changes no firewall or antivirus settings, and
+downloads no executables. Its extension surface is declarative, so macros and
+appearance presets are validated values rather than scripts or stylesheets.
+
+Labbonet's functional and visual reference is GobboNet by Elodine / GoblinCorps.
+The project reuses selected pinned presentation source under AGPLv3-or-later and
+documents each reused element, separating copied source, adapted behavior, and
+Labbonet's own implementation. It is not affiliated with or endorsed by
+GobboNet or its authors.
+
+## Where it stands
+
+Version V0-2-0 is in development. The Phase 1 foundation and the GobboNet
+parity milestones for characters, card import and export, branching threads,
+detached generation, lore retrieval, optional web search, macros, and schedules
+are implemented, and the owner has passed visual approval for the current
+interface. Verification against real embedding, search, and summarizer services
+is deferred. Provider authentication and cold-start checks, together with final
+Phase 1 sign-off, are deferred until V2-0-0. Those items are open, not passed.

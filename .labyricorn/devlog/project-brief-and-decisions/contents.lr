@@ -1,0 +1,42 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: Project brief, decision register, and verified provider protocol
+---
+date: 2026-10-17
+---
+author: Labyricorn
+---
+summary: Labbonet starts as a written brief, a register of architectural decisions, and a documented, probe-verified provider protocol before any code.
+---
+tags: architecture, documentation, privacy, local-first
+---
+source_commit: 6599c2b8b6d1d9a72dc0015b1651947cbdcb1bdd
+---
+body:
+
+Labbonet began with documents rather than code. The first substantive commit
+added the project brief, a decision register, and a protocol note for the Strata
+inference server, so that the security and provider choices were written down
+and reviewable before an implementation existed.
+
+The decision register gives each architectural question a status. A proposal
+becomes an accepted decision only when the project owner explicitly accepts it,
+and any later status change is recorded in the register's log rather than made
+silently. Fifteen of sixteen decisions were eventually accepted; the routing
+decision stays deferred.
+
+The Strata protocol note records what was observed by read-only probes of the
+real server instead of what documentation implied. That rule carried through the
+project: protocol and capability claims are labeled as verified or unverified,
+and ports, authentication, and API formats are not assumed. Later work found
+that the served model and context length had already drifted from the note,
+which is why the provider adapter records the model a server reports rather
+than trusting any document.
+
+The brief also set the commitments that shaped everything after it: loopback by
+default, an allowlist of registered endpoints, no executable downloads, and no
+firewall or antivirus changes.
+
+[Commit 6599c2b](https://github.com/Labyricorn/Labbonet/commit/6599c2b8b6d1d9a72dc0015b1651947cbdcb1bdd)

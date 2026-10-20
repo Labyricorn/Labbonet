@@ -1,0 +1,39 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: Documenting every reused GobboNet element
+---
+date: 2026-10-18
+---
+author: Labyricorn
+---
+summary: A pinned-commit reuse inventory, source hashes, and public notices separate upstream work from what Labbonet implements itself.
+---
+tags: provenance, documentation
+---
+source_commit: 555b7c6d6b144ad6cef7562e3effa1b892c3a397
+---
+body:
+
+Labbonet follows GobboNet's design closely, so the project stopped to make the
+relationship explicit. The owner asked that every reused element be documented
+and credited to Elodine / GoblinCorps, and that copied source, adapted behavior,
+and Labbonet's own implementation be kept distinct.
+
+The inventory is pinned to one upstream commit. Each reused CSS file was checked
+against that commit, and the exact line spans and SHA-256 hashes are recorded in
+a machine-readable provenance file. The old grouped reuse log became a
+file-by-file record with screen and element boundaries and the points where
+Labbonet's implementation begins. A root notice file, the public README, and the
+in-app About view all carry the credit, and files that mix upstream and original
+material say so.
+
+The audit also corrected stale wording such as "design reference only" where
+source had since been reused. Excluded behavior stays excluded: installer
+logic, firewall changes, wide-open listening, recursive-delete uninstalls, and
+unrestricted script hooks are never reused. The inventory is kept up to date as
+material is added, changed, or removed, and the docs state that Labbonet is not
+affiliated with GobboNet.
+
+[Commit 555b7c6](https://github.com/Labyricorn/Labbonet/commit/555b7c6d6b144ad6cef7562e3effa1b892c3a397)

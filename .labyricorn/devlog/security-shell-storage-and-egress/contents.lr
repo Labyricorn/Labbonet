@@ -1,0 +1,47 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: A loopback security shell, SQLite storage, and a single egress path
+---
+date: 2026-10-17
+---
+author: Labyricorn
+---
+summary: Phase 1 steps one to three build the server shell, versioned SQLite storage, and the only package allowed to make outbound requests.
+---
+tags: architecture, privacy, sqlite, local-first
+---
+source_commit: aedf7680f9077d7a397d7b6758ef37747963d021
+---
+body:
+
+The first three build steps laid the foundation that later features depend on.
+
+**Security shell.** A Go server that binds to loopback, checks the Host header,
+Origin, and fetch metadata, issues a session cookie through a one-time launch
+code, applies a strict content security policy, and refuses a second instance on
+the same data directory with a lock file.
+
+**Storage.** SQLite through a pure-Go driver, with numbered migrations applied
+one transaction at a time and tracked by schema version. The server refuses to
+open a database from a newer schema and leaves the file untouched. Backups are
+written with `VACUUM INTO`, and the credential table is cleared in the copy so a
+backup never carries secrets.
+
+**Endpoints, credentials, and egress.** Credentials are protected with the
+operating system's per-user facility, with no plaintext fallback on other
+platforms. All outbound HTTP lives in one package, and a test scans the source
+tree to prove nothing else makes a request. Its dial guard checks the resolved
+address on every connection, refuses redirects, rejects cloud metadata
+addresses, and scopes each credential to its own endpoint. Public addresses need
+an explicit acknowledgement at registration.
+
+A live smoke test found that no stored credential value appeared in the
+database, a backup, or the access log. The access log records method, path,
+status, and duration only.
+
+Provider detection, model discovery, and the generation pipeline were left for
+the next steps.
+
+[Commit aedf768](https://github.com/Labyricorn/Labbonet/commit/aedf7680f9077d7a397d7b6758ef37747963d021)

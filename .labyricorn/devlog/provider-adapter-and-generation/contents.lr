@@ -1,0 +1,41 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: One provider adapter and a cancel-safe generation pipeline
+---
+date: 2026-10-17
+---
+author: Labyricorn
+---
+summary: A single OpenAI-compatible adapter detects Strata and LM Studio profiles, and the generation pipeline persists partial replies through cancellation.
+---
+tags: architecture, ai, sqlite
+---
+source_commit: f22bca79151e6907f299a60e050b5e43a2156c08
+---
+body:
+
+Steps four and five turned registered endpoints into working conversations.
+
+**Adapter.** One OpenAI-compatible adapter serves every endpoint. It detects
+whether the server is Strata, LM Studio, or a generic service, normalizes each
+profile's model list, parses streamed responses into a common set of events, and
+maps failures onto a fixed set of error kinds. The request body is built from a
+type that has no field for settings Labbonet must never send, so that guarantee
+is a property of the code rather than of call-site discipline. A scriptable fake
+provider supports repeatable tests.
+
+**Pipeline.** A reply is recorded as a message plus a generation row that keeps
+provenance: the model requested, the model the server reported, and timings.
+Each endpoint has a concurrency limit enforced by a cancellable queue. A model
+reported as not loaded needs explicit confirmation, because loading it could
+evict another client's model.
+
+Two lessons stand out. Writes meant to keep a partial reply cannot share the
+context that was just cancelled, so they use their own deadlines; a test caught a
+message stuck in the streaming state. And a live run found that a logging
+wrapper had silently dropped the ability to flush streamed responses. Unit tests
+bypassed the real middleware chain, so only driving the actual binary exposed it.
+
+[Commit f22bca7](https://github.com/Labyricorn/Labbonet/commit/f22bca79151e6907f299a60e050b5e43a2156c08)

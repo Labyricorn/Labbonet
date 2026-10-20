@@ -28,6 +28,7 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 - `README.md`: public project summary; `.gitignore`: Go template from the initial GitHub commit.
 - `devlog.md`: implementation history (Devlog Loop); read before starting each step, add an entry when a step is done.
 - `docs/evidence/`: screenshots and verification records supporting acceptance tests.
+- `.labyricorn/`: public project exhibition and curated devlog imported read-only by the Labyricorn site (`.labyricorn/AGENTS.md` owns its rules). It is a public, condensed narrative; `devlog.md` stays the internal operational record. Omit local addresses, ports and credentials from it.
 - `go.mod`, `cmd/`, `internal/` (including `internal/interchange`, card/snapshot parsing, `internal/generate` detached jobs/limits/memory coordination and web-search orchestration, `internal/memory` storybook parser, retrieval engine and memory settings, `internal/search` web-search settings/query/response sanitising, `internal/mods` macro and appearance validation, `internal/egress/search.go` the fixed-destination search client), `migrations/`: Phase 1 and parity backend source, built per `docs/PHASE1-PLAN.md`. `frontend/AGENTS.md` owns the browser source/presentation contracts; this file retains project architecture, provider/security and acceptance ownership.
 
 - Scheduler/profile ownership: `internal/schedule` validates timezone-aware schedules; `internal/profile` validates settings bundles; `internal/generate/scheduler.go` owns unattended jobs; store/API counterparts and migration 6 persist schedules, bounded run ledgers and profiles. Scheduled runs never confirm model loading, have at most five fixed `Continue.` follow-ups, retain the search gates and run only while the server is up. Missed times are recorded without replay. Profiles share the database; they do not isolate user data. See architecture section 15 and security model section 17.
@@ -63,3 +64,4 @@ Labbonet (AGPLv3-or-later): secure, local, multi-provider AI chat application mo
 ## Child DOX Index
 
 - `frontend/AGENTS.md`: browser shell, ES modules, pinned presentation reuse, rendering, vendored assets and visual verification. Backend/protocol/acceptance documents remain owned here.
+- `.labyricorn/AGENTS.md` (with `project/` and `devlog/` children): Labyricorn site publishing records. Application code and internal docs remain owned here.

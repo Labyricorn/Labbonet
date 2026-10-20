@@ -1,0 +1,38 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: Parity audit, visual approval, and what stays deferred
+---
+date: 2026-10-18
+---
+author: Labyricorn
+---
+summary: A row-by-row audit closes milestone eight, the owner passes visual approval, and unverified live services are recorded as deferred rather than passed.
+---
+tags: release, documentation, interface
+---
+source_commit: 0487709e3fa764a3bd7ce3e357b67f802f1d80b4
+---
+body:
+
+The final parity milestone was an audit rather than a feature. A row-by-row
+acceptance document compares the implementation with the reference and states
+each disposition, including compatibility limits. Fixes from the audit added a
+bounded converter for the reference application's export format, vendored math
+and syntax highlighting, accessible in-app dialogs, and the dashboard layout.
+
+Browser checks used disposable loopback databases only, with no real inference
+or search calls. They covered file choosers, exports, deletion and discard
+confirmations, folder ordering with a deliberately stale second tab, and layouts
+at full-window and side-panel widths with no horizontal overflow. Native browser
+confirmation dialogs repeatedly stalled the test driver, so decisions use HTML
+dialogs instead.
+
+The owner then passed visual approval for the current V0-2-0 interface and
+deferred verification against real embedding, search, and summarizer services.
+Both statuses are recorded exactly: approval is not pixel-equality proof, and
+the deferral is not a pass or a waiver. Provider authentication, Strata
+cold-start checks, and final Phase 1 sign-off remain deferred until V2-0-0.
+
+[Commit 0487709](https://github.com/Labyricorn/Labbonet/commit/0487709e3fa764a3bd7ce3e357b67f802f1d80b4)

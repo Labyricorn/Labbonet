@@ -1,0 +1,44 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: Triaging an external review and fixing the first findings
+---
+date: 2026-10-18
+---
+author: Labyricorn
+---
+summary: A product report becomes a prioritized, evidence-checked task list, and the first batches fix lifecycle, correctness, and chat-interface races.
+---
+tags: architecture, privacy, documentation
+---
+source_commit: 78ee64493668408fc6e4135cff27f4ff55e55fdd
+---
+body:
+
+After the parity work, the owner supplied a backend and frontend product report.
+Rather than accept it wholesale, the project checked each claim against the
+source and wrote a triage document with prioritized tasks, evidence, proposed
+approaches, and acceptance conditions. Some broad claims were narrowed, since
+fresh sends already used typed-only search text, and two items were recorded as
+behavior questions for the owner instead of automatic fixes.
+
+The first three batches then landed:
+
+- **Lifecycle and concurrency.** Per-endpoint slots became a stable gate with a
+  first-in-first-out queue of cancellable waiters, retrieval warmth is committed
+  only for a stored turn, and Stop during preparation is now exclusive with the
+  commit. A shutdown path covers every exit. The old hand-off could not be fixed
+  by moving a callback; the decision had to share the watcher's lock.
+- **Privacy and correctness.** Disabled endpoints are refused, a stream must end
+  with a terminator, summaries stay local to their branch even after a reroll,
+  and search queries are cut at attachment headers.
+- **Chat interface.** The chat view disposes cleanly on failed mounts, sending is
+  gated until initialization finishes, drafts are restored only when nothing was
+  stored, and an explicit Stop is separated from an aborted watch.
+
+The race detector could not run because the environment builds without cgo, so
+race-freedom rests on construction and concurrent-loop tests. A dashboard
+scrolling fix followed. Many triage tasks remain open.
+
+[Commit 78ee644](https://github.com/Labyricorn/Labbonet/commit/78ee64493668408fc6e4135cff27f4ff55e55fdd)

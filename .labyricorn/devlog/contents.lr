@@ -1,0 +1,7 @@
+_model: devlog
+---
+schema_version: 1
+---
+title: Labbonet development log
+---
+summary: Milestones and design decisions from building Labbonet, a secure local multi-provider AI chat application.

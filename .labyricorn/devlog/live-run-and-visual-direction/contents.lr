@@ -1,0 +1,41 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: First live run against real providers, and a change of visual direction
+---
+date: 2026-10-17
+---
+author: Labyricorn
+---
+summary: Live testing with Strata and LM Studio exposed two adapter bugs, and the owner rejected the generic interface in favor of a close GobboNet match.
+---
+tags: ai, interface, prototype
+---
+source_commit: c5b43a64be55f81e91d492d0c06f2df22d21a6a7
+---
+body:
+
+Step seven ran the application against real servers, and the live run found
+defects that the fake provider could not.
+
+LM Studio rejected requests with an unsupported media type error because the
+outbound client had not set a JSON content type. The same run showed that its
+stream carries no timing statistics, so the adapter now measures time to first
+token and estimates throughput itself, while still preferring provider-supplied
+timings when they exist. Both bugs were reproduced as failing tests before they
+were fixed.
+
+The same run exercised the behaviors the design promised. One conversation kept
+its history and distinct provenance when switched from one model to another,
+concurrent conversations on one server were serialized, Stop saved partial
+replies as cancelled, and Ctrl+C during a stream saved the partial text, released
+the lock, and left the database intact.
+
+Two items were not finished. Provider authentication and the cold-start checks
+were deferred by the owner, not waived. And the owner rejected the shell's
+appearance, asking for a pixel-for-pixel match to GobboNet except where
+Labbonet's model dynamics require a difference. That requirement redirected the
+work toward the parity effort described in the next entries.
+
+[Commit c5b43a6](https://github.com/Labyricorn/Labbonet/commit/c5b43a64be55f81e91d492d0c06f2df22d21a6a7)

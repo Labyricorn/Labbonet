@@ -1,0 +1,43 @@
+_model: devlog-entry
+---
+schema_version: 1
+---
+title: Characters, personas, and safe card import and export
+---
+date: 2026-10-18
+---
+author: Labyricorn
+---
+summary: Parity milestones one and two add revisioned character cards, per-conversation casts, and a transactional importer for common card formats.
+---
+tags: ai, interface, user-control, sqlite
+---
+source_commit: 8bcb70bc6da29c6c223a797bd4c14d527bd34b25
+---
+body:
+
+The first two parity milestones made conversations about characters rather than
+only about models.
+
+**Characters.** Cards are revisioned, and each conversation has its own cast,
+greetings, and historical speaker identity, so an old message still shows who
+spoke it after a card changes. Prompts are assembled with bounded macro
+expansion and a context estimate, and the stored prompt matches what was sent.
+
+**Interchange.** An importer reads Tavern V1, V2, and V3 cards in JSON and PNG
+form, CHARX archives, native cards, and a versioned Labbonet snapshot. Preview is
+a real import inside a transaction that is rolled back, which yields exact counts
+without a separate preview format. A stateless preview token was considered and
+rejected for that reason.
+
+Imported content is treated as inert data. Archives with executable extensions or
+unsafe paths are rejected whole, unknown assets are ignored with a note, and
+oversized portraits are downscaled instead of dropped. Snapshots omit
+conversation parameters and provenance so a file cannot smuggle in provider
+settings. Imported threads carry no endpoint or model, and a destructive reset
+takes a backup first.
+
+Some browser paths, such as the native file chooser, were not exercised in this
+pass and were carried forward to the milestone audit.
+
+[Commit 8bcb70b](https://github.com/Labyricorn/Labbonet/commit/8bcb70bc6da29c6c223a797bd4c14d527bd34b25)
